@@ -18,6 +18,7 @@ function RegisterWizards()
     // project wizards
     //
     RegisterWizard(wizProject,     _T("empty"),        _("Empty project"),         _("Console"));
+    RegisterWizard(wizProject,     _T("existingmakefileproject"),     _("Existing makefile project"),         _("Console"));
     RegisterWizard(wizProject,     _T("fortran/app"),  _("Fortran application"),   _("Fortran"));
     RegisterWizard(wizProject,     _T("fortran/lib"),  _("Fortran library"),       _("Fortran"));
     RegisterWizard(wizProject,     _T("fortran/dll"),  _("Fortran DLL"),           _("Fortran"));

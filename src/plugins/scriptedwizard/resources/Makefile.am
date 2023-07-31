@@ -39,7 +39,8 @@ SUBDIRS = arduino \
 	sys \
 	tricore \
 	win32gui \
-	wxwidgets
+	wxwidgets \
+	existingmakefileproject
 
 pkgdata_DATA = scriptedwizard.zip
 CLEANFILES = $(pkgdata_DATA)

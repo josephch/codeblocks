@@ -2,6 +2,10 @@
 <resource xmlns="http://www.wxwidgets.org/wxxrc" version="2.5.3.0">
   <object class="wxMenu" name="project_import_menu">
     <label>&amp;Import project</label>
+    <object class="wxMenuItem" name="idFileImportProjectMakefile">
+      <label>Makefile project...</label>
+      <help>Import an existing Makefile project</help>
+    </object>
     <object class="wxMenuItem" name="idFileImportProjectDevCpp">
       <label>Dev-C++ project...</label>
       <help>Import an existing Dev-C++ project</help>

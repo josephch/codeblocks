@@ -435,6 +435,7 @@ AC_CONFIG_FILES([Makefile
 	src/plugins/scriptedwizard/resources/dll/Makefile
 	src/plugins/scriptedwizard/resources/d_source/Makefile
 	src/plugins/scriptedwizard/resources/empty/Makefile
+	src/plugins/scriptedwizard/resources/existingmakefileproject/Makefile
 	src/plugins/scriptedwizard/resources/empty_file/Makefile
 	src/plugins/scriptedwizard/resources/fltk/Makefile
 	src/plugins/scriptedwizard/resources/fortran/Makefile
