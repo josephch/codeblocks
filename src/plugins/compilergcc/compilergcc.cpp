@@ -922,9 +922,11 @@ void CompilerGCC::LoadOptions()
 void CompilerGCC::DoRegisterCompilers()
 {
     bool nonPlatComp = Manager::Get()->GetConfigManager(_T("compiler"))->ReadBool(_T("/non_plat_comp"), false);
-
+    Manager::Get()->GetLogManager()->DebugLog(wxString::Format("\"%s\":\"%d\" Adding GCC compiler CompilerMINGW", __FUNCTION__, __LINE__));
     // register built-in compilers
     CompilerFactory::RegisterCompiler(new CompilerMINGW);
+    Manager::Get()->GetLogManager()->DebugLog(wxString::Format("\"%s\":\"%d\" Added GCC compiler CompilerMINGW", __FUNCTION__, __LINE__));
+#if 0
     if (platform::windows || nonPlatComp)
     {
         CompilerFactory::RegisterCompiler(new CompilerMSVC);
@@ -1020,6 +1022,7 @@ void CompilerGCC::DoRegisterCompilers()
             }
         }
     }
+#endif
 
     // register (if any) user-copies of built-in compilers
     CompilerFactory::RegisterUserCompilers();
