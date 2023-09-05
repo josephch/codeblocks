@@ -467,7 +467,9 @@ void CodeBlocksApp::InitDebugConsole()
 
 void CodeBlocksApp::InitExceptionHandler()
 {
+    wxHandleFatalExceptions (false);
 #ifdef __WXMSW__
+#error
     ExcHndlInit();
 
     // If the executable folder is not writable, as it happens with releases installed under Program Files,
