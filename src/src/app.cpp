@@ -524,6 +524,7 @@ void CodeBlocksApp::InitDebugConsole()
 
 void CodeBlocksApp::InitExceptionHandler()
 {
+    wxHandleFatalExceptions (false);
 #ifdef __WXMSW__
     ExcHndlInit();
 
