@@ -1664,7 +1664,10 @@ void ParseManager::UpdateClassBrowser()
 
 
     if (not m_ClassBrowser)
-          return;
+    {
+        fprintf(stderr,"ParseManager::%s:%d: class browser not available\n", __FUNCTION__, __LINE__);
+        return;
+    }
 
     TRACE(_T("ParseManager::UpdateClassBrowser()"));
 
@@ -1677,6 +1680,7 @@ void ParseManager::UpdateClassBrowser()
         && (not Manager::IsAppShuttingDown()) )
     {
         //-s_ClassBrowserCaller = wxString::Format("%s:%d",__FUNCTION__, __LINE__);
+        TRACE_PRINTF(stderr,"ParseManager::%s:%d: update class browser view\n", __FUNCTION__, __LINE__);
         m_ClassBrowser->UpdateClassBrowserView();
     }
 }
