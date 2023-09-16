@@ -39,6 +39,13 @@ class CCTreeCtrlData : public wxTreeItemData
 public:
     CCTreeCtrlData(SpecialFolder sf = sfToken, Token* token = 0,
                    short int kindMask = 0xffff, int parentIdx = -1);
+    ~CCTreeCtrlData();
+
+    CCTreeCtrlData() = delete;
+    CCTreeCtrlData(const CCTreeCtrlData&) = default;
+    CCTreeCtrlData& operator=(const CCTreeCtrlData&) = default;
+    CCTreeCtrlData(CCTreeCtrlData&&) = delete;
+    CCTreeCtrlData& operator=(CCTreeCtrlData&&) = delete;
 
     /** a pointer to the associated Token instance in the TokenTree */
     Token*        m_Token;
