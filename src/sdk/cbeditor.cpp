@@ -3353,6 +3353,9 @@ void cbEditor::OnContextMenuEntry(wxCommandEvent& event)
         cbProject *prj = Manager::Get()->GetProjectManager()->GetActiveProject();
 
         wxArrayInt targets;
+#ifdef TRACE
+        fprintf(stderr, "cbProject::%s:%d [%p]  idAddFileToProject m_Filename %s\n", __FUNCTION__, __LINE__, this, m_Filename.ToUTF8().data());
+#endif
         if (Manager::Get()->GetProjectManager()->AddFileToProject(m_Filename, prj, targets) != 0)
         {
             ProjectFile* pf = prj->GetFileByFilename(m_Filename, false);
