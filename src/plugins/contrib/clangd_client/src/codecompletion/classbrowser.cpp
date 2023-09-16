@@ -45,7 +45,7 @@
 
 #include <stack>
 
-#define CC_CLASS_BROWSER_DEBUG_OUTPUT 0
+#define CC_CLASS_BROWSER_DEBUG_OUTPUT 1
 //(2021/06/3)
 //-#undef CC_CLASS_BROWSER_DEBUG_OUTPUT
 //-#define CC_CLASS_BROWSER_DEBUG_OUTPUT 1
@@ -137,6 +137,7 @@ ClassBrowser::ClassBrowser(wxWindow* parent, ParseManager* np) :
     m_ClassBrowserSemaphore(0, 1),  // initial count, max count
     m_ClassBrowserBuilderThread(nullptr)
 {
+    fprintf(stderr, "ClassBrowser::%s:%d enter %p\n", __FUNCTION__, __LINE__, this);
     wxXmlResource::Get()->LoadPanel(this, parent, "pnlCldClassBrowser"); // panel class browser -> pnlCB
     m_Search = XRCCTRL(*this, "cmbSearch", wxComboBox);
 
@@ -166,6 +167,7 @@ ClassBrowser::ClassBrowser(wxWindow* parent, ParseManager* np) :
 // class destructor
 ClassBrowser::~ClassBrowser()
 {
+    fprintf(stderr, "ClassBrowser::%s:%d enter %p\n", __FUNCTION__, __LINE__, this);
     const int pos = XRCCTRL(*this, "splitterWin", wxSplitterWindow)->GetSashPosition();
     Manager::Get()->GetConfigManager("clangd_client")->Write("/splitter_pos", pos);
 
@@ -617,7 +619,10 @@ void ClassBrowser::OnTreeItemDoubleClick(wxTreeEvent& event)
     {
         // lock failed, do not block the UI thread, verify tries, call back when idle
         if (GetParseManager()->GetIdleCallbackHandler(pActiveProject)->IncrQCallbackOk(lockFuncLine))
+        {
+            fprintf(stderr, "ClassBrowser::%s:%d lock failed\n", __FUNCTION__, __LINE__);
             GetParseManager()->GetIdleCallbackHandler(pActiveProject)->QueueCallback(this, &ClassBrowser::OnTreeItemDoubleClick, event);
+        }
         else return;
     }
     else /*lock succeeded*/
@@ -672,6 +677,7 @@ void ClassBrowser::OnTreeItemDoubleClick(wxTreeEvent& event)
                 break;
         }
 
+        fprintf(stderr, "ClassBrowser::%s:%d ctd  %p Token =  %p\n", __FUNCTION__, __LINE__, ctd, ctd->m_Token);
         wxFileName fname;
         if (toImp)
             fname.Assign(ctd->m_Token->GetImplFilename());
@@ -860,9 +866,12 @@ bool ClassBrowser::GetTokenTreeLock(void (T::*method)(T1 x1), P1 event)
 void ClassBrowser::OnSearch(cb_unused wxCommandEvent& event)
 // ----------------------------------------------------------------------------
 {
+    fprintf(stderr,"ClassBrowser::%s:%d: enter\n", __FUNCTION__, __LINE__);
     wxString search = m_Search->GetValue();
-    if (search.IsEmpty() || !m_Parser)
+    if (search.IsEmpty() || !m_Parser) {
+        fprintf(stderr,"ClassBrowser::%s:%d: empty search or null parser\n", __FUNCTION__, __LINE__);
         return;
+    }
 
     // ----------------------------------------------------
     // CC_LOCKER_TRACK_TT_MTX_LOCK(s_TokenTreeMutex)
@@ -886,12 +895,13 @@ void ClassBrowser::OnSearch(cb_unused wxCommandEvent& event)
 
         cbMessageBox(_("No matches were found: ") + search,
                      _("Search failed"), wxICON_INFORMATION);
+        fprintf(stderr,"ClassBrowser::%s:%d: No matches were found\n", __FUNCTION__, __LINE__);
         return;
     }
     else if (count == 1)
     {
         token = tree->at(*result.begin());
-
+        fprintf(stderr,"ClassBrowser::%s:%d: one one match :) \n", __FUNCTION__, __LINE__);
     }
     else if (count > 1)
     {
@@ -1024,6 +1034,7 @@ void ClassBrowser::ThreadedBuildTree(cbProject* activeProject)
 {
     if (Manager::IsAppShuttingDown() || !m_Parser)
         return;
+    fprintf(stderr,"ClassBrowser::%s:%d: ThreadedBuildTree started\n", __FUNCTION__, __LINE__);
 
     TRACE("ClassBrowser: ThreadedBuildTree started.");
 
@@ -1202,6 +1213,7 @@ void ClassBrowser::TreeOperation(ETreeOperator op, CCTreeItem* item)
     switch (op)
       {
       case OpClear:
+          fprintf(stderr,"ClassBrowser::%s:%d: TreeOperation OpClear %p %p %p\n", __FUNCTION__, __LINE__, m_CCTreeCtrl, m_CCTreeCtrlBottom, m_targetTreeCtrl);
           m_targetTreeCtrl->Disable(); //fix trunk rev 12689 ticket 1152
           m_targetTreeCtrl->Freeze();
           m_targetTreeCtrl->DeleteAllItems();
@@ -1212,14 +1224,20 @@ void ClassBrowser::TreeOperation(ETreeOperator op, CCTreeItem* item)
           m_targetNode = m_targetTreeCtrl->GetRootItem();
           if (!m_targetNode.IsOk() && item)
           {
+              fprintf(stderr,"ClassBrowser::%s:%d: TreeOperation OpAddRoot adding root %p %p %p\n", __FUNCTION__, __LINE__, m_CCTreeCtrl, m_CCTreeCtrlBottom, m_targetTreeCtrl);
               m_targetNode = m_targetTreeCtrl->AddRoot(item->m_text,
                                                        item->m_image[wxTreeItemIcon_Normal],
                                                        item->m_image[wxTreeItemIcon_Selected],
                                                        item->m_data);
               SetNodeProperties(item);
           }
+          else
+          {
+              fprintf(stderr,"ClassBrowser::%s:%d: TreeOperation OpAddRoot root already available %p %p %p\n", __FUNCTION__, __LINE__, m_CCTreeCtrl, m_CCTreeCtrlBottom, m_targetTreeCtrl);
+          }
           break;
       case OpAddChild:
+          fprintf(stderr,"ClassBrowser::%s:%d: OpAddChild  %p %p %p\n", __FUNCTION__, __LINE__, m_CCTreeCtrl, m_CCTreeCtrlBottom, m_targetTreeCtrl);
           if (m_targetNode.IsOk() && item)
           {
               m_targetTreeCtrl->SetItemHasChildren(m_targetNode);
@@ -1233,22 +1251,27 @@ void ClassBrowser::TreeOperation(ETreeOperator op, CCTreeItem* item)
           }
           break;
       case OpGoUp:
+          fprintf(stderr,"ClassBrowser::%s:%d: OpGoUp  %p %p %p\n", __FUNCTION__, __LINE__, m_CCTreeCtrl, m_CCTreeCtrlBottom, m_targetTreeCtrl);
           if (m_targetNode.IsOk())
               m_targetNode = m_targetTreeCtrl->GetItemParent(m_targetNode);
           break;
       case OpExpandCurrent:
+          fprintf(stderr,"ClassBrowser::%s:%d: OpExpandCurrent  %p %p %p\n", __FUNCTION__, __LINE__, m_CCTreeCtrl, m_CCTreeCtrlBottom, m_targetTreeCtrl);
           if (m_targetNode.IsOk())
               m_targetTreeCtrl->Expand(m_targetNode);
           break;
       case OpExpandRoot:
+          fprintf(stderr,"ClassBrowser::%s:%d: OpExpandRoot  %p %p %p\n", __FUNCTION__, __LINE__, m_CCTreeCtrl, m_CCTreeCtrlBottom, m_targetTreeCtrl);
           root = m_targetTreeCtrl->GetRootItem();
           if (root.IsOk())
               m_targetTreeCtrl->Expand(m_targetTreeCtrl->GetRootItem());
           break;
       case OpExpandAll:
+          fprintf(stderr,"ClassBrowser::%s:%d: OpExpandAll OpShowFirst %p %p %p\n", __FUNCTION__, __LINE__, m_CCTreeCtrl, m_CCTreeCtrlBottom, m_targetTreeCtrl);
           m_targetTreeCtrl->ExpandAll();
           break;
       case OpShowFirst:
+          fprintf(stderr,"ClassBrowser::%s:%d: TreeOperation OpShowFirst %p %p %p\n", __FUNCTION__, __LINE__, m_CCTreeCtrl, m_CCTreeCtrlBottom, m_targetTreeCtrl);
           root = m_targetTreeCtrl->GetRootItem();
           if (root.IsOk())
           {
@@ -1259,6 +1282,7 @@ void ClassBrowser::TreeOperation(ETreeOperator op, CCTreeItem* item)
           }
           break;
       case OpEnd:
+          fprintf(stderr,"ClassBrowser::%s:%d: TreeOperation OpEnd %p %p %p\n", __FUNCTION__, __LINE__, m_CCTreeCtrl, m_CCTreeCtrlBottom, m_targetTreeCtrl);
           m_targetTreeCtrl->Thaw();
           m_targetTreeCtrl->Enable(); //fix rev 12689 ticket 1152
       }
@@ -1332,10 +1356,20 @@ void ClassBrowser::ReselectItem()
         wxTreeItemId item = m_CCTreeCtrl->GetFocusedItem();
         if (item.IsOk())
         {
+            fprintf(stderr,"ClassBrowser::%s:%d: [%p] schedule JobSelectTree\n", __FUNCTION__, __LINE__, this);
             m_ClassBrowserBuilderThread->SetNextJob(JobSelectTree, GetItemPtr(item));
             m_ClassBrowserSemaphore.Post();
         }
         else
+        {
+
+            fprintf(stderr,"ClassBrowser::%s:%d: [%p] item not ok, delete all items\n", __FUNCTION__, __LINE__, this);
             m_CCTreeCtrlBottom->DeleteAllItems();
+        }
+    }
+    else
+    {
+        fprintf(stderr,"ClassBrowser::%s:%d: [%p] do nothing. m_ClassBrowserBuilderThread %p, m_Parser %p treeMembers %d\n",
+        		__FUNCTION__, __LINE__, this, m_ClassBrowserBuilderThread, m_Parser, (!m_Parser)? false :m_Parser->ClassBrowserOptions().treeMembers);
     }
 }

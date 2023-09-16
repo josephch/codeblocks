@@ -1591,7 +1591,10 @@ void ParseManager::UpdateClassBrowser()
 // ----------------------------------------------------------------------------
 {
     if (not m_ClassBrowser)
-          return;
+    {
+        fprintf(stderr,"ParseManager::%s:%d: class browser not available\n", __FUNCTION__, __LINE__);
+        return;
+    }
 
     TRACE(_T("ParseManager::UpdateClassBrowser()"));
 
@@ -1599,6 +1602,7 @@ void ParseManager::UpdateClassBrowser()
         && m_ActiveParser->Done()
         && (not Manager::IsAppShuttingDown()) )
     {
+        fprintf(stderr,"ParseManager::%s:%d: update class browser view\n", __FUNCTION__, __LINE__);
         m_ClassBrowser->UpdateClassBrowserView();
     }
 }

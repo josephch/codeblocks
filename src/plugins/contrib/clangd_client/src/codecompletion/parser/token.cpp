@@ -67,11 +67,13 @@ Token::Token(const wxString& name, unsigned int file, unsigned int line, size_t 
     m_TokenTree(0),
     m_Ticket(ticket)
 {
+    fprintf(stderr, "Token::%s:%d enter %p name %s\n", __FUNCTION__, __LINE__, this, m_Name.ToUTF8().data());
     //ctor
 }
 
 Token::~Token()
 {
+    fprintf(stderr, "Token::%s:%d enter %p name %s\n", __FUNCTION__, __LINE__, this, m_Name.ToUTF8().data());
     //dtor
     m_TemplateMap.clear();
     m_TemplateType.clear();

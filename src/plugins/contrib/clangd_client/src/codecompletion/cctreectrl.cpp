@@ -32,7 +32,14 @@ CCTreeCtrlData::CCTreeCtrlData(SpecialFolder sf, Token* token, short int kindMas
     m_Ticket(token ? token->GetTicket() : 0),
     m_MirrorNode(nullptr)
 {
+    fprintf(stderr, "CCTreeCtrlData::%s:%d enter %p token %p\n", __FUNCTION__, __LINE__, this, token);
 }
+
+CCTreeCtrlData::~CCTreeCtrlData()
+{
+    fprintf(stderr, "CCTreeCtrlData::%s:%d enter %p\n", __FUNCTION__, __LINE__, this);
+    m_Token = nullptr;
+};
 
 // class CCTreeCtrlExpandedItemData
 

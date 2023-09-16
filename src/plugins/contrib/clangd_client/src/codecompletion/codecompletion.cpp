@@ -5241,9 +5241,16 @@ void ClgdCompletion::DoParseOpenedProjectAndActiveEditor(wxTimerEvent& event)
     // Set the ProxyProject to use this new clangd client.
     if (pProxyProject and pProxyClient and pProxyParser)
     {
+        pLogMgr->DebugLog(wxString(__FUNCTION__) + ": Add pClient in m_LSP_Clients[pProxyProject] " <<  pProxyProject->GetTitle());
         GetParseManager()->m_LSP_Clients[pProxyProject] = pProxyClient;
         pProxyParser->SetLSP_Client(pProxyClient);
         pProxyClient->SetParser((Parser*)pProxyParser);
+    }
+    else
+    {
+        msg = wxString::Format("Error: %s Could not add pClient in m_LSP_Clients pProxyProject %p pProxyClient %p and pProxyParser %p",
+                                __FUNCTION__, pProxyProject, pProxyClient, pProxyParser);
+        pLogMgr->DebugLog(msg);
     }
     cbWorkspace* pWorkspace = Manager::Get()->GetProjectManager()->GetWorkspace();
     pWorkspace->SetModified(false);
