@@ -1637,6 +1637,9 @@ void Parser::OnLSP_DiagnosticsResponse(wxCommandEvent& event)
     if (uri.Length())
     {
         cbFilename = fileUtils.FilePathFromURI(uri);
+#ifdef TRACE
+        fprintf(stderr, "Parser::%s:%d [%p] cbFilename %s\n", __FUNCTION__, __LINE__, this, cbFilename.ToUTF8().data());
+#endif
         // Clear previous fix available data for this filename.
         FixMap_t::iterator it = FixesAvailable.find(cbFilename);
         if (it != FixesAvailable.end()) {
@@ -1671,6 +1674,10 @@ void Parser::OnLSP_DiagnosticsResponse(wxCommandEvent& event)
                 CCLogger::Get()->DebugLog( msg);
                 CCLogger::Get()->Log( msg);
             }
+        }
+        else
+        {
+            fprintf(stderr, "Parser::%s:%d [%p] did not get editor for cbFilename %s\n", __FUNCTION__, __LINE__, this, cbFilename.ToUTF8().data());
         }
     }//endif uri
     else //no uri name in json
@@ -4026,11 +4033,14 @@ void Parser::OnRequestCodeActionApply(wxCommandEvent& event)
 
     if (not FixesFound.size())
     {
+        fprintf(stderr, "OnRequestCodeActionApply::%s:%d fixes not found\n", __FUNCTION__, __LINE__);
         // show a "no fix available" message
         msg = wxString::Format( _("No available fixes found.\n %s"), __FUNCTION__);
         InfoWindow::Display(_("No Fixes"), msg);
         return;
     }
+
+    fprintf(stderr, "OnRequestCodeActionApply::%s:%d [%p] FixesFound.size() %d FixesFound[0] %s\n", __FUNCTION__, __LINE__, this, (int)FixesFound.size(), FixesFound[0].ToUTF8().data());
 
     // ----------------------------------------------------
     // Apply the fixes from right to left to avoid any column shift adjustments
@@ -4055,6 +4065,7 @@ void Parser::OnRequestCodeActionApply(wxCommandEvent& event)
         }
         catch(std::exception &err)
         {
+			fprintf(stderr, "Parser::%s:%d [%p] Exception %s\n", __FUNCTION__, __LINE__, this, err.what());
             wxString errMsg(wxString::Format("ERROR: %s:%s", __FUNCTION__, err.what()) );
             CCLogger::Get()->DebugLogError(errMsg);
             return;
@@ -4070,6 +4081,7 @@ void Parser::OnRequestCodeActionApply(wxCommandEvent& event)
         int targetEnd = lineEndPosn + newEndLineCol;
         pControl->SetTargetEnd(targetEnd);
         pControl->ReplaceTarget(newText);
+        fprintf(stderr, "Parser::%s:%d [%p] lineNumInt %d newStartLine %d newEndLine %d targetStart %d targetEnd %d\n", __FUNCTION__, __LINE__, this,  lineNumInt, newStartLine, newEndLine, targetStart, targetEnd);
     }//endfor FixesFound
 
     // Reparse the editor after any changes

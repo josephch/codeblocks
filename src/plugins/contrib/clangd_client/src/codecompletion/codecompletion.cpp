@@ -829,6 +829,7 @@ void ClgdCompletion::OnRelease(bool appShutDown)
     wxString compileCommandsFilename = userDataFolder + "/compile_commands.json";
     if (wxFileExists(compileCommandsFilename))
     {
+        fprintf(stderr, "ClgdCompletion::%s:%d [%p] remove compile_commands.json %s\n", __FUNCTION__, __LINE__, this, compileCommandsFilename.ToUTF8().data());
         //We don't want to hear about another CB having the file open
         // or that it doesn't exist. Thus the nullLog.
         wxLogNull nullLog;
@@ -3328,6 +3329,9 @@ void ClgdCompletion::OnProjectActivated(CodeBlocksEvent& event)
 // ----------------------------------------------------------------------------
 {
     // FYI: OnEditorOpen can occur before this project activate event
+#ifdef TRACE
+    fprintf(stderr, "ClgdCompletion::%s:%d [%p] Enter\n", __FUNCTION__, __LINE__, this);
+#endif
 
     if (m_PrevProject != m_CurrProject) m_PrevProject = m_CurrProject;
     m_CurrProject = event.GetProject();
@@ -5355,9 +5359,16 @@ void ClgdCompletion::DoParseOpenedProjectAndActiveEditor(wxTimerEvent& event)
     // Set the ProxyProject to use this new clangd client.
     if (pProxyProject and pProxyClient and pProxyParser)
     {
+        pLogMgr->DebugLog(wxString(__FUNCTION__) + ": Add pClient in m_LSP_Clients[pProxyProject] " <<  pProxyProject->GetTitle());
         GetParseManager()->m_LSP_Clients[pProxyProject] = pProxyClient;
         pProxyParser->SetLSP_Client(pProxyClient);
         pProxyClient->SetParser((Parser*)pProxyParser);
+    }
+    else
+    {
+        msg = wxString::Format("Error: %s Could not add pClient in m_LSP_Clients pProxyProject %p pProxyClient %p and pProxyParser %p",
+                                __FUNCTION__, pProxyProject, pProxyClient, pProxyParser);
+        pLogMgr->DebugLog(msg);
     }
     cbWorkspace* pWorkspace = Manager::Get()->GetProjectManager()->GetWorkspace();
     pWorkspace->SetModified(false);
