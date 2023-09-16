@@ -519,6 +519,9 @@ ProcessLanguageClient::ProcessLanguageClient(const cbProject* pProject, const ch
 
     // Show clangd start command in Code::Blocks Debug log
     CCLogger::Get()->DebugLog("Clangd start command:" + command);
+#ifdef TRACE
+    fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] Clangd start command %s\n", __FUNCTION__, __LINE__, this, command.ToUTF8().data());
+#endif
 
   #if defined(_WIN32)  //<<------------windows only -------------------
     /** Info:
@@ -1006,6 +1009,9 @@ void ProcessLanguageClient::OnClangd_stdout(wxThreadEvent& event)
     }
     //std::string std_clangdRawOutput = *pRawOutput;
     m_std_LSP_IncomingStr.append(*pRawOutput);
+#ifdef TRACE
+    fprintf(stderr, "ProcessLanguageClient::%s:%d  signal. pRawOutput->size()  %zu\n", __FUNCTION__, __LINE__, pRawOutput->size());
+#endif
     m_CondInputBuf.Signal(); //(Christo ticket 1423 2023/10/16) post jsonRead wait
 
     /// unlock the input buffer
@@ -1268,6 +1274,7 @@ bool ProcessLanguageClient::readJson(json &json)
     if ( m_terminateLSP and (not Has_LSPServerProcess()) )
     {   // terminate the readJson loop thread
         m_MapMsgHndlr.SetLSP_TerminateFlag(1);
+        fprintf(stderr, "ProcessLanguageClient::%s:%d m_terminateLSP %d Has_LSPServerProcess %d\n", __FUNCTION__, __LINE__, m_terminateLSP, Has_LSPServerProcess());
         stdStrInputbuf = "{\"jsonrpc\":\"2.0\",\"Exit!\":\"Exit!\",\"params\":null}";
         length = stdStrInputbuf.length();
         json = json::parse(stdStrInputbuf);
@@ -1284,6 +1291,7 @@ bool ProcessLanguageClient::readJson(json &json)
         std::string msg = StdString_Format("LSP data loss. %s() Failed to obtain input buffer lock", __FUNCTION__);
         //-wxSafeShowMessage("Lock failed, lost data", msg); // **Debugging**
         CCLogger::Get()->DebugLogError(msg);
+        fprintf(stderr, "ProcessLanguageClient::%s:%d  Failed to obtain input buffer lock\n", __FUNCTION__, __LINE__);
         writeClientLog(msg);
         wxMilliSleep(500); //let pipe thread do its thing
         return false;
@@ -1293,7 +1301,15 @@ bool ProcessLanguageClient::readJson(json &json)
     if (not length)
     {
         /// no data, UNlock the input buffer
+#ifdef TRACE
+        auto start = std::chrono::high_resolution_clock::now();
+#endif
         m_CondInputBuf.Wait(); //(Christo ticket 1423 2023/10/16) wait for have input post()
+#ifdef TRACE
+        auto finish = std::chrono::high_resolution_clock::now();
+        uint32_t diff = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
+        fprintf(stderr, "ProcessLanguageClient::%s:%d  waited %d ms\n", __FUNCTION__, __LINE__, diff);
+#endif
         m_MutexInputBufGuard.Unlock();
         //-wxMilliSleep(250); //(Christo ticket 1423 2023/10/16)
         return false;
@@ -1303,6 +1319,7 @@ bool ProcessLanguageClient::readJson(json &json)
     if (dataPosn != wxNOT_FOUND)
         ReadLSPinput(dataPosn, length, stdStrInputbuf);
     else {
+        fprintf(stderr, "ProcessLanguageClient::%s:%d  No json data\n", __FUNCTION__, __LINE__);
         /// UNLock the input buffer
         m_MutexInputBufGuard.Unlock();
         wxMilliSleep(250);
@@ -1313,7 +1330,14 @@ bool ProcessLanguageClient::readJson(json &json)
     m_MutexInputBufGuard.Unlock();
 
     if (stdStrInputbuf.size())
+    {
+        //fprintf(stderr, "ProcessLanguageClient::%s:%d  len:%d data %s\n", __FUNCTION__, __LINE__, length, stdStrInputbuf.c_str());
         writeClientLog(StdString_Format(">>> readJson() len:%d:\n%s", length, stdStrInputbuf.c_str()) );
+    }
+    else
+    {
+        fprintf(stderr, "ProcessLanguageClient::%s:%d  len:0\n", __FUNCTION__, __LINE__);
+    }
 
     // Test removing this check to see if any faster response.
     // Still getting the 3dots in empty param area like "Bind(...)" xE2 x80 xA6
@@ -1394,9 +1418,14 @@ bool ProcessLanguageClient::readJson(json &json)
 bool ProcessLanguageClient::writeJson(json& json)
 // ----------------------------------------------------------------------------
 {
-    if (not Has_LSPServerProcess()) return false;
+    if (not Has_LSPServerProcess())
+    {
+        fprintf(stderr, "ProcessLanguageClient::%s:%d  Has_LSPServerProcess failed\n", __FUNCTION__, __LINE__);
+        return false;
+    }
 
     std::string content = json.dump();
+    //fprintf(stderr, "ProcessLanguageClient::%s:%d  content %s\n", __FUNCTION__, __LINE__, content.c_str());
     std::string header = "Content-Length: " + std::to_string(content.length()) + "\r\n\r\n" + content;
 
     return WriteHdr(header);
@@ -1959,6 +1988,9 @@ cbProject* ProcessLanguageClient::GetProjectFromEditor(cbEditor* pcbEd)
 void ProcessLanguageClient::LSP_Initialize(cbProject* pProject)
 // ----------------------------------------------------------------------------
 {
+#ifdef TRACE
+    fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] Enter\n", __FUNCTION__, __LINE__, this);
+#endif
     #if defined(cbDEBUG)
     cbAssertNonFatal(pProject && "LSP_Initialize called without pProject");
     #endif
@@ -1975,15 +2007,30 @@ void ProcessLanguageClient::LSP_Initialize(cbProject* pProject)
 
     for (int ii=0; ii< pEdMgr->GetEditorsCount(); ++ii)
     {
+#ifdef TRACE
+        fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] ii %d\n", __FUNCTION__, __LINE__, this, ii);
+#endif
         // Find the project and ProjectFile this editor is holding.
         cbEditor* pcbEd = pEdMgr->GetBuiltinEditor(ii);
         if (pcbEd)
         {
             ProjectFile* pProjectFile = pcbEd->GetProjectFile();
-            if (not pProjectFile) continue;
+            if (not pProjectFile)
+            {
+                fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] ii %d continue\n", __FUNCTION__, __LINE__, this, ii);
+                continue;
+            }
             cbProject* pEdProject = pProjectFile->GetParentProject();
-            if (not pEdProject) continue;
-            if (pEdProject != pProject) continue;
+            if (not pEdProject)
+            {
+                fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] ii %d continue\n", __FUNCTION__, __LINE__, this, ii);
+                continue;
+            }
+            if (pEdProject != pProject)
+            {
+                fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] ii %d continue\n", __FUNCTION__, __LINE__, this, ii);
+                continue;
+            }
 
             wxString filename = pcbEd->GetFilename();
             UpdateCompilationDatabase(pProject, filename);
@@ -2037,7 +2084,10 @@ bool ProcessLanguageClient::LSP_DidOpen(cbEditor* pcbEd)
 
 
     if (not ClientProjectOwnsFile(pcbEd, false))
-            return false;
+    {
+        fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] client project does not own file\n", __FUNCTION__, __LINE__, this);
+        return false;
+    }
 
     if (GetLSP_EditorIsOpen(pcbEd))
         return false;
@@ -4230,6 +4280,9 @@ void ProcessLanguageClient::UpdateCompilationDatabase(cbProject* pProjectIn, wxS
     cbProject* pProject = pProjectIn;
     bool isProxyProject = false;
 
+#ifdef TRACE
+    fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] Enter. filename %s\n", __FUNCTION__, __LINE__, this, filename.ToUTF8().data());
+#endif
     if (pProject == m_pParser->GetParseManager()->GetProxyProject() )
     {
         // If this is the dummy proxyProjects pointer used for
@@ -4272,7 +4325,12 @@ void ProcessLanguageClient::UpdateCompilationDatabase(cbProject* pProjectIn, wxS
         //wxString ownerCCJson = FindCompileCommandsJson(filename);
 
         cbProject* pOwnerPrj = FindFilesOwningProject(filename);
-        if (not pOwnerPrj) return;
+        if (not pOwnerPrj)
+        {
+            fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] proxy project, cound not find owning project\n", __FUNCTION__, __LINE__, this);
+            return;
+        }
+        fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] proxy project, found owning project\n", __FUNCTION__, __LINE__, this);
 
         // Set the project pointer to the owning project to get the
         // the real project compile data.
@@ -4280,7 +4338,19 @@ void ProcessLanguageClient::UpdateCompilationDatabase(cbProject* pProjectIn, wxS
 
     }//endif proxyProject
     // -------------------------------------------------------------------
-
+    if (pProject == m_pParser->GetParseManager()->GetProxyProject() )
+    {
+        // Don't update the compile_commands.json database if this is the
+        // Proxy cbProject containing non-project files.
+        // clangd will attempt to find another translation unit that somewhat
+        // matches this projects' unassociated file and use its compile parameters.
+        // We do this because clangd starts searching for the database within the directory
+        // containing the file, then searching backup the tree.
+        // There's likely no such database there; just wasting time.
+        fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] proxy project, do nothing\n", __FUNCTION__, __LINE__, this);
+        return;
+    }
+>>>>>>> 2f7cc2ca9 (Lots of log in clangd_client)
     //(christo 2024/06/26)
     if(m_compileCommandsPopulated)
     {
@@ -4343,10 +4413,17 @@ void ProcessLanguageClient::UpdateCompilationDatabase(cbProject* pProjectIn, wxS
         }
         jsonFile >> jdb; //read file json object
         jsonFile.close();
+#ifdef TRACE
+        fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] read json file %s\n", __FUNCTION__, __LINE__, this, compileCommandsFullPath.ToUTF8().data());
+#endif
     }//endif wxFileExists
 
     ProjectFile* pProjectFile = pProject->GetFileByFilename(filename, false);
-    if (not pProjectFile) return;
+    if (not pProjectFile)
+    {
+        fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] pProjectFile not available\n", __FUNCTION__, __LINE__, this);
+        return;
+    }
 
     if (pProject->IsMakefileCustom())  // christo patch 1559 (whole block)
     {
@@ -4418,6 +4495,7 @@ void ProcessLanguageClient::UpdateCompilationDatabase(cbProject* pProjectIn, wxS
     {
         CCLogger::Get()->Log(_("Clangd_client found no usable project target."));
         CCLogger::Get()->DebugLog(_("Clangd_client found no usable project target."));
+        fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] Clangd_client found no usable project target.\n", __FUNCTION__, __LINE__, this);
         return;
     }
     else
@@ -4439,6 +4517,9 @@ void ProcessLanguageClient::UpdateCompilationDatabase(cbProject* pProjectIn, wxS
         if (   (eft == ParserCommon::ftHeader) or (eft == ParserCommon::ftSource)
             or (FileTypeOf(pProjectFile->relativeFilename) == ftTemplateSource) )
         {
+#ifdef TRACE
+                 fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] AddFileToCompileDBJson : file %s \n", __FUNCTION__, __LINE__, this, pProjectFile->file.GetFullPath().ToUTF8().data());
+#endif
             if ( AddFileToCompileDBJson(pProject, pTarget,  pProjectFile->file.GetFullPath(), &jdb) )
                  ++fileCount;
         }
@@ -4468,6 +4549,9 @@ void ProcessLanguageClient::UpdateCompilationDatabase(cbProject* pProjectIn, wxS
         //(christo 2024/06/26)end
     }//endif filecount
 
+#ifdef TRACE
+    fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] Leave. filename %s\n", __FUNCTION__, __LINE__, this, filename.ToUTF8().data());
+#endif
 }//end UpdateCompilationDatabase()
 // ----------------------------------------------------------------------------
 int ProcessLanguageClient::GetCompilationDatabaseEntry(wxArrayString& resultArray, cbProject* pProject, wxString filename)

@@ -19,6 +19,12 @@
 
 #include "cctreectrl.h"
 
+#ifdef TRACE
+#define TRACE_PRINTF fprintf
+#else
+#define TRACE_PRINTF(x...)
+#endif
+
 // class CCTreeCtrlData
 
 CCTreeCtrlData::CCTreeCtrlData(SpecialFolder sf, Token* token, short int kindMask, int parentIdx) :
@@ -35,10 +41,13 @@ CCTreeCtrlData::CCTreeCtrlData(SpecialFolder sf, Token* token, short int kindMas
     {
         m_Token = *token;
     }
+    TRACE_PRINTF(stderr, "CCTreeCtrlData::%s:%d enter %p token %p\n", __FUNCTION__, __LINE__, this, token);
 }
 
 CCTreeCtrlData::~CCTreeCtrlData()
 {
+
+    TRACE_PRINTF(stderr, "CCTreeCtrlData::%s:%d enter %p\n", __FUNCTION__, __LINE__, this);
 };
 
 // class CCTreeCtrlExpandedItemData

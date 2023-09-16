@@ -1534,6 +1534,8 @@ void ParseManager::OnAUIProjectPageChanged(wxAuiNotebookEvent& event)
 {
     // Handle the page changed event here and clear the local page changing status info
     event.Skip();
+    fprintf(stderr, "ParseManager::%s:%d this %p enter\n", __FUNCTION__, __LINE__, this);
+
 
     int selectedPage = event.GetSelection();
     wxString pageTitle = Manager::Get()->GetProjectManager()->GetUI().GetNotebook()->GetPageText(selectedPage);
@@ -1556,8 +1558,13 @@ void ParseManager::OnAUIProjectPageChanged(wxAuiNotebookEvent& event)
             else SetSymbolsWindowHasFocus(false);
             if (m_ClassBrowser && m_ClassBrowser->IsUpdatePending())
             {
+                fprintf(stderr, "ParseManager::%s:%d this %p update class browser\n", __FUNCTION__, __LINE__, this);
                 UpdateClassBrowser(true);
             }
+        }
+        else
+        {
+            fprintf(stderr, "ParseManager::%s:%d this %p current page %s not symbol browser\n", __FUNCTION__, __LINE__, this, pageTitle.ToUTF8().data());
         }
     }
 
@@ -1579,8 +1586,10 @@ void ParseManager::OnAUIProjectPageChanging(wxAuiNotebookEvent& event)
     if (n_SkipNextSymbolsChangePageCall)
     {
         n_SkipNextSymbolsChangePageCall = false;
+        fprintf(stderr, "ParseManager::%s:%d this %p skipping\n", __FUNCTION__, __LINE__, this);
         return;
     }
+    fprintf(stderr, "ParseManager::%s:%d this %p not skipping\n", __FUNCTION__, __LINE__, this);
 
     wxWindow* pCurrentPage =  Manager::Get()->GetProjectManager()->GetUI().GetNotebook()->GetCurrentPage();
     int currentPageIdx = Manager::Get()->GetProjectManager()->GetUI().GetNotebook()->GetPageIndex(pCurrentPage);
@@ -1602,10 +1611,19 @@ void ParseManager::OnAUIProjectPageChanging(wxAuiNotebookEvent& event)
         SetSymbolsWindowHasFocus(true);
         if (m_ClassBrowser && m_ClassBrowser->IsUpdatePending())
         {
+            fprintf(stderr, "ParseManager::%s:%d this %p update class browser\n", __FUNCTION__, __LINE__, this);
             UpdateClassBrowser(true);
         }
+        else
+        {
+            fprintf(stderr, "ParseManager::%s:%d this %p not updating class browser\n", __FUNCTION__, __LINE__, this);
+        }
     }
-    else SetSymbolsWindowHasFocus(false);
+    else
+    {
+        fprintf(stderr, "ParseManager::%s:%d this %p SetSymbolsWindowHasFocus false\n", __FUNCTION__, __LINE__, this);
+        SetSymbolsWindowHasFocus(false);
+    }
     // alway reset the selection status to avoid confusing other's calls to UpdateClassBrowser()
     n_IsSymbolsTabSelected = false;
 }
@@ -1702,7 +1720,10 @@ void ParseManager::UpdateClassBrowser(bool force)
         return;
     // If no ClassBrowser, bail
     if (not m_ClassBrowser)
-          return;
+    {
+        fprintf(stderr,"ParseManager::%s:%d: class browser not available\n", __FUNCTION__, __LINE__);
+        return;
+    }
 
     // If user is using the Symbols tab delay the update.
     if (not force)
@@ -1717,8 +1738,10 @@ void ParseManager::UpdateClassBrowser(bool force)
             && m_ActiveParser->Done() )
         {
             //-s_ClassBrowserCaller = wxString::Format("%s:%d",__FUNCTION__, __LINE__);
+            TRACE_PRINTF(stderr,"ParseManager::%s:%d: update class browser view\n", __FUNCTION__, __LINE__);
             m_ClassBrowser->UpdateClassBrowserView();
         }
+        m_ClassBrowser->UpdateClassBrowserView();
     }
     else // update is being forced (probably from workspace close to clear the Symbols tree)
         m_ClassBrowser->UpdateClassBrowserView(/*checkHeaderSwap*/false, /*forceupdate*/force);
@@ -1775,13 +1798,18 @@ bool ParseManager::IsOkToUpdateClassBrowserView()
 
             }
         }
+        TRACE_PRINTF(stderr,"ParseManager::%s:%d: class browser builder thread is busy, return false\n", __FUNCTION__, __LINE__);
         return false; // say not ok to update
     }
 
     if ((not isSymbolsTabFocused) or isBusyClassBrowserBuilderThread or isUpdatingClassBrowserBusy)
-        return false; //cannot update, Symbols tab is unfocused or builderthread is busy or already updating
+    {
+         TRACE_PRINTF(stderr,"ParseManager::%s:%d: isSymbolsTabFocused %d, isBusyClassBrowserBuilderThread %d isUpdatingClassBrowserBusy %d, return false\n", __FUNCTION__, __LINE__, isSymbolsTabFocused, isBusyClassBrowserBuilderThread, isUpdatingClassBrowserBusy);
+         return false; //cannot update, Symbols tab is unfocused or builderthread is busy
+    }
 
     startMillisTOD = 0; //clear busy time when is Ok to update classBrowser tree;
+    TRACE_PRINTF(stderr,"ParseManager::%s:%d: return true\n", __FUNCTION__, __LINE__);
     return true;
 }
 // ----------------------------------------------------------------------------
