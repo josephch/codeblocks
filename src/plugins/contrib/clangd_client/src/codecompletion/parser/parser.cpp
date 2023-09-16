@@ -458,6 +458,7 @@ bool Parser::IsOkToUpdateClassBrowserView()
         if ( pCurrentPage->GetScreenRect().Contains( wxGetMousePosition()) )
         {
             //cbAssertNonFatal(0 && "Mouse in ClassBrowser window."); // **Debugging **
+            TRACE_PRINTF(stderr,"Parser::%s:%d: Mouse in ClassBrowser window. do not update\n", __FUNCTION__, __LINE__);
             return false;
         }
     }
@@ -652,6 +653,7 @@ void Parser::LSP_ParseDocumentSymbols(wxCommandEvent& event)
                 ( (++prevDocumentSymbolsFilesProcessed >= 4) or (pClient->LSP_GetServerFilesParsingCount() == 0)) )
         {
             //update after x file parsed or when last file was parsed by LSP server
+            TRACE_PRINTF(stderr,"Parser::%s:%d: Update class browser\n", __FUNCTION__, __LINE__);
             m_pParseManager->UpdateClassBrowser();
             prevDocumentSymbolsFilesProcessed = 0;
 
@@ -1311,6 +1313,9 @@ void Parser::OnLSP_DiagnosticsResponse(wxCommandEvent& event)
     if (uri.Length())
     {
         cbFilename = fileUtils.FilePathFromURI(uri);
+#ifdef TRACE
+        fprintf(stderr, "Parser::%s:%d [%p] cbFilename %s\n", __FUNCTION__, __LINE__, this, cbFilename.ToUTF8().data());
+#endif
 
         // Find the editor matching this files diagnostics
         EditorBase* pEdBase = pEdMgr->GetEditor(cbFilename);
@@ -1340,6 +1345,10 @@ void Parser::OnLSP_DiagnosticsResponse(wxCommandEvent& event)
                 CCLogger::Get()->DebugLog( msg);
                 CCLogger::Get()->Log( msg);
             }
+        }
+        else
+        {
+            fprintf(stderr, "Parser::%s:%d [%p] did not get editor for cbFilename %s\n", __FUNCTION__, __LINE__, this, cbFilename.ToUTF8().data());
         }
     }//endif uri
     else //no uri name in json
