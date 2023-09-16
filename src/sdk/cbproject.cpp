@@ -943,6 +943,11 @@ ProjectFile* cbProject::AddFile(int targetIndex, const wxString& filename, bool 
         }
     }
     SetModified(true);
+
+#ifdef TRACE
+    fprintf(stderr, "cbProject::%s:%d [%p] realPathUnixFilename %s pf %p\n", __FUNCTION__, __LINE__, this, realPathUnixFilename.ToUTF8().data(), pf);
+#endif
+
     m_ProjectFilesMap[realPathUnixFilename] = pf; // add to hashmap
 
     if (!wxFileExists(fullFilename))
