@@ -1325,6 +1325,7 @@ const PluginInfo* PluginManager::GetPluginInfo(cbPlugin* plugin)
 int PluginManager::ExecutePlugin(const wxString& pluginName)
 {
     PluginElement* elem = FindElementByName(pluginName);
+    Manager::Get()->GetLogManager()->LogError(wxString::Format(_("Plugin %s ExecutePlugin!"), elem->info.name));
     cbPlugin* plug = elem ? elem->plugin : nullptr;
     if (plug)
     {
