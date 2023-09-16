@@ -355,7 +355,8 @@ bool PluginManager::InstallPlugin(const wxString& pluginName, bool forAllUsers, 
     const PluginInfo* info = GetPluginInfo(plugin);
     if (!plugin || !info)
     {
-        Manager::Get()->GetLogManager()->DebugLog("Failed");
+        Manager::Get()->GetLogManager()->DebugLog("Failed loading "+ pluginFilename);
+        fprintf(stderr, "PluginManager::%s:%d: plugin %p info %p\n", __FUNCTION__, __LINE__, plugin, info);
         return false;
     }
 //    Manager::Get()->GetLogManager()->DebugLog("Succeeded");
@@ -1325,6 +1326,7 @@ const PluginInfo* PluginManager::GetPluginInfo(cbPlugin* plugin)
 int PluginManager::ExecutePlugin(const wxString& pluginName)
 {
     PluginElement* elem = FindElementByName(pluginName);
+    Manager::Get()->GetLogManager()->LogError(wxString::Format(_("Plugin %s ExecutePlugin!"), elem->info.name));
     cbPlugin* plug = elem ? elem->plugin : nullptr;
     if (plug)
     {
