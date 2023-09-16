@@ -1516,6 +1516,9 @@ void Parser::OnLSP_DiagnosticsResponse(wxCommandEvent& event)
     if (uri.Length())
     {
         cbFilename = fileUtils.FilePathFromURI(uri); //(ph 2024/02/12)
+#ifdef TRACE
+        fprintf(stderr, "Parser::%s:%d [%p] cbFilename %s\n", __FUNCTION__, __LINE__, this, cbFilename.ToUTF8().data());
+#endif
         // Clear previous fix available data for this filename.
         FixMap_t::iterator it = FixesAvailable.find(cbFilename);
         if (it != FixesAvailable.end()) {
@@ -1550,6 +1553,10 @@ void Parser::OnLSP_DiagnosticsResponse(wxCommandEvent& event)
                 CCLogger::Get()->DebugLog( msg);
                 CCLogger::Get()->Log( msg);
             }
+        }
+        else
+        {
+            fprintf(stderr, "Parser::%s:%d [%p] did not get editor for cbFilename %s\n", __FUNCTION__, __LINE__, this, cbFilename.ToUTF8().data());
         }
     }//endif uri
     else //no uri name in json
