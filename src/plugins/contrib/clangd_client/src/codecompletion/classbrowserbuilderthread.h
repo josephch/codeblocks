@@ -19,6 +19,13 @@
 
 #define CRC32_CCITT       0x04C11DB7
 
+#define TRACE_CBT
+#ifdef TRACE_CBT
+#define TRACE_PRINTF fprintf
+#else
+#define TRACE_PRINTF(x...)
+#endif
+
 // ----------------------------------------------------------------------------
 class Crc32
 // ----------------------------------------------------------------------------
@@ -62,7 +69,8 @@ enum EThreadJob
 {
     JobBuildTree,
     JobSelectTree,
-    JobExpandItem
+    JobExpandItem,
+    JobUnknown
 };
 
 class CCTree;
@@ -127,9 +135,27 @@ public:
 
     CCTreeItem*     AddRoot(const wxString& text, int image = -1, int selImage = -1, CCTreeCtrlData* data = nullptr);
     CCTreeItem*     AppendItem(CCTreeItem* parent, const wxString& text, int image = -1, int selImage = -1, CCTreeCtrlData* data = nullptr);
-    void            Delete(CCTreeItem* item) {if (item) {delete item; if (item == m_root) m_root = nullptr;}}
-    void            DeleteAllItems() {Delete(m_root);}
-    void            DeleteChildren(CCTreeItem* item) {if (item) item->DeleteChildren();}
+    void Delete(CCTreeItem *item)
+    {
+        if (item)
+        {
+            TRACE_PRINTF(stderr,"CCTree::%s:%d: this %p item %p\n", __FUNCTION__, __LINE__, this, item);
+            delete item;
+            if (item == m_root)
+                m_root = nullptr;
+        }
+    }
+    void DeleteAllItems()
+    {
+        TRACE_PRINTF(stderr,"CCTree::%s:%d: this %p root %p\n", __FUNCTION__, __LINE__, this, m_root);
+        Delete(m_root);
+    }
+    void DeleteChildren(CCTreeItem *item)
+    {
+        TRACE_PRINTF(stderr,"CCTree::%s:%d: this %p item %p\n", __FUNCTION__, __LINE__, this, item);
+        if (item)
+            item->DeleteChildren();
+    }
     size_t          GetChildrenCount(CCTreeItem* item, bool recursively = true) const;
     size_t          GetCount() const {return m_root ? 1+GetChildrenCount(m_root) : 0;}
     CCTreeItem*     GetFirstChild(CCTreeItem* item, CCCookie& cookie) const;
@@ -208,19 +234,29 @@ public:
     /** Ask the worker thread to die
      *  Called from external: when the class browser window get destroyed
      */
-    void RequestTermination(bool terminate = true) {m_TerminationRequested = terminate;}
+    void RequestTermination()
+    {
+        TRACE_PRINTF(stderr, "ClassBrowserBuilderThread::%s:%d [%p] Request termination\n", __FUNCTION__, __LINE__, this);
+        m_TerminationRequested = true;
+    }
 
     /** Select what the worker thread should do when awakened
      *  Called before posting the semaphore
      * @param job What the thread should do when the semaphore is released
      * @param itemId Identifier of the item (if applicable)
      */
-    void SetNextJob(EThreadJob job, CCTreeItem *item = nullptr) {m_nextJob = job; m_targetItem = item;}
+    void SetNextJob(EThreadJob job, CCTreeItem *item = nullptr)
+    {
+        TRACE_PRINTF(stderr, "ClassBrowserBuilderThread::%s:%d enter %p job %d item %p\n", __FUNCTION__, __LINE__, this, (int)job, item);
+        m_nextJob = job;
+        m_targetItem = item;
+    }
 
     /** Increment or decrement the thread busy count
      * @return @a busy count
      */
-    int SetIsBusy(bool torf, EThreadJob threadJob);
+    int SetIsBusy(bool torf, EThreadJob threadJob, const char* caller);
+
     int GetIsBusy(); //just return the count
 
 protected:
