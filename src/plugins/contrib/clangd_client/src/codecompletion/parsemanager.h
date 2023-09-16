@@ -280,6 +280,8 @@ public:
     //void UpdateClassBrowser();
     void UpdateClassBrowser();
 
+    void RemoveTokensFromClassBrowser(size_t fileIdx);
+
     // save current options and BrowserOptions
     void ParserOptionsSave(Parser* pParser);
     void BrowserOptionsSave(Parser* pParser);

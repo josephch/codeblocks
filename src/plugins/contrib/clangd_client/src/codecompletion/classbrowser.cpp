@@ -233,6 +233,48 @@ void ClassBrowser::UpdateSash()
     XRCCTRL(*this, "splitterWin", wxSplitterWindow)->SetSashPosition(pos, false);
     XRCCTRL(*this, "splitterWin", wxSplitterWindow)->Refresh();
 }
+
+
+static void RemoveTokenFromChildren(CCTreeCntrl* tree, const size_t fileIdx, const wxTreeItemId start )
+{
+    wxTreeItemIdValue cookie;
+    wxTreeItemId itemId = tree->GetFirstChild(start, cookie);
+    while (itemId.IsOk())
+    {
+        CCTreeCtrlData* ctd = dynamic_cast<CCTreeCtrlData*>(tree->GetItemData (itemId));
+        if (ctd)
+        {
+            if( ctd->m_Token && (ctd->m_Token->m_FileIdx == fileIdx))
+            {
+                fprintf(stderr,"%s:%d: remove token %p from CCTreeCtrlData %p\n", __FUNCTION__, __LINE__, ctd->m_Token, ctd);
+                ctd->m_Token = NULL;
+            }
+            if (tree->ItemHasChildren(itemId))
+            {
+                RemoveTokenFromChildren( tree, fileIdx, itemId);
+            }
+        }
+        itemId = tree->GetNextChild(start, cookie);
+    }
+}
+
+static void RemoveTokenFromAllChildren(CCTreeCntrl* tree, const size_t fileIdx)
+{
+    wxTreeItemId rootItem = tree->GetRootItem();
+    if (rootItem.IsOk() && tree->ItemHasChildren(rootItem))
+    {
+        RemoveTokenFromChildren(tree, fileIdx, rootItem);
+    }
+}
+
+// ----------------------------------------------------------------------------
+void ClassBrowser::RemoveTokensFromClassBrowser(size_t fileIdx)
+// ----------------------------------------------------------------------------
+{
+    RemoveTokenFromAllChildren(m_CCTreeCtrl, fileIdx);
+    RemoveTokenFromAllChildren(m_CCTreeCtrlBottom, fileIdx);
+}
+
 // ----------------------------------------------------------------------------
 void ClassBrowser::UpdateClassBrowserView(bool checkHeaderSwap )
 // ----------------------------------------------------------------------------

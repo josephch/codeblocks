@@ -1680,6 +1680,22 @@ void ParseManager::GetPriorityFilesForParsing(StringList& localSourcesList, cbPr
     }
 }
 // ----------------------------------------------------------------------------
+void ParseManager::RemoveTokensFromClassBrowser(size_t fileIdx)
+// ----------------------------------------------------------------------------
+{
+    if (not m_ClassBrowser)
+          return;
+
+    TRACE(_T("ParseManager::UpdateClassBrowser()"));
+
+    if ( m_ActiveParser != m_NullParser
+        && m_ActiveParser->Done()
+        && (not Manager::IsAppShuttingDown()) )
+    {
+        m_ClassBrowser->RemoveTokensFromClassBrowser(fileIdx);
+    }
+}
+// ----------------------------------------------------------------------------
 bool ParseManager::DoFullParsing(cbProject* project, Parser* parser)
 // ----------------------------------------------------------------------------
 {

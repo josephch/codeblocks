@@ -613,6 +613,7 @@ void Parser::LSP_ParseDocumentSymbols(wxCommandEvent& event)
         {
             wxString msg = wxString::Format("%s(): Removing tokens for %s", __FUNCTION__, filename);
             CCLogger::Get()->DebugLog(msg);
+            m_pParseManager->RemoveTokensFromClassBrowser(fileIdx);
             m_TokenTree->RemoveFile(fileIdx);
         }
         //-const size_t   result  = m_TokenTree->GetFileStatusCountForIndex(fileIdx); // **debugging**

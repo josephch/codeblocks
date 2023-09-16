@@ -96,6 +96,8 @@ public:
      */
     void UpdateClassBrowserView(bool checkHeaderSwap = false);
 
+    void RemoveTokensFromClassBrowser(size_t fileIdx);
+
     /** update the position sash bar between top tree and the bottom tree, the position (percentage)
      *  of the two trees are saved in the C::B's configuration file.
      */
