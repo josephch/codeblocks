@@ -458,6 +458,7 @@ bool Parser::IsOkToUpdateClassBrowserView()
         if ( pCurrentPage->GetScreenRect().Contains( wxGetMousePosition()) )
         {
             //cbAssertNonFatal(0 && "Mouse in ClassBrowser window."); // **Debugging **
+            TRACE_PRINTF(stderr,"Parser::%s:%d: Mouse in ClassBrowser window. do not update\n", __FUNCTION__, __LINE__);
             return false;
         }
     }
@@ -652,6 +653,7 @@ void Parser::LSP_ParseDocumentSymbols(wxCommandEvent& event)
                 ( (++prevDocumentSymbolsFilesProcessed >= 4) or (pClient->LSP_GetServerFilesParsingCount() == 0)) )
         {
             //update after x file parsed or when last file was parsed by LSP server
+            TRACE_PRINTF(stderr,"Parser::%s:%d: Update class browser\n", __FUNCTION__, __LINE__);
             m_pParseManager->UpdateClassBrowser();
             prevDocumentSymbolsFilesProcessed = 0;
 

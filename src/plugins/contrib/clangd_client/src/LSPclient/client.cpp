@@ -725,9 +725,17 @@ ProcessLanguageClient::~ProcessLanguageClient()
             {
                 wxString dirName = fnProjectFilename.GetPath();
                 if (wxDirExists(dirName + fileSep + ".cache"))
+                {
+                    wxString cacheDir = dirName + fileSep + ".cache";
+                    fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] remove cache %s\n", __FUNCTION__, __LINE__, this, cacheDir.ToUTF8().data());
                     wxDir::Remove(dirName + fileSep + ".cache", wxPATH_RMDIR_RECURSIVE);
+                }
                 if (wxFileExists(dirName + fileSep + "compile_commands.json"))
+                {
+                    wxString compileCommandsFile = dirName + fileSep + "compile_commands.json";
+                    fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] remove compile_commands.json %s\n", __FUNCTION__, __LINE__, this, compileCommandsFile.ToUTF8().data());
                     wxRemoveFile(dirName + fileSep + "compile_commands.json");
+                }
             }
         }//endfor
         m_vProjectNeedsCleanup.clear();
@@ -1210,6 +1218,7 @@ bool ProcessLanguageClient::readJson(json &json)
 
     if ( m_terminateLSP or (not Has_LSPServerProcess()) )
     {   // terminate the read loop thread
+        fprintf(stderr, "ProcessLanguageClient::%s:%d m_terminateLSP %d Has_LSPServerProcess %d\n", __FUNCTION__, __LINE__, m_terminateLSP, Has_LSPServerProcess());
         stdStrInputbuf = "{\"jsonrpc\":\"2.0\",\"Exit!\":\"Exit!\",\"params\":null}";
         length = stdStrInputbuf.length();
         json = json::parse(stdStrInputbuf);
@@ -1225,6 +1234,7 @@ bool ProcessLanguageClient::readJson(json &json)
         std::string msg = StdString_Format("LSP data loss. %s() Failed to obtain input buffer lock", __FUNCTION__);
         //-wxSafeShowMessage("Lock failed, lost data", msg); // **Debugging**
         CCLogger::Get()->DebugLogError(msg);
+        fprintf(stderr, "ProcessLanguageClient::%s:%d  Failed to obtain input buffer lock\n", __FUNCTION__, __LINE__);
         writeClientLog(msg);
         wxMilliSleep(500); //let pipe thread do its thing
         return false;
@@ -1243,6 +1253,7 @@ bool ProcessLanguageClient::readJson(json &json)
     if (dataPosn != wxNOT_FOUND)
         ReadLSPinput(dataPosn, length, stdStrInputbuf);
     else {
+        fprintf(stderr, "ProcessLanguageClient::%s:%d  No json data\n", __FUNCTION__, __LINE__);
         /// UNLock the input buffer
         m_MutexInputBufGuard.Unlock();
         wxMilliSleep(250);
@@ -1253,7 +1264,14 @@ bool ProcessLanguageClient::readJson(json &json)
     m_MutexInputBufGuard.Unlock();
 
     if (stdStrInputbuf.size())
+    {
+        //fprintf(stderr, "ProcessLanguageClient::%s:%d  len:%d data %s\n", __FUNCTION__, __LINE__, length, stdStrInputbuf.c_str());
         writeClientLog(StdString_Format(">>> readJson() len:%d:\n%s", length, stdStrInputbuf.c_str()) );
+    }
+    else
+    {
+        fprintf(stderr, "ProcessLanguageClient::%s:%d  len:0\n", __FUNCTION__, __LINE__);
+    }
 
     // Test removing this check to see if any faster response.
     // Still getting the 3dots in empty param area like "Bind(...)" xE2 x80 xA6
@@ -1334,9 +1352,14 @@ bool ProcessLanguageClient::readJson(json &json)
 bool ProcessLanguageClient::writeJson(json& json)
 // ----------------------------------------------------------------------------
 {
-    if (not Has_LSPServerProcess()) return false;
+    if (not Has_LSPServerProcess())
+    {
+        fprintf(stderr, "ProcessLanguageClient::%s:%d  Has_LSPServerProcess failed\n", __FUNCTION__, __LINE__);
+        return false;
+    }
 
     std::string content = json.dump();
+    //fprintf(stderr, "ProcessLanguageClient::%s:%d  content %s\n", __FUNCTION__, __LINE__, content.c_str());
     std::string header = "Content-Length: " + std::to_string(content.length()) + "\r\n\r\n" + content;
     return WriteHdr(header);
 }
