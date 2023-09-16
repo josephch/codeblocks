@@ -1767,7 +1767,10 @@ void ParseManager::UpdateClassBrowser(bool force)
         return;
     // If no ClassBrowser, bail
     if (not m_ClassBrowser)
-          return;
+    {
+        fprintf(stderr,"ParseManager::%s:%d: class browser not available\n", __FUNCTION__, __LINE__);
+        return;
+    }
 
     // If user is using the Symbols tab delay the update.
     if (not force) //(ph 2024/01/19)
@@ -1779,8 +1782,10 @@ void ParseManager::UpdateClassBrowser(bool force)
             && m_ActiveParser->Done() )
         {
             //-s_ClassBrowserCaller = wxString::Format("%s:%d",__FUNCTION__, __LINE__);
+            TRACE_PRINTF(stderr,"ParseManager::%s:%d: update class browser view\n", __FUNCTION__, __LINE__);
             m_ClassBrowser->UpdateClassBrowserView();
         }
+        m_ClassBrowser->UpdateClassBrowserView();
     }
     else // update is being forced (probably from workspace close to clear the Symbols tree)
         m_ClassBrowser->UpdateClassBrowserView(/*checkHeaderSwap*/false, /*forceupdate*/force);
