@@ -43,6 +43,15 @@ ProjectFile::ProjectFile(cbProject* prj) :
     project(prj),
     m_VisualState(fvsNormal)
 {
+#ifdef TRACE
+    fprintf(stderr, "ProjectFile::%s:%d [%p] project %s\n", __FUNCTION__, __LINE__, this, prj->GetTitle().ToUTF8().data());
+#endif
+#ifdef ABORT_ON_PROXYPROJECT
+    if (prj->GetTitle() == "~ProxyProject~")
+    {
+        abort();
+    }
+#endif
 }
 
 ProjectFile::~ProjectFile()

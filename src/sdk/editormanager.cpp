@@ -340,6 +340,10 @@ EditorBase* EditorManager::IsOpen(const wxString& filename)
             continue;
         wxString fname = UnixFilename(realpath(eb->GetFilename()));
 
+#ifdef TRACE
+        fprintf(stderr, "EditorManager::%s:%d [%p] uFilename %s fname %s\n", __FUNCTION__, __LINE__, this, uFilename.ToUTF8().data(), fname.ToUTF8().data());
+#endif
+
         // MSW must use case-insensitive comparison
         if (fname.IsSameAs(uFilename, platform::windows == false) || fname.IsSameAs(g_EditorModified + uFilename, platform::windows == false))
             return eb;
