@@ -452,14 +452,19 @@ void ProjectManagerUI::InitPane()
 void ProjectManagerUI::RebuildTree()
 {
     if (Manager::IsAppShuttingDown()) // saves a lot of time at startup for large projects
+    {
+        fprintf(stderr, "ProjectManagerUI::%s:%d app shutting down, return\n", __FUNCTION__, __LINE__);
         return;
+    }
 
     wxStopWatch timer;
 
+    fprintf(stderr, "ProjectManagerUI::%s:%d call FreezeTree\n", __FUNCTION__, __LINE__);
     FreezeTree();
     ProjectManager* pm = Manager::Get()->GetProjectManager();
     ProjectsArray* pa = pm->GetProjects();
     const int count = pa->GetCount();
+    fprintf(stderr, "ProjectManagerUI::%s:%d project count %d\n", __FUNCTION__, __LINE__, count);
     for (int i = 0; i < count; ++i)
     {
         if ( cbProject* prj = pa->Item(i) )
@@ -498,6 +503,7 @@ void ProjectManagerUI::RebuildTree()
     if (title.empty())
         title = _("Workspace");
 
+    fprintf(stderr, "ProjectManagerUI::%s:%d workspace title %s\n", __FUNCTION__, __LINE__, title.ToUTF8().data());
     m_TreeRoot = m_pTree->AddRoot(title, cbProjectTreeImages::WorkspaceIconIndex(read_only), cbProjectTreeImages::WorkspaceIconIndex(read_only));
 
     std::vector<cbProject*> prjv;
@@ -512,6 +518,7 @@ void ProjectManagerUI::RebuildTree()
 
     for (cbProject* prj : prjv)
     {
+        fprintf(stderr, "ProjectManagerUI::%s:%d BuildProjectTree for project %s\n", __FUNCTION__, __LINE__, prj->GetTitle().ToUTF8().data());
         BuildProjectTree(prj, m_pTree, m_TreeRoot, m_TreeVisualState, pm->GetFilesGroupsAndMasks());
         m_pTree->SetItemBold(prj->GetProjectNode(), prj == pm->GetActiveProject());
     }
@@ -523,6 +530,7 @@ void ProjectManagerUI::RebuildTree()
             prj->RestoreTreeState(m_pTree);
     }
 
+    fprintf(stderr, "ProjectManagerUI::%s:%d call UnfreezeTree\n", __FUNCTION__, __LINE__);
     UnfreezeTree();
 
     // Restore the last visible item
@@ -553,6 +561,7 @@ void ProjectManagerUI::RebuildTree()
         LogManager *log = Manager::Get()->GetLogManager();
         log->Log(wxString::Format(_("ProjectManagerUI::RebuildTree took %.3f seconds"), time / 1000.0f));
     }
+    fprintf(stderr, "ProjectManagerUI::%s:%d took %ld ms\n", __FUNCTION__, __LINE__, time);
 }
 
 void ProjectManagerUI::FreezeTree()
@@ -3882,7 +3891,10 @@ void ProjectManagerUI::BuildProjectTree(cbProject* project, cbTreeCtrl* tree,
                                         FilesGroupsAndMasks* fgam)
 {
     if (!tree)
+    {
+        fprintf(stderr, "ProjectManagerUI::%s:%d tree null, return\n", __FUNCTION__, __LINE__);
         return;
+    }
 
 #ifdef fileload_measuring
     wxStopWatch sw;
@@ -3905,6 +3917,7 @@ void ProjectManagerUI::BuildProjectTree(cbProject* project, cbTreeCtrl* tree,
     bool do_categorise = ((ptvs&ptvsCategorize) && fgam);
     if (do_categorise)
     {
+        fprintf(stderr, "ProjectManagerUI::%s:%d categorise. fgam->GetGroupsCount() %ld \n", __FUNCTION__, __LINE__, fgam->GetGroupsCount());
         // obtain all group nodes available from "file groups and masks"
         pGroupNodes = new wxTreeItemId[fgam->GetGroupsCount()];
         for (unsigned int i = 0; i < fgam->GetGroupsCount(); ++i)
@@ -3924,6 +3937,7 @@ void ProjectManagerUI::BuildProjectTree(cbProject* project, cbTreeCtrl* tree,
 
     // Now add any virtual folders
     const wxArrayString& virtualFolders = project->GetVirtualFolders();
+    fprintf(stderr, "ProjectManagerUI::%s:%d . virtualFolders.GetCount() %ld \n", __FUNCTION__, __LINE__, virtualFolders.GetCount());
     for (size_t i = 0; i < virtualFolders.GetCount(); ++i)
     {
         ftd = new FileTreeData(project, FileTreeData::ftdkVirtualFolder);
