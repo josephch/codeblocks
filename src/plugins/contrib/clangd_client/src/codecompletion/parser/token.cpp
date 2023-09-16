@@ -14,6 +14,12 @@
 
 #include "token.h"
 
+#ifdef TRACE
+#define TRACE_PRINTF fprintf
+#else
+#define TRACE_PRINTF(x...)
+#endif
+
 #define CC_TOKEN_DEBUG_OUTPUT 0
 
 #if defined(CC_GLOBAL_DEBUG_OUTPUT)
@@ -67,11 +73,13 @@ Token::Token(const wxString& name, unsigned int file, unsigned int line, size_t 
     m_TokenTree(0),
     m_Ticket(ticket)
 {
+    TRACE_PRINTF(stderr, "Token::%s:%d enter %p name %s\n", __FUNCTION__, __LINE__, this, m_Name.ToUTF8().data());
     //ctor
 }
 
 Token::~Token()
 {
+    TRACE_PRINTF(stderr, "Token::%s:%d enter %p name %s\n", __FUNCTION__, __LINE__, this, m_Name.ToUTF8().data());
     //dtor
     m_TemplateMap.clear();
     m_TemplateType.clear();

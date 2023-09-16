@@ -1868,7 +1868,10 @@ void ParseManager::UpdateClassBrowser(bool force)
         return;
     // If no ClassBrowser, bail
     if (not m_ClassBrowser)
-          return;
+    {
+        fprintf(stderr,"ParseManager::%s:%d: class browser not available\n", __FUNCTION__, __LINE__);
+        return;
+    }
 
     // If user is using the Symbols tab delay the update.
     if (not force) //(ph 2024/01/19)
@@ -1880,8 +1883,10 @@ void ParseManager::UpdateClassBrowser(bool force)
             && m_ActiveParser->Done() )
         {
             //-s_ClassBrowserCaller = wxString::Format("%s:%d",__FUNCTION__, __LINE__);
+            TRACE_PRINTF(stderr,"ParseManager::%s:%d: update class browser view\n", __FUNCTION__, __LINE__);
             m_ClassBrowser->UpdateClassBrowserView();
         }
+        m_ClassBrowser->UpdateClassBrowserView();
     }
     else // update is being forced (probably from workspace close to clear the Symbols tree)
         m_ClassBrowser->UpdateClassBrowserView(/*checkHeaderSwap*/false, /*forceupdate*/force);
@@ -1939,13 +1944,18 @@ bool ParseManager::IsOkToUpdateClassBrowserView()
 
             }
         }
+        TRACE_PRINTF(stderr,"ParseManager::%s:%d: class browser builder thread is busy, return false\n", __FUNCTION__, __LINE__);
         return false; // say not ok to update //(ph 2023/11/15)
     }
 
     if ((not isSymbolsTabFocused) or isBusyClassBrowserBuilderThread or isUpdatingClassBrowserBusy)
-        return false; //cannot update, Symbols tab is unfocused or builderthread is busy or already updating
+    {
+         TRACE_PRINTF(stderr,"ParseManager::%s:%d: isSymbolsTabFocused %d, isBusyClassBrowserBuilderThread %d isUpdatingClassBrowserBusy %d, return false\n", __FUNCTION__, __LINE__, isSymbolsTabFocused, isBusyClassBrowserBuilderThread, isUpdatingClassBrowserBusy);
+         return false; //cannot update, Symbols tab is unfocused or builderthread is busy
+    }
 
     startMillisTOD = 0; //clear busy time when is Ok to update classBrowser tree;
+    TRACE_PRINTF(stderr,"ParseManager::%s:%d: return true\n", __FUNCTION__, __LINE__);
     return true;
 }
 // ----------------------------------------------------------------------------
