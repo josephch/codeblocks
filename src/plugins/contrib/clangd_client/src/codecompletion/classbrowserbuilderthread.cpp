@@ -40,7 +40,7 @@
 // This macro return FALSE when this is not the main thread and not terminationRequestd or not shutting down
 #define CBBT_SANITY_CHECK ((!::wxIsMainThread() && m_TerminationRequested) || Manager::IsAppShuttingDown())
 
-#define CC_BUILDERTHREAD_DEBUG_OUTPUT 0
+#define CC_BUILDERTHREAD_DEBUG_OUTPUT 1
 
 #if defined(CC_GLOBAL_DEBUG_OUTPUT)
     #if CC_GLOBAL_DEBUG_OUTPUT == 1
@@ -54,7 +54,7 @@
 
 #if CC_BUILDERTHREAD_DEBUG_OUTPUT == 1
     #define TRACE(format, args...) \
-        CCLogger::Get()->DebugLog(wxString::Format(format, ##args))
+        fprintf(stderr, "%s\n",wxString::Format(format, ##args).ToUTF8().data())
     #define TRACE2(format, args...)
 #elif CC_BUILDERTHREAD_DEBUG_OUTPUT == 2
     #define TRACE(format, args...)                                              \
@@ -81,9 +81,10 @@ namespace
 }
 
 // ----------------------------------------------------------------------------
-int ClassBrowserBuilderThread::SetIsBusy(bool torf, EThreadJob threadJob)
+int ClassBrowserBuilderThread::SetIsBusy(bool torf, EThreadJob threadJob, const char* caller)
 // ----------------------------------------------------------------------------
 {
+    TRACE_PRINTF(stderr,"ClassBrowserBuilderThread::%s:%d: caller %s torf = %d m_Busy %d\n", __FUNCTION__, __LINE__, caller, torf, m_Busy);
     torf ? ++m_Busy : --m_Busy;
     if (m_Busy < 0)
     {
@@ -106,9 +107,12 @@ int ClassBrowserBuilderThread::SetIsBusy(bool torf, EThreadJob threadJob)
     //        default:topTree = false;
     //    }
 
-    m_Parent->CallAfter(&ClassBrowser::BuildTreeStartOrStop, torf, threadJob); //start toptree
-    //The timeout is needed when C::B shuts down so the thread can exit
-    m_ClassBrowserCallAfterSemaphore.WaitTimeout(500); // wait for ClassBrowser to execute
+    if (threadJob != JobUnknown)
+    {
+        m_Parent->CallAfter(&ClassBrowser::BuildTreeStartOrStop, torf, threadJob); //start toptree
+        //The timeout is needed when C::B shuts down so the thread can exit
+        m_ClassBrowserCallAfterSemaphore.WaitTimeout(500); // wait for ClassBrowser to execute
+    }
 
     // if an end-busy call, clear m_Busy status
     if (not torf) m_Busy = 0;
@@ -147,11 +151,13 @@ ClassBrowserBuilderThread::ClassBrowserBuilderThread(wxEvtHandler* evtHandler, w
     m_topCrc32(CRC32_CCITT),
     m_bottomCrc32(CRC32_CCITT)
 {
+    TRACE_PRINTF(stderr, "ClassBrowserBuilderThread::%s:%d this %p\n", __FUNCTION__, __LINE__, this);
 }
 // ----------------------------------------------------------------------------
 ClassBrowserBuilderThread::~ClassBrowserBuilderThread()
 // ----------------------------------------------------------------------------
 {
+    TRACE_PRINTF(stderr, "ClassBrowserBuilderThread::%s:%d this %p\n", __FUNCTION__, __LINE__, this);
     delete m_CCTreeTop;
     m_CCTreeTop = nullptr;
     delete m_CCTreeBottom;
@@ -168,6 +174,7 @@ bool ClassBrowserBuilderThread::Init(ParseManager*         pParseManager,
 // ----------------------------------------------------------------------------
 {
     TRACE("ClassBrowserBuilderThread::Init");
+    TRACE_PRINTF(stderr, "ClassBrowserBuilderThread::%s:%d this %p\n", __FUNCTION__, __LINE__, this);
 
     // Init() is called directly from ClassBrowser::ThreadBuilderTree()
     // Init() also called for every update of the symbol browser window
@@ -185,8 +192,7 @@ bool ClassBrowserBuilderThread::Init(ParseManager*         pParseManager,
             return (success = false);
         }
     }// end Codeblock
-    //SetIsBusy(true);
-    m_Busy = 1;
+    SetIsBusy(true, JobUnknown, "ClassBrowserBuilderThread::Init");
     m_ClassBrowserBuilderThreadMutex_Owner = wxString::Format("%s %d",__FUNCTION__, __LINE__); /*record owner*/
     // ----------------------------------------------------------------------------
     // This structs dtor unlocks the ClassBrowserBuilderThreadMutex after any return statement in this function
@@ -194,14 +200,15 @@ bool ClassBrowserBuilderThread::Init(ParseManager*         pParseManager,
     // ----------------------------------------------------------------------------
     struct ClassBrowserBuilderThreadMutexUnlock
     {
-        ClassBrowserBuilderThreadMutexUnlock(){}
+        ClassBrowserBuilderThreadMutexUnlock(ClassBrowserBuilderThread* th) :m_th(th){}
         ~ClassBrowserBuilderThreadMutexUnlock()
             {
                 CC_LOCKER_TRACK_CBBT_MTX_UNLOCK(m_ClassBrowserBuilderThreadMutex); //unlock
                 m_ClassBrowserBuilderThreadMutex_Owner = wxString();
-                --m_Busy;
+                m_th->SetIsBusy(false, JobUnknown, "ClassBrowserBuilderThread::Init");
             }
-    } classBrowserBuilderThreadMutexUnlock;
+         ClassBrowserBuilderThread* m_th;
+    } classBrowserBuilderThreadMutexUnlock(this);
 
     m_ParseManager     = pParseManager;
     // patch 1407 svn:r13354 Thanks Christo 2023/09/15
@@ -375,26 +382,26 @@ void* ClassBrowserBuilderThread::Entry()
         switch (m_nextJob)
         {
           case JobBuildTree:  // build internal trees and transfer to GUI ones
-              SetIsBusy(/*start*/true, thisJob);
+              SetIsBusy(/*start*/true, thisJob, "JobBuildTree");
               BuildTree();
               if (thisJob == m_nextJob)  //if no new nextjob, send end-of-job
-                SetIsBusy(false,thisJob);
+                SetIsBusy(false,thisJob, "JobBuildTree");
               break;
           case JobSelectTree: // fill the bottom tree with data relative to the selected item
-              SetIsBusy(true,thisJob);
+              SetIsBusy(true,thisJob, "JobSelectTree");
               SelectGUIItem();
               FillGUITree(false);
              if (thisJob == m_nextJob)  //if no new nextjob, send end-of-job
-                SetIsBusy(false,thisJob);
+                SetIsBusy(false,thisJob, "JobSelectTree");
               break;
           case JobExpandItem: // add child items on the fly
-              SetIsBusy(true,thisJob);
+              SetIsBusy(true,thisJob, "JobExpandItem");
               ExpandGUIItem();
              if (thisJob == m_nextJob)  //if no new nextjob, send end-of-job
-                SetIsBusy(false,thisJob);
+                SetIsBusy(false,thisJob, "JobExpandItem");
               break;
           default:
-              SetIsBusy(false,thisJob); //This is a coding  error
+              SetIsBusy(false,thisJob, "UnknownJob"); //This is a coding  error
               cbAssertNonFatal(0 && "ClassBrowserBuildThread::Entry with illegal Job type" )
         }//endSwitch
 
@@ -403,6 +410,7 @@ void* ClassBrowserBuilderThread::Entry()
     }
 
     m_ParseManager = nullptr;
+    TRACE_PRINTF(stdout, "ClassBrowserBuilderThread::%s:%d exit this %p\n", __FUNCTION__, __LINE__, this);
     //-m_CCTreeTop = nullptr;       Leak! CCTree dtor won't be called from ~ClassBrowserBuilderThread().    //(2022/05/7)
     //-m_CCTreeBottom = nullptr;    Leak! CCTree dtor won't be called from ~ClassBrowserBuilderThread().    //(2022/05/7)
 
@@ -415,10 +423,15 @@ void ClassBrowserBuilderThread::ExpandGUIItem()
 {
     if (m_targetItem)
     {
+        TRACE_PRINTF(stderr,"ClassBrowserBuilderThread::%s:%d: expand item\n", __FUNCTION__, __LINE__);
         ExpandItem(m_targetItem);
         AddItemChildrenToGuiTree(m_CCTreeTop, m_targetItem, true);
         m_Parent->CallAfter(&ClassBrowser::TreeOperation, ClassBrowser::OpExpandCurrent, nullptr);
         m_ClassBrowserCallAfterSemaphore.WaitTimeout(500); // wait for ClassBrowser to execute
+    }
+    else
+    {
+        fprintf(stderr,"ClassBrowserBuilderThread::%s:%d: m_targetItem null\n", __FUNCTION__, __LINE__);
     }
 }
 
@@ -533,9 +546,14 @@ void ClassBrowserBuilderThread::SelectGUIItem()
 // ----------------------------------------------------------------------------
 {
     TRACE("ClassBrowserBuilderThread::SelectItem");
+    TRACE_PRINTF(stderr, "ClassBrowserBuilderThread::%s:%d enter this %p\n", __FUNCTION__, __LINE__, this);
 
     if (!m_targetItem)
+    {
+
+        fprintf(stderr, "ClassBrowserBuilderThread::%s:%d m_targetItem null this %p\n", __FUNCTION__, __LINE__, this);
         return;
+    }
 
     // ----------------------------------------------------------------------------
     CC_LOCKER_TRACK_CBBT_MTX_LOCK(m_ClassBrowserBuilderThreadMutex)
@@ -562,7 +580,14 @@ void ClassBrowserBuilderThread::SelectGUIItem()
         return;
     if ( !(   m_BrowserOptions.displayFilter == bdfFile
            && m_ActiveFilename.IsEmpty() ) )
+    {
+        TRACE_PRINTF(stderr, "ClassBrowserBuilderThread::%s:%d AddMembersOf this %p\n", __FUNCTION__, __LINE__, this);
         AddMembersOf(tree, m_targetItem);
+    }
+    else
+    {
+        fprintf(stderr, "ClassBrowserBuilderThread::%s:%d not AddMembersOf this %p\n", __FUNCTION__, __LINE__, this);
+    }
 
 #ifdef CC_BUILDTREE_MEASURING
     CCLogger::Get()->DebugLog(wxString::Format("SelectGUIItem (internally) took : %ld ms", sw.Time()));
@@ -579,7 +604,10 @@ void ClassBrowserBuilderThread::BuildTree()
 // ----------------------------------------------------------------------------
 {
     if (CBBT_SANITY_CHECK || !m_ParseManager)
+    {
+        fprintf(stderr, "ClassBrowserBuilderThread::%s:%d this %p m_ParseManager %p\n", __FUNCTION__, __LINE__, this, m_ParseManager);
         return; // Called before UI tree construction completed?!
+    }
 
 #ifdef CC_BUILDTREE_MEASURING
     wxStopWatch sw;
@@ -587,7 +615,11 @@ void ClassBrowserBuilderThread::BuildTree()
 #endif
 
     cbAssert(m_CCTreeTop != nullptr);
-    if (not m_CCTreeTop) return;
+    if (not m_CCTreeTop)
+    {
+        fprintf(stderr, "ClassBrowserBuilderThread::%s:%d this %p m_CCTreeTop %p\n", __FUNCTION__, __LINE__, this, m_CCTreeTop); 
+        return;
+    }
 
     // 1.) Create initial root node, if not already there
     CCTreeItem* root = m_CCTreeTop->GetRootItem();
@@ -1016,6 +1048,7 @@ void ClassBrowserBuilderThread::AddMembersOf(CCTree* tree, CCTreeItem* node)
     const CCTreeCtrlData* data = m_CCTreeTop->GetItemData(node);
     if (not data)
         return;
+    fprintf(stderr, "ClassBrowserBuilderThread::%s:%d node->m_data %p data %p\n", __FUNCTION__, __LINE__, node->m_data, data);
 
      // FIXME (ph#):Getting crash here with data == -1 as a ptr (0xFFFFFFFFFFFFFFFF)
      // I believe this problem is fixed by version 1.2.89 (see version.h)
@@ -1035,6 +1068,7 @@ void ClassBrowserBuilderThread::AddMembersOf(CCTree* tree, CCTreeItem* node)
     }
 
     const bool bottom = (tree == m_CCTreeBottom);
+    TRACE_PRINTF(stderr,"ClassBrowserBuilderThread::%s:%d: enter. tree %p %s node %p\n", __FUNCTION__, __LINE__, tree, bottom?"bottom":"top", node);
     if (bottom)
     {
 #ifdef CC_BUILDTREE_MEASURING
@@ -1127,6 +1161,10 @@ void ClassBrowserBuilderThread::AddMembersOf(CCTree* tree, CCTreeItem* node)
             default:
                 break;
         }
+    }
+    else
+    {
+        fprintf(stderr,"ClassBrowserBuilderThread::%s:%d: data  null tree %p\n", __FUNCTION__, __LINE__, tree);
     }
 }//AddMembersOf
 // ----------------------------------------------------------------------------
@@ -1371,7 +1409,11 @@ void ClassBrowserBuilderThread::FillGUITree(bool top)
 {
     CCTree* localTree = top ? m_CCTreeTop : m_CCTreeBottom;
     if (not localTree)  //sanity check
+    {
+        TRACE_PRINTF(stderr,"ClassBrowserBuilderThread::%s:%d: [%p] localTree null. m_CCTreeTop %p m_CCTreeBottom %p\n", __FUNCTION__, __LINE__, this, m_CCTreeTop, m_CCTreeBottom);
         return;
+    }
+    TRACE_PRINTF(stderr,"ClassBrowserBuilderThread::%s:%d: [%p] Enter m_CCTreeTop %p m_CCTreeBottom %p\n", __FUNCTION__, __LINE__, this, m_CCTreeTop, m_CCTreeBottom);
 
     // When Code Completion information changes refreshing is made in two steps:
     //   1.- Top is refreshed and bottom is cleared. Top refresh calls ReselectItem()
@@ -1428,6 +1470,7 @@ void ClassBrowserBuilderThread::FillGUITree(bool top)
         m_Parent->CallAfter(&ClassBrowser::TreeOperation, ClassBrowser::OpAddRoot, sourceRoot);
         m_ClassBrowserCallAfterSemaphore.WaitTimeout(500); // wait for ClassBrowser to executed
 
+        TRACE_PRINTF(stderr,"ClassBrowserBuilderThread::%s:%d: AddItemChildrenToGuiTree localTree %p\n", __FUNCTION__, __LINE__, localTree);
         AddItemChildrenToGuiTree(localTree, sourceRoot, true);
         m_Parent->CallAfter(&ClassBrowser::TreeOperation, top ? ClassBrowser::OpExpandRoot : ClassBrowser::OpExpandAll, nullptr);
         m_ClassBrowserCallAfterSemaphore.WaitTimeout(500); // wait for ClassBrowser to execute
@@ -1456,11 +1499,14 @@ void ClassBrowserBuilderThread::AddItemChildrenToGuiTree(CCTree* localTree, CCTr
 // ----------------------------------------------------------------------------
 {
     CCCookie cookie;
+    TRACE_PRINTF(stderr,"ClassBrowserBuilderThread::%s:%d: enter. localTree %p parent %p\n", __FUNCTION__, __LINE__, localTree, parent);
     for (CCTreeItem* child = localTree->GetFirstChild(parent, cookie); child; child = localTree->GetNextChild(parent, cookie))
     {
-        if (CBBT_SANITY_CHECK)
+        if (CBBT_SANITY_CHECK) {
+            fprintf(stderr,"ClassBrowserBuilderThread::%s:%d: sanity check failed. localTree %p\n", __FUNCTION__, __LINE__, localTree);
             break;
-
+        }
+        TRACE_PRINTF(stderr,"ClassBrowserBuilderThread::%s:%d: schedule OpAddChild. localTree %p child %p\n", __FUNCTION__, __LINE__, localTree, child);
         m_Parent->CallAfter(&ClassBrowser::TreeOperation, ClassBrowser::OpAddChild, child);
         m_ClassBrowserCallAfterSemaphore.WaitTimeout(500); // wait for ClassBrowser to execute
         //- The semaphore prevents flooding message queue. The timeout is needed when C::B shuts down so the thread can exit
@@ -1548,6 +1594,7 @@ CCTreeItem* CCTree::AddRoot(const wxString& text, int image, int selImage, CCTre
     wxASSERT_MSG(!m_root, "CCTree can have only a single root");
 
     m_root = new CCTreeItem(nullptr, text, image, selImage, data);
+    TRACE_PRINTF(stderr,"CCTree::%s:%d: this %p root %p\n", __FUNCTION__, __LINE__, this, m_root);
     return m_root;
 }
 // ----------------------------------------------------------------------------
@@ -1742,7 +1789,7 @@ CCTreeItem* CCTree::DoInsertAfter(CCTreeItem* parent, CCTreeItem* hInsertAfter, 
         if (newItem->m_nextSibling)
             newItem->m_nextSibling->m_prevSibling = newItem;
     }
-
+    TRACE_PRINTF(stderr,"CCTree::%s:%d: this %p item %p token [%s]\n", __FUNCTION__, __LINE__, this, newItem, (data)?data->m_TokenName.ToUTF8().data():"null");
     return newItem;
 }
 // ----------------------------------------------------------------------------
