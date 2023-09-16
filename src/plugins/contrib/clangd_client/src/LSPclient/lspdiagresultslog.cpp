@@ -257,16 +257,21 @@ void LSPDiagnosticsResultsLog::OnApplyFixIfAvailable(wxCommandEvent& event)
           wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED)) != wxNOT_FOUND)
     {
         // Got the selected item index
+        fprintf(stderr, "LSPDiagnosticsResultsLog::%s:%d [%p] itemIndex %d\n", __FUNCTION__, __LINE__, this, (int)itemIndex);
         selectedLineText = GetItemAsText(itemIndex);
         if (not (selectedLineText.Contains(" (fix available) ") or (selectedLineText.Contains("(fixes available)"))))
         {
             wxString msg = wxString::Format(_("No Fix available for logLine(%d)"), int(itemIndex) );
+            fprintf(stderr, "LSPDiagnosticsResultsLog::%s:%d [%p] itemIndex %d no fix available. selectedLineText %s\n", __FUNCTION__, __LINE__, this, (int)itemIndex, selectedLineText.ToUTF8().data());
             InfoWindow::Display(_("NO fix"), msg);
             return;
         }
     }
-    if (selectedLineText.empty()) return;
-
+    if (selectedLineText.empty())
+    {
+        fprintf(stderr, "LSPDiagnosticsResultsLog::%s:%d [%p] itemIndex %d selectedLineText empty\n", __FUNCTION__, __LINE__, this, (int)itemIndex);
+        return;
+    }
     // parse the line at '|' chars to get filename, lineNum text, and error text
     wxArrayString lineItems = GetArrayFromString(selectedLineText, "|", /*trimSpaces*/ true);
     size_t itemKnt = lineItems.GetCount();
@@ -290,6 +295,7 @@ void LSPDiagnosticsResultsLog::OnApplyFixIfAvailable(wxCommandEvent& event)
     // This class does not have addressability to what we need (parser and FixesAvailable).
     wxCommandEvent evt(wxEVT_COMMAND_MENU_SELECTED, idRequestCodeActionAppy);
     evt.SetString(filename +"|"+lineNumStr+"|"+logText);
+    fprintf(stderr, "LSPDiagnosticsResultsLog::%s:%d [%p] itemIndex %d idRequestCodeActionAppy event %s\n", __FUNCTION__, __LINE__, this, (int)itemIndex, evt.GetString().ToUTF8().data());
     Manager::Get()->GetAppFrame()->GetEventHandler()->AddPendingEvent(evt);
 
     return;
