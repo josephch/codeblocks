@@ -207,6 +207,12 @@ private:
 
     CCTreeItem* GetItemPtr(wxTreeItemId ItemId);
 
+    /** search bottom tree for symbol */
+    void SearchBottomTree( bool firstTry);
+
+    /** Timer callback to search bottom tree for symbol */
+    void DoSearchBottomTree(wxTimerEvent& event);
+
     /** the pointer to parser manager object */
     ParseManager*              m_ParseManager;
 
@@ -247,6 +253,12 @@ private:
 
     /** Saves the selected items while the tree changes */
     SelectedItemPath           m_SelectedPath;
+
+    /** Timer to handle symbol search when bottom tree is not populated */
+    wxTimer                    m_TimerSymbolSearchWaitForBottomTree;
+
+    /** Store last searched symbol */
+    wxString                   m_LastSearchedSymbol;
 
     DECLARE_EVENT_TABLE()
 };

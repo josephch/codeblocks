@@ -92,6 +92,7 @@ int idCBSortByKind             = wxNewId();
 int idCBSortByScope            = wxNewId();
 int idCBSortByLine             = wxNewId();
 int idCBBottomTree             = wxNewId();
+int idSearchSymbolTimer        = wxNewId();
 
 /** the event ID which will be sent from worker thread to ClassBrowser */
 int idThreadEvent              = wxNewId();
@@ -135,13 +136,13 @@ ClassBrowser::ClassBrowser(wxWindow* parent, ParseManager* np) :
     m_TreeForPopupMenu(nullptr),
     m_Parser(nullptr),
     m_ClassBrowserSemaphore(0, 1),  // initial count, max count
-    m_ClassBrowserBuilderThread(nullptr)
+    m_ClassBrowserBuilderThread(nullptr),
+    m_TimerSymbolSearchWaitForBottomTree(this, idSearchSymbolTimer)
 {
     wxXmlResource::Get()->LoadPanel(this, parent, "pnlCldClassBrowser"); // panel class browser -> pnlCB
     m_Search = XRCCTRL(*this, "cmbSearch", wxComboBox);
 
-    if (platform::windows)
-        m_Search->SetWindowStyle(wxTE_PROCESS_ENTER); // it's a must on windows to catch EVT_TEXT_ENTER
+    m_Search->SetWindowStyle(wxTE_PROCESS_ENTER); // it's a must on windows to catch EVT_TEXT_ENTER
 
     // Subclassed in XRC file, for reference see here: http://wiki.wxwidgets.org/Resource_Files
     m_CCTreeCtrl       = XRCCTRL(*this, "treeAll",     CCTreeCntrl);
@@ -161,11 +162,14 @@ ClassBrowser::ClassBrowser(wxWindow* parent, ParseManager* np) :
     // so we force the correct colour for the panel here...
     XRCCTRL(*this, "pnlCldMainPanel", wxPanel)->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
 
+    Connect(idSearchSymbolTimer, wxEVT_TIMER, wxTimerEventHandler(ClassBrowser::DoSearchBottomTree));
+
 }
 
 // class destructor
 ClassBrowser::~ClassBrowser()
 {
+    Disconnect(idSearchSymbolTimer,    wxEVT_TIMER, wxTimerEventHandler(ClassBrowser::DoSearchBottomTree));
     const int pos = XRCCTRL(*this, "splitterWin", wxSplitterWindow)->GetSashPosition();
     Manager::Get()->GetConfigManager("clangd_client")->Write("/splitter_pos", pos);
 
@@ -490,7 +494,7 @@ wxTreeItemId ClassBrowser::FindChild(const wxString& search, wxTreeCtrl* tree, c
                 return res;
         }
 
-        res = m_CCTreeCtrl->GetNextChild(start, cookie);
+        res = tree->GetNextChild(start, cookie);
     }
 
     res.Unset();
@@ -1004,12 +1008,34 @@ void ClassBrowser::OnSearch(cb_unused wxCommandEvent& event)
         }
         else
         {
-            // search in bottom tree too
-            res = FindChild(token->m_Name, m_CCTreeCtrlBottom, m_CCTreeCtrlBottom->GetRootItem(), true, true);
-            if (res.IsOk())
-                m_CCTreeCtrlBottom->SelectItem(res);
+            m_LastSearchedSymbol = token->m_Name;
+            SearchBottomTree(true);
         }
     }
+}
+// ----------------------------------------------------------------------------
+void ClassBrowser::SearchBottomTree(bool firstTry)
+// ----------------------------------------------------------------------------
+{
+    wxTreeItemId bottomRoot = m_CCTreeCtrlBottom->GetRootItem();
+    if (!bottomRoot.IsOk())
+    {
+        if (firstTry)
+        {
+            m_TimerSymbolSearchWaitForBottomTree.Start(100, wxTIMER_ONE_SHOT);
+            return;
+        }
+    }
+    wxTreeItemId res = FindChild(m_LastSearchedSymbol, m_CCTreeCtrlBottom, bottomRoot, true, true);
+    if (res.IsOk()) {
+        m_CCTreeCtrlBottom->SelectItem(res);
+    }
+}
+// ----------------------------------------------------------------------------
+void ClassBrowser::DoSearchBottomTree(wxTimerEvent& event)
+// ----------------------------------------------------------------------------
+{
+    SearchBottomTree(false);
 }
 
 /* There are several cases:
