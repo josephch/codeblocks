@@ -217,6 +217,9 @@ private:
     /** handle both goto declaration and implementation event */
     void OnGotoDeclaration(wxCommandEvent& event);
 
+    /** handle both goto declaration and implementation event */
+    void OnGotoDeclaration(CodeBlocksEvent& event);
+
     /** CC's re-factoring function, find all the reference place */
     void OnFindReferences(wxCommandEvent& event);
 
