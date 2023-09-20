@@ -730,6 +730,7 @@ void ClgdCompletion::OnAttach()
     pm->RegisterEventSink(cbEVT_EDITOR_OPEN,          new cbEventFunctor<ClgdCompletion, CodeBlocksEvent>(this, &ClgdCompletion::OnEditorOpen));
     pm->RegisterEventSink(cbEVT_EDITOR_ACTIVATED,     new cbEventFunctor<ClgdCompletion, CodeBlocksEvent>(this, &ClgdCompletion::OnEditorActivated));
     pm->RegisterEventSink(cbEVT_EDITOR_CLOSE,         new cbEventFunctor<ClgdCompletion, CodeBlocksEvent>(this, &ClgdCompletion::OnEditorClosed));
+    pm->RegisterEventSink(cbEVT_EDITOR_GOTO_DECLARATION,      new cbEventFunctor<ClgdCompletion, CodeBlocksEvent>(this, &ClgdCompletion::OnGotoDeclaration));
 
     pm->RegisterEventSink(cbEVT_DEBUGGER_STARTED,     new cbEventFunctor<ClgdCompletion, CodeBlocksEvent>(this, &ClgdCompletion::OnDebuggerStarting));
     pm->RegisterEventSink(cbEVT_DEBUGGER_FINISHED,    new cbEventFunctor<ClgdCompletion, CodeBlocksEvent>(this, &ClgdCompletion::OnDebuggerFinished));
@@ -2369,13 +2370,20 @@ void ClgdCompletion::OnGotoDeclaration(wxCommandEvent& event)
     {
         GetLSPClient(pActiveEditor)->LSP_GoToDeclaration(pActiveEditor, GetCaretPosition(pActiveEditor));
     }
-    // Confusing behaviour of clangd which switches back and forth between def and decl
-    if (isImpl)
+    else
     {
         GetLSPClient(pActiveEditor)->LSP_GoToDefinition(pActiveEditor, GetCaretPosition(pActiveEditor));
     }
     return;
 }//end OnGotoDeclaration()
+
+// ----------------------------------------------------------------------------
+void ClgdCompletion::OnGotoDeclaration(CodeBlocksEvent& event)
+//
+{
+    wxCommandEvent& eventBase = event;
+    OnGotoDeclaration(eventBase);
+}
 // ----------------------------------------------------------------------------
 void ClgdCompletion::OnFindReferences(cb_unused wxCommandEvent& event)
 // ----------------------------------------------------------------------------
