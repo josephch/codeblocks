@@ -309,7 +309,16 @@ void cbStyledTextCtrl::OnKeyUp(wxKeyEvent& event)
 
 void cbStyledTextCtrl::OnMouseLeftUp(wxMouseEvent& event)
 {
-    HighlightRightBrace();
+    if (event.GetModifiers() != wxMOD_CONTROL)
+    {
+        HighlightRightBrace();
+    }
+    else
+    {
+        fprintf(stderr, "cbStyledTextCtrl::%s:%d got mouse up ctrl\n", __FUNCTION__, __LINE__);
+        CodeBlocksEvent event(cbEVT_EDITOR_GOTO_DECLARATION);
+        Manager::Get()->GetPluginManager()->NotifyPlugins(event);
+    }
     event.Skip();
 }
 
