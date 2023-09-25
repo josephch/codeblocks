@@ -323,9 +323,6 @@ namespace //annonymous
     bool wxFound(int result){return result != wxNOT_FOUND;};
     bool stdFound(size_t result){return result != std::string::npos;}
 
-    static wxMutex m_MutexInputBufGuard; //jsonread buffer guard
-
-
 }//end namespace
 // ----------------------------------------------------------------------------
 namespace ClientHelp
@@ -353,7 +350,7 @@ namespace ClientHelp
 LSPDiagnosticsResultsLog* ProcessLanguageClient::m_pDiagnosticsLog = nullptr;
 
 // ----------------------------------------------------------------------------
-ProcessLanguageClient::ProcessLanguageClient(const cbProject* pProject, const char* program, const char* arguments)
+ProcessLanguageClient::ProcessLanguageClient(const cbProject* pProject, const char* program, const char* arguments) : m_MutexInputBufGuard(), m_CondInputBuf(m_MutexInputBufGuard)
 // ----------------------------------------------------------------------------
 {
     LogManager* pLogMgr = Manager::Get()->GetLogManager();
@@ -688,6 +685,7 @@ ProcessLanguageClient::~ProcessLanguageClient()
     }
     if ( m_pJsonReadThread and (jsonTerminationThreadRC < 2) )
     {
+        m_CondInputBuf.Signal();
         // return should have been 2 //0=running; 1=terminateRequested; 2=Terminated
         m_pJsonReadThread->join();
         wxString msg = wxString::Format("%s() Json read thread termination error rc:%d\n", __FUNCTION__, int(jsonTerminationThreadRC) );
@@ -943,7 +941,11 @@ void ProcessLanguageClient::OnClangd_stdout(wxThreadEvent& event)
         }
 
     // Ignore any clangd data when app is shutting down.
-    if (Manager::IsAppShuttingDown()) return;
+    if (Manager::IsAppShuttingDown())
+    {
+        m_MutexInputBufGuard.Unlock();
+        return;
+    }
 
     // Append clangd incomming response data to buffer;
     std::string* pRawOutput = event.GetPayload<std::string*>();
@@ -953,6 +955,7 @@ void ProcessLanguageClient::OnClangd_stdout(wxThreadEvent& event)
     }
     std::string std_clangdRawOutput = *pRawOutput;
     m_std_LSP_IncomingStr.append(*pRawOutput);
+    m_CondInputBuf.Signal();
 
     /// unlock the input buffer
     m_MutexInputBufGuard.Unlock();
@@ -1231,8 +1234,8 @@ bool ProcessLanguageClient::readJson(json &json)
     if (not length)
     {
         /// no data, UNlock the input buffer
+        m_CondInputBuf.Wait();
         m_MutexInputBufGuard.Unlock();
-        wxMilliSleep(250);
         return false;
     }
 
