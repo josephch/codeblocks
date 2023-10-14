@@ -43,6 +43,13 @@ ProjectFile::ProjectFile(cbProject* prj) :
     project(prj),
     m_VisualState(fvsNormal)
 {
+    fprintf(stderr, "ProjectFile::%s:%d [%p] project %s\n", __FUNCTION__, __LINE__, this, prj->GetTitle().ToUTF8().data());
+#ifdef ABORT_ON_PROXYPROJECT
+    if (prj->GetTitle() == "~ProxyProject~")
+    {
+    	abort();
+    }
+#endif
 }
 
 ProjectFile::~ProjectFile()
@@ -87,6 +94,7 @@ ProjectFile::ProjectFile(cbProject* prj, const ProjectFile &pf) :
     m_TreeItemId(pf.m_TreeItemId),
     m_ObjName(pf.m_ObjName)
 {
+
 }
 
 void ProjectFile::Rename(const wxString& newName)

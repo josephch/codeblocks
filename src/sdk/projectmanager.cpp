@@ -164,6 +164,8 @@ bool ProjectManager::IsProjectStillOpen(cbProject* project)
 void ProjectManager::SetProject(cbProject* project, bool refresh)
 {
     bool activeProjectChanged = false;
+    fprintf(stderr, "ProjectManager::%s:%d [%p] Enter. Project %s\n", __FUNCTION__, __LINE__, this, project->GetTitle().ToUTF8().data());
+
     if (project != m_pActiveProject)
     {
         // Only set workspace as modified, if there was an active project before
@@ -171,7 +173,10 @@ void ProjectManager::SetProject(cbProject* project, bool refresh)
             activeProjectChanged = true;
     }
     else
+    {
+        fprintf(stderr, "ProjectManager::%s:%d [%p] Already active, return\n", __FUNCTION__, __LINE__, this);
         return; // already active
+    }
 
     wxStopWatch timer;
 

@@ -1265,7 +1265,7 @@ bool ProcessLanguageClient::readJson(json &json)
 
     if (stdStrInputbuf.size())
     {
-        //fprintf(stderr, "ProcessLanguageClient::%s:%d  len:%d data %s\n", __FUNCTION__, __LINE__, length, stdStrInputbuf.c_str());
+        fprintf(stderr, "ProcessLanguageClient::%s:%d  len:%d data %s\n", __FUNCTION__, __LINE__, length, stdStrInputbuf.c_str());
         writeClientLog(StdString_Format(">>> readJson() len:%d:\n%s", length, stdStrInputbuf.c_str()) );
     }
     else
@@ -1359,7 +1359,7 @@ bool ProcessLanguageClient::writeJson(json& json)
     }
 
     std::string content = json.dump();
-    //fprintf(stderr, "ProcessLanguageClient::%s:%d  content %s\n", __FUNCTION__, __LINE__, content.c_str());
+    fprintf(stderr, "ProcessLanguageClient::%s:%d  content %s\n", __FUNCTION__, __LINE__, content.c_str());
     std::string header = "Content-Length: " + std::to_string(content.length()) + "\r\n\r\n" + content;
     return WriteHdr(header);
 }
@@ -1881,6 +1881,7 @@ cbProject* ProcessLanguageClient::GetProjectFromEditor(cbEditor* pcbEd)
 void ProcessLanguageClient::LSP_Initialize(cbProject* pProject)
 // ----------------------------------------------------------------------------
 {
+    fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] Enter\n", __FUNCTION__, __LINE__, this);
     #if defined(cbDEBUG)
     cbAssertNonFatal(pProject && "LSP_Initialize called without pProject");
     #endif
@@ -1897,15 +1898,25 @@ void ProcessLanguageClient::LSP_Initialize(cbProject* pProject)
 
     for (int ii=0; ii< pEdMgr->GetEditorsCount(); ++ii)
     {
+        fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] ii %d\n", __FUNCTION__, __LINE__, this, ii);
         // Find the project and ProjectFile this editor is holding.
         cbEditor* pcbEd = pEdMgr->GetBuiltinEditor(ii);
         if (pcbEd)
         {
-            ProjectFile* pProjectFile = pcbEd->GetProjectFile();
-            if (not pProjectFile) continue;
-            cbProject* pEdProject = pProjectFile->GetParentProject();
-            if (not pEdProject) continue;
-            if (pEdProject != pProject) continue;
+			ProjectFile *pProjectFile = pcbEd->GetProjectFile();
+			if (not pProjectFile){
+		        fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] ii %d continue\n", __FUNCTION__, __LINE__, this, ii);
+				continue;
+			}
+			cbProject *pEdProject = pProjectFile->GetParentProject();
+			if (not pEdProject){
+		        fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] ii %d continue\n", __FUNCTION__, __LINE__, this, ii);
+				continue;
+			}
+			if (pEdProject != pProject) {
+		        fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] ii %d continue\n", __FUNCTION__, __LINE__, this, ii);
+				continue;
+			}
 
             wxString filename = pcbEd->GetFilename();
             UpdateCompilationDatabase(pProject, filename);
@@ -1953,7 +1964,10 @@ bool ProcessLanguageClient::LSP_DidOpen(cbEditor* pcbEd)
     wxString infilename = pcbEd->GetFilename();
 
     if (not ClientProjectOwnsFile(pcbEd, false))
-            return false;
+    {
+        fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] client project does not own file\n", __FUNCTION__, __LINE__, this);
+        return false;
+    }
 
     if (GetLSP_EditorIsOpen(pcbEd))
         return false;
@@ -3834,6 +3848,7 @@ bool ProcessLanguageClient::AddFileToCompileDBJson(cbProject* pProject, ProjectB
 void ProcessLanguageClient::UpdateCompilationDatabase(cbProject* pProject, wxString filename)
 // ----------------------------------------------------------------------------
 {
+    fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] Enter. filename %s\n", __FUNCTION__, __LINE__, this, filename.ToUTF8().data());
     if (pProject == m_pParser->GetParseManager()->GetProxyProject() )
     {
         // Don't update the compile_commands.json database if this is the
@@ -3843,6 +3858,7 @@ void ProcessLanguageClient::UpdateCompilationDatabase(cbProject* pProject, wxStr
         // We do this because clangd starts searching for the database within the directory
         // containing the file, then searching backup the tree.
         // There's likely no such database there; just wasting time.
+        fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] proxy project, do nothing\n", __FUNCTION__, __LINE__, this);
         return;
     }
 
@@ -3884,7 +3900,10 @@ void ProcessLanguageClient::UpdateCompilationDatabase(cbProject* pProject, wxStr
     }//endif wxFileExists
 
     ProjectFile* pProjectFile = pProject->GetFileByFilename(filename, false);
-    if (not pProjectFile) return;
+	if (not pProjectFile){
+        fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] pProjectFile not available\n", __FUNCTION__, __LINE__, this);
+		return;
+	}
 
     // create array of compiler built-in include files needed for for clang '-fsyntax-only'
     // The files arn't found by clang for some unknown reason to me.
@@ -3923,11 +3942,11 @@ void ProcessLanguageClient::UpdateCompilationDatabase(cbProject* pProject, wxStr
     if (not pTarget)
     {   CCLogger::Get()->Log(_("Clangd_client found no usable project target."));
         CCLogger::Get()->DebugLog(_("Clangd_client found no usable project target."));
+        fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] Clangd_client found no usable project target.\n", __FUNCTION__, __LINE__, this);
         return;
     }
     else
         CCLogger::Get()->DebugLog(_("Clangd_client using project target:" + pTarget->GetTitle()));
-
     Compiler* pCompiler = CompilerFactory::GetCompiler(pTarget->GetCompilerID());
     wxString masterPath = pCompiler ? pCompiler->GetMasterPath() : "";
     wxString compilerID = pCompiler ? pCompiler->GetID() : "";
