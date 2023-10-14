@@ -204,7 +204,7 @@ cbProject& cbProject::operator=(const cbProject &p)
     // Just regenerate the hash map for faster lookup of files.
     m_ProjectFilesMap.clear();
     for (ProjectFile *pf : m_Files)
-        m_ProjectFilesMap[UnixFilename(pf->relativeFilename)] = pf;
+        m_ProjectFilesMap[UnixFilename(realpath(pf->file.GetFullPath()))] = pf;
 
     m_LastModified = p.m_LastModified;
 
@@ -776,7 +776,8 @@ ProjectFile* cbProject::AddFile(int targetIndex, const wxString& filename, bool 
 //    }
 
     // quick test
-    ProjectFile* pf = m_ProjectFilesMap[UnixFilename(filename)];
+    const wxString realPathUnixFilename = UnixFilename(realpath(GetBasePath() + filename));
+    ProjectFile* pf = m_ProjectFilesMap[realPathUnixFilename];
     if (pf)
         return pf;
 
@@ -903,7 +904,7 @@ ProjectFile* cbProject::AddFile(int targetIndex, const wxString& filename, bool 
     }
     fname.Normalize(wxPATH_NORM_DOTS | wxPATH_NORM_TILDE, projectBasePath);
 
-    const wxString &fullFilename = realpath(fname.GetFullPath());
+    const wxString &fullFilename = fname.GetFullPath();
     pf->file = fullFilename;
 
     // Make sure the relativeFilename is really relative to the project file.
@@ -942,7 +943,7 @@ ProjectFile* cbProject::AddFile(int targetIndex, const wxString& filename, bool 
         }
     }
     SetModified(true);
-    m_ProjectFilesMap[pf->relativeFilename] = pf; // add to hashmap
+    m_ProjectFilesMap[realPathUnixFilename] = pf; // add to hashmap
 
     if (!wxFileExists(fullFilename))
         pf->SetFileState(fvsMissing);
@@ -988,7 +989,7 @@ bool cbProject::RemoveFile(ProjectFile* pf)
 {
     if (!pf)
         return false;
-    m_ProjectFilesMap.erase(UnixFilename(pf->relativeFilename)); // remove from hashmap
+    m_ProjectFilesMap.erase(UnixFilename(realpath(pf->file.GetFullPath()))); // remove from hashmap
     Manager::Get()->GetEditorManager()->Close(pf->file.GetFullPath());
 
     {
@@ -1183,31 +1184,14 @@ ProjectFile* cbProject::GetFile(int index)
 
 ProjectFile* cbProject::GetFileByFilename(const wxString& filename, bool isRelative, bool isUnixFilename)
 {
-    // m_ProjectFilesMap keeps UnixFilename(ProjectFile::relativeFilename)
+    // m_ProjectFilesMap keeps UnixFilename(realpath(ProjectFile::relativeFilename))
     wxString tmp = filename;
-    if (!isRelative)
+    if (isRelative)
     {
-        // if the search is not relative, make it
-        wxFileName fname(realpath(filename));
-        fname.MakeRelativeTo( GetBasePath() );
-        tmp = fname.GetFullPath();
+        wxFileName fname(GetBasePath() + filename);
+        tmp =  fname.GetFullPath();
     }
-    else
-    {
-        // make sure filename doesn't start with ".\"
-        // our own relative files don't have it, so the search would fail
-        // this happens when importing MS projects...
-        if (tmp.StartsWith(_T(".\\")) ||
-            tmp.StartsWith(_T("./")))
-        {
-            tmp.Remove(0, 2);
-        }
-    }
-
-    if (isUnixFilename)
-        return m_ProjectFilesMap[tmp];
-
-    return m_ProjectFilesMap[UnixFilename(tmp)];
+    return m_ProjectFilesMap[UnixFilename(realpath(tmp))];
 }
 
 bool cbProject::QueryCloseAllFiles()
@@ -1895,7 +1879,7 @@ void cbProject::ProjectFileRenamed(ProjectFile* pf)
         {
             // got it
             m_ProjectFilesMap.erase(it);
-            m_ProjectFilesMap[UnixFilename(pf->relativeFilename)] = pf;
+            m_ProjectFilesMap[UnixFilename(realpath(pf->file.GetFullPath()))] = pf;
             break;
         }
     }
