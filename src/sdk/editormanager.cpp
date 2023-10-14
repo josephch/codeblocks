@@ -338,7 +338,7 @@ EditorBase* EditorManager::IsOpen(const wxString& filename)
         EditorBase* eb = InternalGetEditorBase(i);
         if (!eb)
             continue;
-        wxString fname = eb->GetFilename();
+        wxString fname = UnixFilename(realpath(eb->GetFilename()));
 
         // MSW must use case-insensitive comparison
         if (fname.IsSameAs(uFilename, platform::windows == false) || fname.IsSameAs(g_EditorModified + uFilename, platform::windows == false))
