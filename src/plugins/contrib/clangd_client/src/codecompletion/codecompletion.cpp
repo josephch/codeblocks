@@ -3188,6 +3188,7 @@ void ClgdCompletion::OnWorkspaceChanged(CodeBlocksEvent& event)
                 if (pParser and (not pParser->GetLSPClient()) )
                     LSPsucceeded = GetParseManager()->CreateNewLanguageServiceProcess(pActiveProject, LSPeventID);
 
+#ifdef DEFER_PARSING_FOR_MAKEFILE_PROJECTS
                 // Pause parsing if this is a makefile project //(ph 2023/09/03)
                 if ( pParser and LSPsucceeded and pActiveProject->IsMakefileCustom())
                 {
@@ -3196,6 +3197,7 @@ void ClgdCompletion::OnWorkspaceChanged(CodeBlocksEvent& event)
                     cbPlugin* pPlgn = Manager::Get()->GetPluginManager()->FindPluginByName("clangd_client");
                     if (pPlgn) pPlgn->ProcessEvent(evt);
                 }
+#endif// DEFER_PARSING_FOR_MAKEFILE_PROJECTS
 
             }//if not parser
 
@@ -3340,6 +3342,7 @@ void ClgdCompletion::OnProjectActivated(CodeBlocksEvent& event)
             if (pParser and pParser->PauseParsingCount("Deactivated"))
                 pParser->PauseParsingForReason("Deactivated",false);
         }
+#ifdef DEFER_PARSING_FOR_MAKEFILE_PROJECTS
         // Pause parsing if this is a makefile project //(ph 2023/09/03)
         if (m_CurrProject->IsMakefileCustom())
         {
@@ -3348,6 +3351,7 @@ void ClgdCompletion::OnProjectActivated(CodeBlocksEvent& event)
             cbPlugin* pPlgn = Manager::Get()->GetPluginManager()->FindPluginByName("clangd_client");
             if (pPlgn) pPlgn->ProcessEvent(evt);
         }
+#endif // DEFER_PARSING_FOR_MAKEFILE_PROJECTS
 
     }//endif attached
 
