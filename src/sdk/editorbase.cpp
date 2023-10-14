@@ -86,7 +86,7 @@ void EditorBase::InitFilename(const wxString& filename)
     if (filename.IsEmpty())
         m_Filename = realpath(CreateUniqueFilename());
     else
-        m_Filename = realpath(filename);
+        m_Filename = (filename);
 
     wxFileName fname;
     fname.Assign(m_Filename);
