@@ -3748,9 +3748,7 @@ bool ProcessLanguageClient::AddFileToCompileDBJson(cbProject* pProject, ProjectB
             cbMessageBox(errMsg);
         }
         //wxString look = entry.dump(); //debugging
-        std::string ccjDir     = entry["directory"];
-        std::string ccjFile    = entry["file"];
-        std::string ccjCommand = entry["command"];
+        const std::string &ccjFile    = entry["file"];
 
         //-wxString ccjPath = ccjDir + filesep + ccjFile ;
         //-if (ccjFile == newFullFilePath)         // make compile_commands file fullpath
@@ -3761,6 +3759,7 @@ bool ProcessLanguageClient::AddFileToCompileDBJson(cbProject* pProject, ProjectB
             // If commands match, leave entry alone.
             if (not found)
             {
+                const std::string &ccjCommand = entry["command"];
                 found++;    //update first entry only
                 if (ccjCommand != newEntry["command"])
                 {
