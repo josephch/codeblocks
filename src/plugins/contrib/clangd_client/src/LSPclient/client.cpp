@@ -427,11 +427,9 @@ ProcessLanguageClient::ProcessLanguageClient(const cbProject* pProject, const ch
     wxString masterPath = pCompiler ? pCompiler->GetMasterPath() : "";
 
     // get the first char of executable name from the compiler toolchain
-    CompilerPrograms toolchain = pCompiler->GetPrograms();
-    wxString toolchainCPP = toolchain.CPP.Length() ? wxString(toolchain.CPP[0]) : "";
+    const CompilerPrograms& toolchain = pCompiler->GetPrograms();
     // " --query-driver=f:\\usr\\MinGW810_64seh\\**\\g*"
-    wxString queryDriver = masterPath + fileSep + "**" + fileSep + toolchainCPP + "*";
-    if (not platform::windows) queryDriver.Replace("\\","/");
+    wxString queryDriver = masterPath + fileSep + "bin" + fileSep + toolchain.CPP;
 
     wxString pgmExec = clangd_Dir + fileSep + clangdexe;
     QuoteStringIfNeeded(pgmExec);
@@ -3747,6 +3745,7 @@ bool ProcessLanguageClient::AddFileToCompileDBJson(cbProject* pProject, ProjectB
 
     // Remove the older entry if any
     size_t found = 0, changed = 0;
+    const bool isMakefileCustom = pProject->IsMakefileCustom();
     for (int ii=0; ii<entryknt; ++ii)
     {
         json entry;
@@ -3758,9 +3757,7 @@ bool ProcessLanguageClient::AddFileToCompileDBJson(cbProject* pProject, ProjectB
             cbMessageBox(errMsg);
         }
         //wxString look = entry.dump(); //debugging
-        std::string ccjDir     = entry["directory"];
-        std::string ccjFile    = entry["file"];
-        std::string ccjCommand = entry["command"];
+        const std::string &ccjFile    = entry["file"];
 
         //-wxString ccjPath = ccjDir + filesep + ccjFile ;
         //-if (ccjFile == newFullFilePath)         // make compile_commands file fullpath
@@ -3772,10 +3769,15 @@ bool ProcessLanguageClient::AddFileToCompileDBJson(cbProject* pProject, ProjectB
             if (not found)
             {
                 found++;    //update first entry only
-                if (ccjCommand != newEntry["command"])
+                if (!isMakefileCustom)
                 {
-                    pJson->at(ii) = newEntry;
-                    changed++;
+                    const std::string &ccjCommand = entry["command"];
+                    if (ccjCommand != newEntry["command"])
+                    {
+                        fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] Adding entry for %s\n", __FUNCTION__, __LINE__, this, ccjFile.c_str());
+                        pJson->at(ii) = newEntry;
+                        changed++;
+                    }
                 }
                 continue;
             }
