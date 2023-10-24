@@ -4132,7 +4132,7 @@ void ProcessLanguageClient::UpdateCompilationDatabase(cbProject* pProject, wxStr
         else
         {
             // update compile_commands.json file
-            jsonFile << jdb; //write file json object
+            jsonFile << std::setw(4) << jdb; //write file json object
             jsonFile.close();
         }
         //(christo 2024/06/26)
