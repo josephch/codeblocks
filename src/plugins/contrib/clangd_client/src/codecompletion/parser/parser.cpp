@@ -55,6 +55,7 @@
 #include "../IdleCallbackHandler.h"
 #include "../gotofunctiondlg.h"
 #include "ccmanager.h"
+#include <vector>
 
 #ifndef CB_PRECOMP
     #include "editorbase.h"
@@ -1470,6 +1471,9 @@ void Parser::OnLSP_DiagnosticsResponse(wxCommandEvent& event)
     wxArrayString  aLogLinesToWrite;
     const char STX = '\u0002'; //start-of-text char used as string separator
 
+    std::vector<bool> isLineWarning;
+    isLineWarning.reserve(diagnosticsKnt);
+
     try {
         for (int ii=0; ii<diagnosticsKnt; ++ii)
         {
@@ -1512,6 +1516,7 @@ void Parser::OnLSP_DiagnosticsResponse(wxCommandEvent& event)
             LSPdiagnostic.Add(lspDiagTxt);
             // hold msg in array
             aLogLinesToWrite.Add(STX+ LSPdiagnostic[0] +STX+ LSPdiagnostic[1] +STX+ LSPdiagnostic[2]);
+            isLineWarning.push_back(diagSeverity >= 2);
 
         }//endfor diagnosticsKnt
 
@@ -1550,7 +1555,19 @@ void Parser::OnLSP_DiagnosticsResponse(wxCommandEvent& event)
             EditorBase* pEb = Manager::Get()->GetEditorManager()->GetEditor(cbFilename);
             cbEditor* pEd = nullptr;
             if (pEb) pEd = Manager::Get()->GetEditorManager()->GetBuiltinEditor(pEb);
-            if (pEd) pEd->SetErrorLine(diagLine-1);
+            if (pEd)
+            {
+                if (isLineWarning[ii])
+                {
+                    fprintf(stderr, "Parser::%s:%d [%p] set warning. diagLine  %d\n", __FUNCTION__, __LINE__, this, diagLine);
+                    pEd->SetWarningLine(diagLine-1);
+                }
+                else
+                {
+                    fprintf(stderr, "Parser::%s:%d [%p] set error. diagLine  %d\n", __FUNCTION__, __LINE__, this, diagLine);
+                    pEd->SetErrorLine(diagLine-1);
+                }
+            }
         }//endfor
     }
     catch ( std::exception &e) {
@@ -1597,7 +1614,7 @@ void Parser::OnLSP_DiagnosticsResponse(wxCommandEvent& event)
     {
         // when no diagnostics for active editor clear error markers and clear the log
         //-GetLSPClient(pEditor)->LSP_GetLog()->Clear(); dont clear the header
-        pEditor->SetErrorLine(-1);
+        pEditor->DeleteAllErrorAndWarningMarkers();
     }
 
     // ----------------------------------------------------------------------------
