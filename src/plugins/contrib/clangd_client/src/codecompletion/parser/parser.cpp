@@ -1489,10 +1489,10 @@ void Parser::OnLSP_DiagnosticsResponse(wxCommandEvent& event)
             switch (diagSeverity)
             {
                 case 0: severity = "unknown";  break;
-                case 1: severity = "note";     break;
+                case 1: severity = "error";    break;
                 case 2: severity = "warning";  break;
-                case 3: severity = "error";    break;
-                case 4: severity = "fatal";    break;
+                case 3: severity = "note";     break;
+                case 4: severity = "remark";   break;
             }
             wxString logMsg(wxString::Format("LSP:diagnostic:%s %d:%d  %s: %s", cbFilename, diagLine+1, diagColstrt+1, severity, diagMsg));
            // CCLogger::Get()->Log(logMsg);
