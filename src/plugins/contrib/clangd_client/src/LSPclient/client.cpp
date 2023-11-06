@@ -3747,6 +3747,7 @@ bool ProcessLanguageClient::AddFileToCompileDBJson(cbProject* pProject, ProjectB
 
     // Remove the older entry if any
     size_t found = 0, changed = 0;
+    const bool isMakefileCustom = pProject->IsMakefileCustom();
     for (int ii=0; ii<entryknt; ++ii)
     {
         json entry;
@@ -3758,9 +3759,7 @@ bool ProcessLanguageClient::AddFileToCompileDBJson(cbProject* pProject, ProjectB
             cbMessageBox(errMsg);
         }
         //wxString look = entry.dump(); //debugging
-        std::string ccjDir     = entry["directory"];
-        std::string ccjFile    = entry["file"];
-        std::string ccjCommand = entry["command"];
+        const std::string &ccjFile    = entry["file"];
 
         //-wxString ccjPath = ccjDir + filesep + ccjFile ;
         //-if (ccjFile == newFullFilePath)         // make compile_commands file fullpath
@@ -3772,10 +3771,14 @@ bool ProcessLanguageClient::AddFileToCompileDBJson(cbProject* pProject, ProjectB
             if (not found)
             {
                 found++;    //update first entry only
-                if (ccjCommand != newEntry["command"])
+                if (!isMakefileCustom)
                 {
-                    pJson->at(ii) = newEntry;
-                    changed++;
+                    const std::string &ccjCommand = entry["command"];
+                    if (ccjCommand != newEntry["command"])
+                    {
+                        pJson->at(ii) = newEntry;
+                        changed++;
+                    }
                 }
                 continue;
             }
