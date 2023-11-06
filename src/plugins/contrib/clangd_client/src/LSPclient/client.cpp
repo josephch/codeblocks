@@ -427,11 +427,9 @@ ProcessLanguageClient::ProcessLanguageClient(const cbProject* pProject, const ch
     wxString masterPath = pCompiler ? pCompiler->GetMasterPath() : "";
 
     // get the first char of executable name from the compiler toolchain
-    CompilerPrograms toolchain = pCompiler->GetPrograms();
-    wxString toolchainCPP = toolchain.CPP.Length() ? wxString(toolchain.CPP[0]) : "";
+    const CompilerPrograms& toolchain = pCompiler->GetPrograms();
     // " --query-driver=f:\\usr\\MinGW810_64seh\\**\\g*"
-    wxString queryDriver = masterPath + fileSep + "**" + fileSep + toolchainCPP + "*";
-    if (not platform::windows) queryDriver.Replace("\\","/");
+    wxString queryDriver = masterPath + fileSep + "bin" + fileSep + toolchain.CPP;
 
     wxString pgmExec = clangd_Dir + fileSep + clangdexe;
     QuoteStringIfNeeded(pgmExec);
