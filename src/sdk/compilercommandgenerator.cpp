@@ -340,6 +340,12 @@ void CompilerCommandGenerator::GenerateCommandLine(Result &result, const Params 
         return;
     }
 
+    wxString compilerStrTemp = compiler->GetMasterPath() +  wxFILE_SEP_PATH + "bin" + wxFILE_SEP_PATH + compilerStr;
+    compilerStr = compilerStrTemp;
+
+    wxString linkerProgramTemp  = compiler->GetMasterPath() +  wxFILE_SEP_PATH + "bin" + wxFILE_SEP_PATH + linkerProgram;
+    linkerProgram = linkerProgramTemp;
+
     FixPathSeparators(compiler, compilerStr);
 
     wxString tmpIncludes(m_Inc[params.target]);
