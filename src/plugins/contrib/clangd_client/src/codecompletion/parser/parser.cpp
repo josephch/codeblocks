@@ -2580,6 +2580,7 @@ void Parser::OnLSP_CompletionResponse(wxCommandEvent& event, std::vector<ClgdCCT
             labelValue.Trim(true).Trim(false); // clangd returning prefixed blank
 
             if (labelValue.empty()) continue; // this happens on Linux clangd ver13
+            if (valueItems[itemNdx].at("insertTextFormat").get<int>() == 2) continue; //InsertTextFormat.Snippet not supported
             // Example code from old CC code:
             // tokens.push_back(CCToken(token->m_Index, token->m_Name + dispStr, token->m_Name, token->m_IsTemp ? 0 : 5, iidx));
             // CCToken(int _id, const wxString& dispNm, int categ = -1) :
