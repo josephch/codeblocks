@@ -18,6 +18,7 @@
 #include "parser/cclogger.h"
 #include "LSPEventCallbackHandler.h"
 //-#include "IdleCallbackHandler.h"
+#include "diagnostics_cache.h"
 
 
 /** debug only variable, used to print the AI match related log message*/
@@ -388,6 +389,13 @@ public:
     // Get pointer to hidden cbStyledTextCtrl //(ph 2023/12/22)
     cbStyledTextCtrl* GetHiddenEditor(){return m_pHiddenEditor.get();} //(ph 2023/12/22)
 
+
+    bool DoShowDiagnostics(const wxString &filename, int line);
+
+    void InsertDiagnostics(const wxString &filename, int line, wxString diagnostics);
+
+    void ClearDiagnostics(const wxString &filename);
+
 protected:
     /** When a Parser is created, we need a full parsing stage including:
      * 1, parse the priority header files firstly.
@@ -688,6 +696,7 @@ private:
     // to avoid constantly allocating wxIDs.
     std::unique_ptr<cbStyledTextCtrl> m_pHiddenEditor = nullptr; //(ph 2023/12/22)
 
+    DiagnosticsCache m_diagnosticsCache;
 };
 
 #endif // ParseManager_H

@@ -3264,3 +3264,30 @@ void ParseManager::ClearAllIdleCallbacks()
         }
     }
 }
+
+bool ParseManager::DoShowDiagnostics(const wxString &filename, int line)
+{
+	const int actualLine = line + 1;
+	bool ret;
+	wxString diagnostics = m_diagnosticsCache.Get(filename, actualLine);
+	if (!diagnostics.empty())
+	{
+		cbMessageBox(std::move(diagnostics), _("LSP Diagnostics"));
+		ret = true;
+	}
+	else
+	{
+		ret = false;
+	}
+	return ret;
+}
+
+void ParseManager::InsertDiagnostics(const wxString &filename, int line, wxString diagnostics)
+{
+	m_diagnosticsCache.Insert(filename, line, std::move(diagnostics));
+}
+
+void ParseManager::ClearDiagnostics(const wxString &filename)
+{
+	m_diagnosticsCache.ClearFile(filename);
+}

@@ -39,6 +39,7 @@
 #endif
 #include "cbstyledtextctrl.h"
 #include "cbcolourmanager.h"
+#include "ccmanager.h"
 
 #include <stack>
 
@@ -3388,6 +3389,13 @@ void cbEditor::OnMarginClick(wxScintillaEvent& event)
         {
             int lineYpix = event.GetPosition();
             int line = GetControl()->LineFromPosition(lineYpix);
+
+            //TODO Insert logic for CC Diag string
+            CCManager *ccManager = Manager::Get()->GetCCManager();
+            if (true == ccManager->DoShowDiagnostics(this, line))
+            {
+                break;
+            }
 
             ToggleBreakpoint(line);
             break;

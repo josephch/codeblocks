@@ -5787,3 +5787,8 @@ wxString ClgdCompletion::VerifyEditorHasSymbols(cbEditor* pEd)
 
     return msg;
 }//VerifyEditorParsed
+
+bool ClgdCompletion::DoShowDiagnostics( cbEditor* ed, int line)
+{
+	return m_pParseManager->DoShowDiagnostics(ed->GetFilename(), line);
+}
