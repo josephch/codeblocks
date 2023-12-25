@@ -2,6 +2,7 @@
 #define DIAGNOSTICS_CACHE_H
 
 #include <unordered_map>
+#include <vector>
 #include <mutex>
 class DiagnosticsCache
 {
@@ -10,7 +11,7 @@ public:
     {
         std::scoped_lock < std::mutex > lock(m_mutex);
         auto &innermap = m_cache[filename];
-        innermap[line] = std::move(diagnostics);
+        innermap.emplace_back(line, std::move(diagnostics));
     }
 
     wxString Get(const wxString &filename, int line)
@@ -21,7 +22,8 @@ public:
         if (itr != m_cache.end())
         {
             const auto &innermap = itr->second;
-            const auto &inner_itr = innermap.find(line);
+            const auto &inner_itr = std::find_if(innermap.begin(), innermap.end(),
+                    [line](const std::pair<int, wxString>& entry) -> bool {return (entry.first == line);});
             if (inner_itr != innermap.end())
             {
                 ret = inner_itr->second;
@@ -52,7 +54,7 @@ public:
     }
 
 private:
-    std::unordered_map<wxString, std::unordered_map<int, wxString>> m_cache;
+    std::unordered_map<wxString, std::vector<std::pair<int, wxString>>> m_cache;
     std::mutex m_mutex;
 
 };
