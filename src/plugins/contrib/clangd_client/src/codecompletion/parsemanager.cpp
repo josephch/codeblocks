@@ -3267,9 +3267,8 @@ void ParseManager::ClearAllIdleCallbacks()
 
 bool ParseManager::DoShowDiagnostics(const wxString &filename, int line)
 {
-	const int actualLine = line + 1;
 	bool ret;
-	wxString diagnostics = m_diagnosticsCache.Get(filename, actualLine);
+	wxString diagnostics = m_diagnosticsCache.Get(filename, line);
 	if (!diagnostics.empty())
 	{
 		cbMessageBox(std::move(diagnostics), _("LSP Diagnostics"));

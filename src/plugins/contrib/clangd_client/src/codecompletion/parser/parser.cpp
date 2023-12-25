@@ -1739,7 +1739,7 @@ void Parser::OnLSP_DiagnosticsResponse(wxCommandEvent& event)
             {
                 lineWarningMap[diagLine] = false; //insert or replace as error takes precedence
             }
-            fileDiagnostics.emplace_back(diagLine+1, std::move(diagMsg));
+            fileDiagnostics.emplace_back(diagLine, std::move(diagMsg));
         }//endfor diagnosticsKnt
         m_pParseManager->InsertDiagnostics(cbFilename, std::move(fileDiagnostics));
         // ------------------------------------------------------
