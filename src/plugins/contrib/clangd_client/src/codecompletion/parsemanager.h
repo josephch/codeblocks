@@ -394,6 +394,8 @@ public:
 
     void InsertDiagnostics(const wxString &filename, int line, wxString diagnostics);
 
+    void InsertDiagnostics(const wxString &filename, std::vector<std::pair<int, wxString>> &&diagnostics);
+
     void ClearDiagnostics(const wxString &filename);
 
 protected:

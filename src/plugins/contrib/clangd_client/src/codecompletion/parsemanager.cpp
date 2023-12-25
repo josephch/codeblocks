@@ -3287,6 +3287,11 @@ void ParseManager::InsertDiagnostics(const wxString &filename, int line, wxStrin
 	m_diagnosticsCache.Insert(filename, line, std::move(diagnostics));
 }
 
+void ParseManager::InsertDiagnostics(const wxString &filename, std::vector<std::pair<int, wxString>> &&diagnostics)
+{
+    m_diagnosticsCache.Insert(filename, std::move(diagnostics));
+}
+
 void ParseManager::ClearDiagnostics(const wxString &filename)
 {
 	m_diagnosticsCache.ClearFile(filename);

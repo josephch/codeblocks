@@ -14,6 +14,12 @@ public:
         innermap.emplace_back(line, std::move(diagnostics));
     }
 
+    void Insert(const wxString &filename, std::vector<std::pair<int, wxString>> &&diagnostics)
+    {
+        std::scoped_lock < std::mutex > lock(m_mutex);
+        m_cache[filename] = std::move(diagnostics);
+    }
+
     wxString Get(const wxString &filename, int line)
     {
         std::scoped_lock < std::mutex > lock(m_mutex);
