@@ -55,7 +55,14 @@ public:
         const auto &itr = m_cache.find(filename);
         if (itr != m_cache.end())
         {
+            fprintf(stderr, "ClassBrowser::%s:%d: [%p] clear cache of file %s\n", __FUNCTION__,
+                    __LINE__, this, filename.ToUTF8().data());
             m_cache.erase(itr);
+        }
+        else
+        {
+            fprintf(stderr, "ClassBrowser::%s:%d: [%p] cache of %s not found\n", __FUNCTION__,
+                    __LINE__, this, filename.ToUTF8().data());
         }
     }
 
