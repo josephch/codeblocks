@@ -86,6 +86,9 @@ class DLLIMPORT CCManager : public Mgr<CCManager>, public wxEvtHandler
 
         /** Called after env settings have changed, so the changes can be applied. */
         void UpdateEnvSettings();
+
+        /** Show the diagnostics of the line if available*/
+        bool DoShowDiagnostics( cbEditor* ed, int line);
     private:
         CCManager();
         ~CCManager() override;

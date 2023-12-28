@@ -1684,6 +1684,9 @@ void Parser::OnLSP_DiagnosticsResponse(wxCommandEvent& event)
     std::unordered_map<int, bool> lineWarningMap;
     lineWarningMap.reserve(diagnosticsKnt);
 
+    std::vector<std::pair<int, wxString>> fileDiagnostics;
+    fileDiagnostics.reserve(diagnosticsKnt);
+
     try {
         for (int ii=0; ii<diagnosticsKnt; ++ii)
         {
@@ -1832,8 +1835,9 @@ void Parser::OnLSP_DiagnosticsResponse(wxCommandEvent& event)
             {
                 lineWarningMap[diagLine] = false; //insert or replace as error takes precedence
             }
+            fileDiagnostics.emplace_back(diagLine, std::move(diagMsg));
         }//endfor diagnosticsKnt
-
+        m_pParseManager->InsertDiagnostics(cbFilename, std::move(fileDiagnostics));
         // ------------------------------------------------------
         // Always put out a log message even if zero diagnostics
         // ------------------------------------------------------
