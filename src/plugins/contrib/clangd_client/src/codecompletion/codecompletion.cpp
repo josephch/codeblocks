@@ -4298,7 +4298,10 @@ void ClgdCompletion::OnEditorClosed(CodeBlocksEvent& event)
     //-if (pcbEd and GetLSP_Initialized(pcbEd) and GetLSPClient(pcbEd) )
     //^^ NoteToSelf: editor would not show initialized if it never got diagnostics
     if (pcbEd and pClient and pClient->GetLSP_EditorIsOpen(pcbEd))
+    {
             GetLSPClient(pcbEd)->LSP_DidClose(pcbEd);
+            m_pParseManager->ClearDiagnostics(pcbEd->GetFilename());
+    }
 
     if (m_LastEditor == event.GetEditor())
     {
@@ -5789,3 +5792,8 @@ wxString ClgdCompletion::VerifyEditorHasSymbols(cbEditor* pEd)
 
     return msg;
 }//VerifyEditorParsed
+
+bool ClgdCompletion::DoShowDiagnostics( cbEditor* ed, int line)
+{
+	return m_pParseManager->DoShowDiagnostics(ed->GetFilename(), line);
+}
