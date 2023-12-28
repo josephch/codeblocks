@@ -183,6 +183,8 @@ public:
         return wxString(stdString.c_str(), wxConvUTF8);
     }
 
+    bool DoShowDiagnostics( cbEditor* ed, int line) override;
+
 private:
     void OnWindowActivated(wxActivateEvent& event); //on Window activated
 
