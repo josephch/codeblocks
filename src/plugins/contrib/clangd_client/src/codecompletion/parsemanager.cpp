@@ -3262,3 +3262,64 @@ void ParseManager::ClearAllIdleCallbacks()
         }
     }
 }
+
+bool ParseManager::DoShowDiagnostics(const wxString &filename, int line)
+{
+    bool ret = false;
+    wxString diagnostics;
+
+    {
+        std::scoped_lock < std::mutex > lock(m_diagnosticsCacheMutex);
+        const auto &itr = m_diagnosticsCache.find(filename);
+        if (itr != m_diagnosticsCache.end())
+        {
+            const auto &innermap = itr->second;
+            const auto &inner_itr = std::find_if(innermap.begin(), innermap.end(),
+                    [line](const std::pair<int, wxString>& entry) -> bool {return (entry.first == line);});
+            if (inner_itr != innermap.end())
+            {
+                diagnostics = inner_itr->second;
+                ret = true;
+            }
+            else
+            {
+                fprintf(stderr, "ClassBrowser::%s:%d: [%p] innermap of %s does not have line %d \n", __FUNCTION__,
+                        __LINE__, this, filename.ToUTF8().data(), line);
+            }
+        }
+        else
+        {
+            fprintf(stderr, "ClassBrowser::%s:%d: [%p] cache does not have information of file %s\n", __FUNCTION__,
+                    __LINE__, this, filename.ToUTF8().data());
+        }
+    }
+    if (ret)
+    {
+        cbMessageBox(diagnostics, _("LSP Diagnostics"));
+    }
+	return ret;
+}
+
+void ParseManager::InsertDiagnostics(const wxString &filename, std::vector<std::pair<int, wxString>> &&diagnostics)
+{
+    std::scoped_lock < std::mutex > lock(m_diagnosticsCacheMutex);
+    m_diagnosticsCache[filename] = std::move(diagnostics);
+}
+
+void ParseManager::ClearDiagnostics(const wxString &filename)
+{
+    std::scoped_lock < std::mutex > lock(m_diagnosticsCacheMutex);
+    wxString ret;
+    const auto &itr = m_diagnosticsCache.find(filename);
+    if (itr != m_diagnosticsCache.end())
+    {
+        fprintf(stderr, "ClassBrowser::%s:%d: [%p] clear cache of file %s\n", __FUNCTION__,
+                __LINE__, this, filename.ToUTF8().data());
+        m_diagnosticsCache.erase(itr);
+    }
+    else
+    {
+        fprintf(stderr, "ClassBrowser::%s:%d: [%p] cache of %s not found\n", __FUNCTION__,
+                __LINE__, this, filename.ToUTF8().data());
+    }
+}
