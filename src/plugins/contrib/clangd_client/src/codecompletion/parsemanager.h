@@ -9,6 +9,7 @@
 #include <queue>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 #include <wx/event.h>
 #include <wx/aui/aui.h> //(ph 2024/01/19)
@@ -398,6 +399,12 @@ public:
     bool GetParsingIsBusy(){ return m_ParsingIsBusy;}
     void SetParsingIsBusy(bool trueOrFalse){ m_ParsingIsBusy = trueOrFalse;}
 
+    bool DoShowDiagnostics(const wxString &filename, int line);
+
+    void InsertDiagnostics(const wxString &filename, std::vector<std::pair<int, wxString>> &&diagnostics);
+
+    void ClearDiagnostics(const wxString &filename);
+
 protected:
     /** When a Parser is created, we need a full parsing stage including:
      * 1, parse the priority header files firstly.
@@ -701,6 +708,8 @@ private:
     // to avoid constantly allocating wxIDs.
     std::unique_ptr<cbStyledTextCtrl> m_pHiddenEditor = nullptr; //(ph 2023/12/22)
 
+    std::unordered_map<wxString, std::vector<std::pair<int, wxString>>> m_diagnosticsCache;
+    std::mutex m_diagnosticsCacheMutex;
 };
 
 #endif // ParseManager_H
