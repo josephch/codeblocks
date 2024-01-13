@@ -89,3 +89,7 @@ src/tools/cb_share_config/cb_share_config
 .cproject
 .project
 .settings/
+src/plugins/*/*/.objs/
+src/plugins/*/*/*.cbplugin
+src/plugins/*/*/*.so
+
