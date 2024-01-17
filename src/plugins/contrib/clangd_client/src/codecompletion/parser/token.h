@@ -14,6 +14,7 @@
 
 class Token;
 class TokenTree;
+class ParserBase;
 
 typedef std::set< int,    std::less<int>    > TokenIdxSet;
 typedef std::set< size_t, std::less<size_t> > TokenFileSet;
@@ -92,7 +93,8 @@ class Token
      *  @param ticket an integer number, once a new Token is allocated, this value will increase by
      *  one, it is mainly used for duplicated Token checking when class browser tree get refreshed.
      */
-    Token(const wxString& name, unsigned int file, unsigned int line, size_t ticket);
+    Token(const wxString& name, unsigned int file, unsigned int line, size_t ticket, ParserBase* parser);
+    Token() = default;
 
     /** destructor */
     ~Token();
@@ -172,7 +174,7 @@ class Token
     /** get the TokenTree associated with the current Token
      * @return TokenTree pointer
      */
-    TokenTree* GetTree() const { return m_TokenTree; }
+//    TokenTree* GetTree() const { return m_TokenTree; }
 
     /** built in types are not valid ancestors for a type define token
      * @param ancestor testing type string
@@ -301,10 +303,9 @@ class Token
      */
     void*                        m_UserData;
 
-protected:
+    ParserBase* m_Parser;
 
-    /** a pointer to TokenTree */
-    TokenTree*                   m_TokenTree;
+protected:
 
     /** This is used in class browser to avoid duplication nodes in the class browser tree. Once a
      *  Token is allocated from the heap, a new ticket number is assigned to the Token, so a new

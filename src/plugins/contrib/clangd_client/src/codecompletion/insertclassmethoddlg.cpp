@@ -37,7 +37,7 @@ namespace InsertClassMethodDlgHelper
     {
         if (!parentToken)
             return;
-        TokenTree* tree = parentToken->GetTree();
+        TokenTree* tree = parentToken->m_Parser->GetTokenTree();
         if (!tree)
             return;
 
