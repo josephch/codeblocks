@@ -410,7 +410,7 @@ void ClassBrowserBuilderThread::ExpandItem(CCTreeItem* item)
     // base class or derived class need to be shown
     CCTreeCtrlData* data = m_CCTreeTop->GetItemData(item);
     if (data)
-        m_TokenTree->RecalcInheritanceChain(data->m_Token);
+        m_TokenTree->RecalcInheritanceChain(const_cast<Token *>(data->m_Token));
 
     CC_LOCKER_TRACK_TT_MTX_UNLOCK(s_TokenTreeMutex)
 
@@ -1249,7 +1249,7 @@ bool ClassBrowserBuilderThread::TokenContainsChildrenOfKind(const Token* token, 
         return false;
 
     bool isOfKind = false;
-    const TokenTree* tree = token->GetTree();
+    const TokenTree* tree = m_ParseManager->GetParser().GetTokenTree();
 
     CC_LOCKER_TRACK_TT_MTX_LOCK(s_TokenTreeMutex)
 

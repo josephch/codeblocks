@@ -13,6 +13,7 @@
 #include "tokentree.h"
 
 #include "token.h"
+#include "parser_base.h"
 
 #ifdef TRACE
 #define TRACE_PRINTF fprintf
@@ -51,7 +52,7 @@
     #define TRACE2(format, args...)
 #endif
 
-Token::Token(const wxString& name, unsigned int file, unsigned int line, size_t ticket) :
+Token::Token(const wxString& name, unsigned int file, unsigned int line, size_t ticket, ParserBase* parser) :
     m_Name(name),
     m_FileIdx(file),
     m_Line(line),
@@ -70,7 +71,7 @@ Token::Token(const wxString& name, unsigned int file, unsigned int line, size_t 
     m_Index(-1),
     m_ParentIndex(-1),
     m_UserData(0),
-    m_TokenTree(0),
+    m_Parser(parser),
     m_Ticket(ticket)
 {
     TRACE_PRINTF(stderr, "Token::%s:%d enter %p name %s\n", __FUNCTION__, __LINE__, this, m_Name.ToUTF8().data());
@@ -192,16 +193,18 @@ bool Token::IsValidAncestor(const wxString& ancestor)
 
 wxString Token::GetFilename() const
 {
-    if (!m_TokenTree)
+    const TokenTree* tokenTree = m_Parser->GetTokenTree();
+    if (!tokenTree)
         return wxString(_T(""));
-    return m_TokenTree->GetFilename(m_FileIdx);
+    return tokenTree->GetFilename(m_FileIdx);
 }
 
 wxString Token::GetImplFilename() const
 {
-    if (!m_TokenTree)
+    const TokenTree* tokenTree = m_Parser->GetTokenTree();
+    if (!tokenTree)
         return wxString(_T(""));
-    return m_TokenTree->GetFilename(m_ImplFileIdx);
+    return tokenTree->GetFilename(m_ImplFileIdx);
 }
 
 // ----------------------------------------------------------------------------
@@ -268,12 +271,17 @@ wxString Token::GetNamespace() const
 {
     const wxString dcolon(_T("::"));
     wxString res;
-    Token* parentToken = m_TokenTree->at(m_ParentIndex);
+    const TokenTree* tokenTree = m_Parser->GetTokenTree();
+    if (!tokenTree)
+    {
+        return res;
+    }
+    const Token* parentToken = tokenTree->at(m_ParentIndex);
     while (parentToken)
     {
         res.Prepend(dcolon);
         res.Prepend(parentToken->m_Name);
-        parentToken = m_TokenTree->at(parentToken->m_ParentIndex);
+        parentToken = tokenTree->at(parentToken->m_ParentIndex);
     }
     return res;
 }
@@ -288,31 +296,33 @@ bool Token::AddChild(int childIdx)
 
 bool Token::DeleteAllChildren()
 {
-    if (!m_TokenTree)
+    TokenTree* tokenTree = m_Parser->GetTokenTree();
+    if (!tokenTree)
         return false;
     for (;;)
     {
         TokenIdxSet::const_iterator it = m_Children.begin();
         if (it == m_Children.end())
             break;
-        m_TokenTree->erase(*it);
+        tokenTree->erase(*it);
     }
     return true;
 }
 
 bool Token::InheritsFrom(int idx) const
 {
-    if (idx < 0 || !m_TokenTree)
+    const TokenTree* tokenTree = m_Parser->GetTokenTree();
+    if (idx < 0 || !tokenTree)
         return false;
 
-    Token* token = m_TokenTree->at(idx);
+    const Token* token = tokenTree->at(idx);
     if (!token)
         return false;
 
     for (TokenIdxSet::const_iterator it = m_DirectAncestors.begin(); it != m_DirectAncestors.end(); it++)
     {
         int idx2 = *it;
-        const Token* ancestor = m_TokenTree->at(idx2);
+        const Token* ancestor = tokenTree->at(idx2);
         if (!ancestor)
             continue;
 

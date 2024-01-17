@@ -76,7 +76,7 @@ public:
     /** Tokenizer constructor.
      * @param filename the file to be opened.
      */
-    LSP_Tokenizer(TokenTree* tokenTree, cbStyledTextCtrl* pHiddenEditor, const wxString& filename = wxEmptyString);
+    LSP_Tokenizer(TokenTree* tokenTree, cbStyledTextCtrl* pHiddenEditor, ParserBase* parser, const wxString& filename = wxEmptyString);
 
     /** Tokenizer destructor.*/
     ~LSP_Tokenizer();
@@ -709,6 +709,8 @@ private:
      *  @see Tokenizer::SkipComment for details
      */
     bool m_ReadingMacroDefinition;
+
+    ParserBase* m_Parser;
 };
 
 #endif // TOKENIZER_H

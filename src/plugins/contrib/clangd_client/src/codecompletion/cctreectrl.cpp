@@ -27,8 +27,7 @@
 
 // class CCTreeCtrlData
 
-CCTreeCtrlData::CCTreeCtrlData(SpecialFolder sf, Token* token, short int kindMask, int parentIdx) :
-    m_Token(token),
+CCTreeCtrlData::CCTreeCtrlData(SpecialFolder sf, const Token* token, short int kindMask, int parentIdx) :
     m_KindMask(kindMask),
     m_SpecialFolder(sf),
     m_TokenIndex(token ? token->m_Index : -1),
@@ -38,6 +37,16 @@ CCTreeCtrlData::CCTreeCtrlData(SpecialFolder sf, Token* token, short int kindMas
     m_Ticket(token ? token->GetTicket() : 0),
     m_MirrorNode(nullptr)
 {
+    if (token)
+    {
+        m_TokenCopy = *token;
+        m_Token = &m_TokenCopy;
+    }
+    else
+    {
+        m_Token = nullptr;
+    }
+
     TRACE_PRINTF(stderr, "CCTreeCtrlData::%s:%d enter %p token %p\n", __FUNCTION__, __LINE__, this, token);
 }
 

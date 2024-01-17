@@ -85,7 +85,7 @@ void TokenTree::clear()
 {
     m_Tree.clear();
 
-    m_FilenameMap.clear();
+    m_FilenameMap.clear(); 
     m_FileMap.clear();
     m_FilesToBeReparsed.clear();
     m_FreeTokens.clear();
@@ -529,7 +529,6 @@ int TokenTree::AddTokenToList(Token* newToken, int forceidx)
         }
     }
 
-    newToken->m_TokenTree = this;
     newToken->m_Index = result;
 
     // Clean up extra string memory
