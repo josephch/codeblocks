@@ -88,7 +88,7 @@ namespace TokenizerConsts
 // maximum macro replacement stack size
 static const size_t s_MaxMacroReplaceDepth = 5;
 
-Tokenizer::Tokenizer(TokenTree* tokenTree, const wxString& filename) :
+Tokenizer::Tokenizer(TokenTree* tokenTree, ParserBase* parser, const wxString& filename) :
     m_TokenTree(tokenTree),
     m_Filename(filename),
     m_BufferLen(0),
@@ -110,7 +110,8 @@ Tokenizer::Tokenizer(TokenTree* tokenTree, const wxString& filename) :
     m_Loader(0),
     m_NextTokenDoc(),
     m_LastTokenIdx(-1),
-    m_ReadingMacroDefinition(false)
+    m_ReadingMacroDefinition(false),
+    m_Parser(parser)
 {
     m_TokenizerOptions.wantPreprocessor = true;
     m_TokenizerOptions.storeDocumentation = true;
@@ -2055,7 +2056,7 @@ void Tokenizer::AddMacroDefinition(wxString name, int line, wxString para, wxStr
         token = m_TokenTree->at(index);
     else
     {
-        token = new Token(name, m_FileIdx, line, ++m_TokenTree->m_TokenTicketCount);
+        token = new Token(name, m_FileIdx, line, ++m_TokenTree->m_TokenTicketCount, m_Parser);
         token->m_TokenKind = tkMacroDef;// type of the token
         token->m_ParentIndex = -1;      // global namespace
         m_TokenTree->insert(token); // by default, it was added under m_ParentIndex member
