@@ -99,6 +99,9 @@ class Token
     /** destructor */
     ~Token();
 
+    bool operator==(Token const&) const;
+    bool operator!=(Token const&) const;
+
     /** add a child token
      * @param childIdx int
      * @return return true if success, in the case the childIdx < 0, this function will return false
@@ -304,6 +307,13 @@ class Token
     void*                        m_UserData;
 
     ParserBase* m_Parser;
+
+    char* GetTokenDetails() const
+    {
+        char * ret;
+        asprintf(& ret, "Token info : name %s line %d implLine %d", m_Name.ToUTF8().data(), m_Line, m_ImplLine);
+        return ret;
+    }
 
 protected:
 

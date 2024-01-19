@@ -78,6 +78,37 @@ Token::Token(const wxString& name, unsigned int file, unsigned int line, size_t 
     //ctor
 }
 
+bool Token::operator==(Token const& other) const
+{
+	return (
+		(m_Name == other.m_Name) &&
+		(m_FileIdx == other.m_FileIdx ) &&
+		(m_Line == other.m_Line ) &&
+		(m_ImplFileIdx == other.m_ImplFileIdx ) &&
+		(m_ImplLine == other.m_ImplLine ) &&
+		(m_ImplLineStart == other.m_ImplLineStart ) &&
+		(m_ImplLineEnd == other.m_ImplLineEnd ) &&
+		(m_Scope == other.m_Scope ) &&
+		(m_TokenKind == other.m_TokenKind ) &&
+		(m_IsOperator == other.m_IsOperator ) &&
+		(m_IsLocal == other.m_IsLocal ) &&
+		(m_IsTemp == other.m_IsTemp ) &&
+		(m_IsConst == other.m_IsConst ) &&
+		(m_IsNoExcept == other.m_IsNoExcept ) &&
+		(m_IsAnonymous == other.m_IsAnonymous ) &&
+		(m_Index == other.m_Index ) &&
+		(m_ParentIndex == other.m_ParentIndex ) &&
+		(m_UserData == other.m_UserData ) &&
+		(m_Parser == other.m_Parser ) &&
+		(m_Ticket == other.m_Ticket )
+	);
+}
+
+bool Token::operator!=(Token const& other) const
+{
+    return !(*this == other);
+}
+
 Token::~Token()
 {
     TRACE_PRINTF(stderr, "Token::%s:%d enter %p name %s\n", __FUNCTION__, __LINE__, this, m_Name.ToUTF8().data());
@@ -193,10 +224,16 @@ bool Token::IsValidAncestor(const wxString& ancestor)
 
 wxString Token::GetFilename() const
 {
-    const TokenTree* tokenTree = m_Parser->GetTokenTree();
-    if (!tokenTree)
-        return wxString(_T(""));
-    return tokenTree->GetFilename(m_FileIdx);
+    wxString ret;
+    if (m_Parser)
+    {
+        const TokenTree* tokenTree = m_Parser->GetTokenTree();
+        if (tokenTree)
+        {
+            ret = tokenTree->GetFilename(m_FileIdx);
+        }
+    }
+    return ret;
 }
 
 wxString Token::GetImplFilename() const
