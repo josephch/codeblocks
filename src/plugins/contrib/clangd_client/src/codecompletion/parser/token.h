@@ -307,14 +307,6 @@ class Token
     void*                        m_UserData;
 
     ParserBase* m_Parser;
-
-    char* GetTokenDetails() const
-    {
-        char * ret;
-        asprintf(& ret, "Token info : name %s line %d implLine %d", m_Name.ToUTF8().data(), m_Line, m_ImplLine);
-        return ret;
-    }
-
 protected:
 
     /** This is used in class browser to avoid duplication nodes in the class browser tree. Once a
