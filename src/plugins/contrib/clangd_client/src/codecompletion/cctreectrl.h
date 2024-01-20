@@ -33,6 +33,121 @@ enum SpecialFolder
     sfMacro   = 0x0100  // global macro node
 };
 
+class TokenInfo
+{
+private:
+
+public:
+    void operator=(const Token& token)
+    {
+        m_Name = token.m_Name;
+        m_FileIdx = token.m_FileIdx;
+        m_Line = token.m_Line;
+        m_ImplFileIdx = token.m_ImplFileIdx;
+        m_ImplLine = token.m_ImplLine;
+        m_Scope = token.m_Scope;
+        m_Index = token.m_Index;
+        m_Parser = token.m_Parser;
+    };
+
+    bool operator==(const Token& token) const
+    {
+        return (
+                   (m_Name == token.m_Name) &&
+                   (m_FileIdx == token.m_FileIdx ) &&
+                   (m_Line == token.m_Line ) &&
+                   (m_ImplFileIdx == token.m_ImplFileIdx ) &&
+                   (m_ImplLine == token.m_ImplLine ) &&
+                   (m_Scope == token.m_Scope ) &&
+                   (m_Index == token.m_Index ) &&
+                   (m_Parser == token.m_Parser )
+               );
+    };
+
+    bool operator!=(const Token& token) const
+    {
+        return !(*this == token);
+    };
+
+    Token* GetToken() const
+    {
+        Token* token = nullptr;
+        if (m_Parser)
+        {
+            TokenTree* tokenTree = m_Parser->GetTokenTree();
+            if (tokenTree)
+            {
+                token  = tokenTree->at(m_Index);
+                if (token)
+                {
+                    if (!(*this == *token))
+                    {
+                        fprintf(stderr, "%s:%d : token %p does not match with this %p\n", __FUNCTION__, __LINE__, token, this );
+                        token = nullptr;
+                    }
+                }
+                else
+                {
+                    fprintf(stderr, "%s:%d : no token for tokeninfo this %p\n", __FUNCTION__, __LINE__, this );
+                }
+            }
+        }
+        return token;
+    }
+
+    wxString DisplayName()
+    {
+        if (m_DisplayName.empty())
+        {
+            Token* token = GetToken();
+            if (token)
+            {
+                m_DisplayName = token->DisplayName();
+            }
+        }
+        return m_DisplayName;
+    }
+
+    wxString GetFilename() const
+    {
+        wxString ret;
+        if (m_Parser)
+        {
+            const TokenTree* tokenTree = m_Parser->GetTokenTree();
+            if (tokenTree)
+            {
+                ret = tokenTree->GetFilename(m_FileIdx);
+            }
+        }
+        return ret;
+    }
+
+    wxString GetImplFilename() const
+    {
+        const TokenTree* tokenTree = m_Parser->GetTokenTree();
+        if (!tokenTree)
+            return wxString(_T(""));
+        return tokenTree->GetFilename(m_ImplFileIdx);
+    }
+
+    char* GetTokenDetails() const
+    {
+        char * ret;
+        asprintf(& ret, "Token info : name %s line %d implLine %d", m_Name.ToUTF8().data(), m_Line, m_ImplLine);
+        return ret;
+    }
+
+    wxString                     m_Name;
+    TokenScope                   m_Scope;
+    unsigned int                 m_ImplLine;
+    unsigned int                 m_FileIdx;
+    unsigned int                 m_ImplFileIdx;
+    unsigned int                 m_Line;
+    int                          m_Index;
+    wxString                     m_DisplayName;
+    ParserBase* m_Parser;
+};
+
 /** Actual data stored with each node in the symbol tree */
 class CCTreeCtrlData : public wxTreeItemData
 {
@@ -48,7 +163,7 @@ public:
     CCTreeCtrlData& operator=(CCTreeCtrlData&&) = delete;
 
     /** a pointer to the associated Token instance in the TokenTree */
-    Token m_Token;
+    TokenInfo m_Token;
 
     /** a copy of Token::m_KindMask
      * @todo this variable is not used?
