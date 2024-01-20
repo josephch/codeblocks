@@ -456,7 +456,7 @@ void ClassBrowser::ShowMenu(wxTreeCtrl* tree, wxTreeItemId id, cb_unused const w
     CCTreeCtrlData* ctd = (CCTreeCtrlData*)tree->GetItemData(id);
     if (ctd)
     {
-        switch (ctd->m_Token.m_TokenKind)
+        switch (ctd->m_TokenKind)
         {
             case tkConstructor:
             case tkDestructor:
@@ -773,7 +773,7 @@ void ClassBrowser::OnTreeItemDoubleClick(wxTreeEvent& event)
         if (wxGetKeyState(WXK_ALT) && wxGetKeyState(WXK_SHIFT))
         {
 //            TokenTree* tree = m_Parser->GetTokenTree(); // the one used inside CCDebugInfo
-            CCDebugInfo info(wx_tree, m_Parser, &ctd->m_Token);
+            CCDebugInfo info(wx_tree, m_Parser, ctd->m_Token.GetToken());
             PlaceWindow(&info);
             info.ShowModal();
 
@@ -786,7 +786,7 @@ void ClassBrowser::OnTreeItemDoubleClick(wxTreeEvent& event)
         // jump to the implementation line only if the token is a function, and has a valid
         // implementation field
         bool toImp = false;
-        switch (ctd->m_Token.m_TokenKind)
+        switch (ctd->m_TokenKind)
         {
             case tkConstructor:
             case tkDestructor:

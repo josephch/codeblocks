@@ -410,7 +410,7 @@ void ClassBrowserBuilderThread::ExpandItem(CCTreeItem* item)
     // base class or derived class need to be shown
     CCTreeCtrlData* data = m_CCTreeTop->GetItemData(item);
     if (data)
-        m_TokenTree->RecalcInheritanceChain(&data->m_Token);
+        m_TokenTree->RecalcInheritanceChain(data->m_Token.GetToken());
 
     CC_LOCKER_TRACK_TT_MTX_UNLOCK(s_TokenTreeMutex)
 
@@ -431,22 +431,23 @@ void ClassBrowserBuilderThread::ExpandItem(CCTreeItem* item)
             case sfToken:
             {
                 short int kind = 0;
-                switch (data->m_Token.m_TokenKind)
+                switch (data->m_TokenKind)
                 {
                     case tkClass:
                     {
+                        Token* token = data->m_Token.GetToken();
                         // add base and derived classes folders
                         if (m_BrowserOptions.showInheritance)
                         {
                             CCTreeItem* base = m_CCTreeTop->AppendItem(item, _("Base classes"),
                                                PARSER_IMG_CLASS_FOLDER, PARSER_IMG_CLASS_FOLDER,
-                                               new CCTreeCtrlData(sfBase, &data->m_Token, tkClass, data->m_Token.m_Index));
-                            if (!data->m_Token.m_DirectAncestors.empty())
+                                               new CCTreeCtrlData(sfBase, token, tkClass, data->m_Token.m_Index));
+                            if (!token->m_DirectAncestors.empty())
                                 m_CCTreeTop->SetItemHasChildren(base);
                             CCTreeItem* derived = m_CCTreeTop->AppendItem(item, _("Derived classes"),
                                                   PARSER_IMG_CLASS_FOLDER, PARSER_IMG_CLASS_FOLDER,
-                                                  new CCTreeCtrlData(sfDerived, &data->m_Token, tkClass, data->m_Token.m_Index));
-                            if (!data->m_Token.m_Descendants.empty())
+                                                  new CCTreeCtrlData(sfDerived, token, tkClass, data->m_Token.m_Index));
+                            if (!token->m_Descendants.empty())
                                 m_CCTreeTop->SetItemHasChildren(derived);
                         }
                         kind = tkClass | tkEnum;
@@ -696,9 +697,9 @@ void ClassBrowserBuilderThread::RemoveInvalidNodes(CCTree* tree, CCTreeItem* par
                 CC_LOCKER_TRACK_TT_MTX_UNLOCK(s_TokenTreeMutex)
                 // ------------------------------------------------
             }
-            if (   (!token) || ( *token != data->m_Token)
-                || (data->m_Ticket && data->m_Ticket != data->m_Token.GetTicket())
-                || !TokenMatchesFilter(&data->m_Token) )
+            if (   (!token) || ( data->m_Token != *token)
+                || (data->m_Ticket && data->m_Ticket != token->GetTicket())
+                || !TokenMatchesFilter(data->m_Token.GetToken()) )
             {
                 removeCurrent = true;
             }
@@ -741,7 +742,7 @@ void ClassBrowserBuilderThread::ExpandNamespaces(CCTreeItem* node, TokenKind tok
     {
         CCTreeCtrlData* data = m_CCTreeTop->GetItemData(existing);
         if (   data
-            && (data->m_Token.m_TokenKind == tokenKind) )
+            && (data->m_TokenKind == tokenKind) )
         {
             TRACE(F("Auto-expanding: " + data->m_Token.m_Name));
             ExpandItem(existing);
@@ -1027,7 +1028,7 @@ void ClassBrowserBuilderThread::AddMembersOf(CCTree* tree, CCTreeItem* node)
                 if (bottom)
                 {
                     if (   m_BrowserOptions.sortType == bstKind
-                        && !(data->m_Token.m_TokenKind & tkEnum))
+                        && !(data->m_TokenKind & tkEnum))
                     {
                         CCTreeItem* rootCtorDtor = tree->AppendItem(node, _("Ctors & Dtors"), PARSER_IMG_CLASS_FOLDER);
                         CCTreeItem* rootFuncs    = tree->AppendItem(node, _("Functions"), PARSER_IMG_FUNCS_FOLDER);
@@ -1042,7 +1043,7 @@ void ClassBrowserBuilderThread::AddMembersOf(CCTree* tree, CCTreeItem* node)
                         AddChildrenOf(tree, rootOthers,   data->m_Token.m_Index, ~(tkNamespace | tkClass | tkEnum | tkAnyFunction | tkVariable | tkMacroUse));
                     }
                     else if (   m_BrowserOptions.sortType == bstScope
-                             && data->m_Token.m_TokenKind & tkClass )
+                             && data->m_TokenKind & tkClass )
                     {
                         CCTreeItem* rootPublic    = tree->AppendItem(node, _("Public"), PARSER_IMG_CLASS_FOLDER);
                         CCTreeItem* rootProtected = tree->AppendItem(node, _("Protected"), PARSER_IMG_FUNCS_FOLDER);

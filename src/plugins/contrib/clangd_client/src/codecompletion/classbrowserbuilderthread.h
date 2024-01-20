@@ -16,7 +16,8 @@
 
 #define CRC32_CCITT       0x04C11DB7
 
-#ifdef TRACE
+#define TRACE_CBT
+#ifdef TRACE_CBT
 #define TRACE_PRINTF fprintf
 #else
 #define TRACE_PRINTF(x...)
