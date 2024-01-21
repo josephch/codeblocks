@@ -1795,6 +1795,9 @@ CCTreeItem* CCTree::DoInsertItem(CCTreeItem* parent, size_t index, const wxStrin
 
     return DoInsertAfter(parent, idPrev, text, image, selectedImage, data);
 }
+
+
+
 // ----------------------------------------------------------------------------
 uint32_t CCTree::GetCrc32() const
 // ----------------------------------------------------------------------------
