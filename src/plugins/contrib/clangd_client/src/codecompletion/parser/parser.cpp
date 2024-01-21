@@ -147,7 +147,8 @@ namespace
 // ----------------------------------------------------------------------------
 Parser::Parser(ParseManager* parent, cbProject* project)
 // ----------------------------------------------------------------------------
-   : m_pParseManager(parent),
+   : ParserBase(parent),
+     m_pParseManager(parent),
      m_ParsersProject(project),
      //?m_BatchTimer(this, wxNewId()),
      m_BatchTimer(this, XRCID("BatchTimer")),  //(ph 2023/12/11)
