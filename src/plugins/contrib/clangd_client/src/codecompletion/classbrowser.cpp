@@ -279,6 +279,8 @@ void ClassBrowser::OnClassBrowserFocusChanged(wxFocusEvent& event) //(ph 2023/12
 void ClassBrowser::SetParser(ParserBase* parser)
 // ----------------------------------------------------------------------------
 {
+   fprintf(stderr, "ClassBrowser::%s:%d m_Parser %p ParserBase parser %p\n", __FUNCTION__, __LINE__, m_Parser, parser);
+
     if (m_Parser == parser)
         return;
 
@@ -809,7 +811,7 @@ void ClassBrowser::OnTreeItemDoubleClick(wxTreeEvent& event)
                 break;
         }
 
-        TRACE_PRINTF(stderr, "ClassBrowser::%s:%d ctd  %p Token =  %p\n", __FUNCTION__, __LINE__, ctd, ctd->m_Token);
+        TRACE_PRINTF(stderr, "ClassBrowser::%s:%d ctd  %p Token =  %s\n", __FUNCTION__, __LINE__, ctd, ctd->m_Token.GetTokenDetails());
         wxFileName fname;
         if (toImp)
             fname.Assign(ctd->m_Token.GetImplFilename());

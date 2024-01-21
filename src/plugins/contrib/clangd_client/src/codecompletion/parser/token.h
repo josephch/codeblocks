@@ -93,8 +93,10 @@ class Token
      *  @param ticket an integer number, once a new Token is allocated, this value will increase by
      *  one, it is mainly used for duplicated Token checking when class browser tree get refreshed.
      */
+     
+     
     Token(const wxString& name, unsigned int file, unsigned int line, size_t ticket, ParserBase* parser);
-    Token() = default;
+    Token() = delete;
 
     /** destructor */
     ~Token();

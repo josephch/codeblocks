@@ -47,7 +47,8 @@ public:
         m_ImplLine = token.m_ImplLine;
         m_Scope = token.m_Scope;
         m_Index = token.m_Index;
-        m_Parser = token.m_Parser;
+        m_ParseManager = token.m_Parser->GetParseManager();
+        assert(token.m_Parser == &token.m_Parser->GetParseManager()->GetParser());
     };
 
     bool operator==(const Token& token) const
@@ -59,8 +60,7 @@ public:
                    (m_ImplFileIdx == token.m_ImplFileIdx ) &&
                    (m_ImplLine == token.m_ImplLine ) &&
                    (m_Scope == token.m_Scope ) &&
-                   (m_Index == token.m_Index ) &&
-                   (m_Parser == token.m_Parser )
+                   (m_Index == token.m_Index )
                );
     };
 
@@ -72,9 +72,9 @@ public:
     Token* GetToken() const
     {
         Token* token = nullptr;
-        if (m_Parser)
+        if (m_ParseManager)
         {
-            TokenTree* tokenTree = m_Parser->GetTokenTree();
+            TokenTree* tokenTree = m_ParseManager->GetParser().GetTokenTree();
             if (tokenTree)
             {
                 token  = tokenTree->at(m_Index);
@@ -90,6 +90,10 @@ public:
                 {
                     fprintf(stderr, "%s:%d : no token for tokeninfo this %p\n", __FUNCTION__, __LINE__, this );
                 }
+            }
+            else
+            {
+                fprintf(stderr, "%s:%d : could not get token tree for this %p\n", __FUNCTION__, __LINE__, this );
             }
         }
         return token;
@@ -111,9 +115,9 @@ public:
     wxString GetFilename() const
     {
         wxString ret;
-        if (m_Parser)
+        if (m_ParseManager)
         {
-            const TokenTree* tokenTree = m_Parser->GetTokenTree();
+            const TokenTree* tokenTree = m_ParseManager->GetParser().GetTokenTree();
             if (tokenTree)
             {
                 ret = tokenTree->GetFilename(m_FileIdx);
@@ -124,7 +128,7 @@ public:
 
     wxString GetImplFilename() const
     {
-        const TokenTree* tokenTree = m_Parser->GetTokenTree();
+        const TokenTree* tokenTree = m_ParseManager->GetParser().GetTokenTree();
         if (!tokenTree)
             return wxString(_T(""));
         return tokenTree->GetFilename(m_ImplFileIdx);
@@ -145,7 +149,7 @@ public:
     unsigned int                 m_Line;
     int                          m_Index;
     wxString                     m_DisplayName;
-    ParserBase* m_Parser;
+    ParseManager* m_ParseManager{nullptr};
 };
 
 /** Actual data stored with each node in the symbol tree */
