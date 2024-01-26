@@ -25,7 +25,7 @@
 					<Add option="-Wl,--no-undefined" />
 					<Add option="`pkg-config --libs codeblocks`" />
 				</Linker>
-				<ExtraCommands>
+				<!--ExtraCommands>
 					<Add after="if [ -e clangd_client.zip ]; then rm clangd_client.zip; fi;" />
 					<Add after="if [ -e clangd_client.cbplugin ]; then rm clangd_client.cbplugin; fi;" />
 					<Add after="zip -jq9 clangd_client.zip src/resources/manifest.xml src/resources/*.xrc" />
@@ -34,7 +34,7 @@
 					<Add after="cp -f libclangd_client.so clangd_client.so" />
 					<Add after="zip -j9 clangd_client.cbplugin clangd_client.so clangd_client.zip" />
 					<Mode after="always" />
-				</ExtraCommands>
+				</ExtraCommands-->
 			</Target>
 			<Environment>
 				<Variable name="GTK_VERSION" value="gtk+-3.0" />
