@@ -123,8 +123,6 @@
 		<Unit filename="src/codecompletion/parser/parser.h" />
 		<Unit filename="src/codecompletion/parser/parser_base.cpp" />
 		<Unit filename="src/codecompletion/parser/parser_base.h" />
-		<Unit filename="src/codecompletion/parser/profiletimer.cpp" />
-		<Unit filename="src/codecompletion/parser/profiletimer.h" />
 		<Unit filename="src/codecompletion/parser/searchtree.cpp" />
 		<Unit filename="src/codecompletion/parser/searchtree.h" />
 		<Unit filename="src/codecompletion/parser/token.cpp" />
