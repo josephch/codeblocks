@@ -77,9 +77,10 @@ namespace
 }
 
 // ----------------------------------------------------------------------------
-int ClassBrowserBuilderThread::SetIsBusy(bool torf, EThreadJob threadJob)
+int ClassBrowserBuilderThread::SetIsBusy(bool torf, EThreadJob threadJob, const char* caller)
 // ----------------------------------------------------------------------------
 {
+    TRACE_PRINTF(stderr,"ClassBrowserBuilderThread::%s:%d: caller %s torf = %d m_Busy %d\n", __FUNCTION__, __LINE__, caller, torf, m_Busy);
     torf ? ++m_Busy : --m_Busy;
     if (m_Busy < 0)
     {
@@ -183,8 +184,7 @@ bool ClassBrowserBuilderThread::Init(ParseManager*         pParseManager,
             return (success = false);
         }
     }// end Codeblock
-    //SetIsBusy(true);
-    m_Busy = 1;
+    SetIsBusy(true, JobUnknown, "ClassBrowserBuilderThread::Init");
     m_ClassBrowserBuilderThreadMutex_Owner = wxString::Format("%s %d",__FUNCTION__, __LINE__); /*record owner*/
     // ----------------------------------------------------------------------------
     // This structs dtor unlocks the ClassBrowserBuilderThreadMutex after any return statement in this function
@@ -192,14 +192,15 @@ bool ClassBrowserBuilderThread::Init(ParseManager*         pParseManager,
     // ----------------------------------------------------------------------------
     struct ClassBrowserBuilderThreadMutexUnlock
     {
-        ClassBrowserBuilderThreadMutexUnlock(){}
+        ClassBrowserBuilderThreadMutexUnlock(ClassBrowserBuilderThread* th) :m_th(th){}
         ~ClassBrowserBuilderThreadMutexUnlock()
             {
                 CC_LOCKER_TRACK_CBBT_MTX_UNLOCK(m_ClassBrowserBuilderThreadMutex); //unlock
                 m_ClassBrowserBuilderThreadMutex_Owner = wxString();
-                --m_Busy;
+                m_th->SetIsBusy(false, JobUnknown, "ClassBrowserBuilderThread::Init");
             }
-    } classBrowserBuilderThreadMutexUnlock;
+         ClassBrowserBuilderThread* m_th;
+    } classBrowserBuilderThreadMutexUnlock(this);
 
     m_ParseManager     = pParseManager;
     // patch 1407 svn:r13354 Thanks Christo 2023/09/15
@@ -371,26 +372,26 @@ void* ClassBrowserBuilderThread::Entry()
         switch (m_nextJob)
         {
           case JobBuildTree:  // build internal trees and transfer to GUI ones
-              SetIsBusy(/*start*/true, thisJob);
+              SetIsBusy(/*start*/true, thisJob, "JobBuildTree");
               BuildTree();
               if (thisJob == m_nextJob)  //if no new nextjob, send end-of-job
-                SetIsBusy(false,thisJob);
+                SetIsBusy(false,thisJob, "JobBuildTree");
               break;
           case JobSelectTree: // fill the bottom tree with data relative to the selected item
-              SetIsBusy(true,thisJob);
+              SetIsBusy(true,thisJob, "JobSelectTree");
               SelectGUIItem();
               FillGUITree(false);
              if (thisJob == m_nextJob)  //if no new nextjob, send end-of-job
-                SetIsBusy(false,thisJob);
+                SetIsBusy(false,thisJob, "JobSelectTree");
               break;
           case JobExpandItem: // add child items on the fly
-              SetIsBusy(true,thisJob);
+              SetIsBusy(true,thisJob, "JobExpandItem");
               ExpandGUIItem();
              if (thisJob == m_nextJob)  //if no new nextjob, send end-of-job
-                SetIsBusy(false,thisJob);
+                SetIsBusy(false,thisJob, "JobExpandItem");
               break;
           default:
-              SetIsBusy(false,thisJob); //This is a coding  error
+              SetIsBusy(false,thisJob, "UnknownJob"); //This is a coding  error
               cbAssertNonFatal(0 && "ClassBrowserBuildThread::Entry with illegal Job type" )
         }//endSwitch
 
@@ -593,7 +594,10 @@ void ClassBrowserBuilderThread::BuildTree()
 // ----------------------------------------------------------------------------
 {
     if (CBBT_SANITY_CHECK || !m_ParseManager)
+    {
+        fprintf(stderr, "ClassBrowserBuilderThread::%s:%d this %p m_ParseManager %p\n", __FUNCTION__, __LINE__, this, m_ParseManager);
         return; // Called before UI tree construction completed?!
+    }
 
 #ifdef CC_BUILDTREE_MEASURING
     wxStopWatch sw;
@@ -601,7 +605,11 @@ void ClassBrowserBuilderThread::BuildTree()
 #endif
 
     cbAssert(m_CCTreeTop != nullptr);
-    if (not m_CCTreeTop) return;
+    if (not m_CCTreeTop)
+    {
+        fprintf(stderr, "ClassBrowserBuilderThread::%s:%d this %p m_CCTreeTop %p\n", __FUNCTION__, __LINE__, this, m_CCTreeTop); 
+        return;
+    }
 
     // 1.) Create initial root node, if not already there
     CCTreeItem* root = m_CCTreeTop->GetRootItem();
