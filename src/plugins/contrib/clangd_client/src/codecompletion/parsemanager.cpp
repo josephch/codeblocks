@@ -1800,9 +1800,8 @@ bool ParseManager::IsOkToUpdateClassBrowserView()
     if (IsDebuggerRunning()) //(ph 2023/11/17)
         return false;
 
-    bool isSymbolsTabFocused = GetClassBrowser() ? GetSymbolsWindowHasFocus() : false;
     bool isUpdatingClassBrowserBusy = GetUpdatingClassBrowserBusy();
-    isSymbolsTabFocused = isSymbolsTabFocused or n_IsSymbolsTabSelected;
+    bool isSymbolsTabFocused  = m_ClassBrowser && m_ClassBrowser->IsShown();
     // Only update Symbol browser window if it has focus.
     // Check again, wxWidgets focus event can be really slow sometimes
     // Experience shows this routine is faster than wxEVT_SET/KILL_FOCUS event.
