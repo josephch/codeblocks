@@ -314,7 +314,8 @@ void ClassBrowser::SetParser(ParserBase* parser)
         // DeleteParser() calls SetParser() calls ClassBrowser->SetParser() calls WriteOptions()
         //-m_Parser->WriteOptions();  removed to avoid clobbering settings
         s_ClassBrowserCaller = wxString::Format("%s:%d",__FUNCTION__, __LINE__);
-        UpdateClassBrowserView();
+        m_CCTreeCtrl->DeleteAllItems();
+        m_CCTreeCtrlBottom->DeleteAllItems();
     }
     else
         CCLogger::Get()->DebugLog("SetParser: No parser available.");
