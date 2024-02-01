@@ -1869,13 +1869,18 @@ bool ParseManager::IsOkToUpdateClassBrowserView()
 
             }
         }
+        TRACE_PRINTF(stderr,"ParseManager::%s:%d: class browser builder thread is busy, return false\n", __FUNCTION__, __LINE__);
         return false; // say not ok to update //(ph 2023/11/15)
     }
 
     if ((not isSymbolsTabFocused) or isBusyClassBrowserBuilderThread or isUpdatingClassBrowserBusy)
-        return false; //cannot update, Symbols tab is unfocused or builderthread is busy or already updating
+    {
+         TRACE_PRINTF(stderr,"ParseManager::%s:%d: isSymbolsTabFocused %d, isBusyClassBrowserBuilderThread %d isUpdatingClassBrowserBusy %d, return false\n", __FUNCTION__, __LINE__, isSymbolsTabFocused, isBusyClassBrowserBuilderThread, isUpdatingClassBrowserBusy);
+         return false; //cannot update, Symbols tab is unfocused or builderthread is busy
+    }
 
     startMillisTOD = 0; //clear busy time when is Ok to update classBrowser tree;
+    TRACE_PRINTF(stderr,"ParseManager::%s:%d: return true\n", __FUNCTION__, __LINE__);
     return true;
 }
 // ----------------------------------------------------------------------------
