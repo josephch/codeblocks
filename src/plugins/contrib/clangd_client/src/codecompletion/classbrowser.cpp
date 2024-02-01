@@ -254,12 +254,20 @@ void ClassBrowser::OnClassBrowserFocusChanged(wxFocusEvent& event) //(ph 2023/12
         if ( pCurrentPage->GetScreenRect().Contains( wxGetMousePosition()) )
         {
             // Symbols window contains the mouse.
+            fprintf(stderr, "ClassBrowser::%s:%d mouse is in symbols window\n", __FUNCTION__, __LINE__);
             m_SymbolsWindowHasFocus = true;
         }
-        else m_SymbolsWindowHasFocus = false;
-
+        else
+        {
+            m_SymbolsWindowHasFocus = false;
+            fprintf(stderr, "ClassBrowser::%s:%d mouse is not in symbols window\n", __FUNCTION__, __LINE__);
+        }
     }
-    else m_SymbolsWindowHasFocus = false;
+    else
+    {
+        fprintf(stderr, "ClassBrowser::%s:%d pCurrentPage %p does not match with this %p\n", __FUNCTION__, __LINE__, pCurrentPage, this);
+        m_SymbolsWindowHasFocus = false;
+    }
 
     // **Debugging**
     //if (m_SymbolsWindowHasFocus) // **Debugging**
@@ -273,6 +281,10 @@ void ClassBrowser::OnClassBrowserFocusChanged(wxFocusEvent& event) //(ph 2023/12
             if (GetParseManager()->IsOkToUpdateClassBrowserView(/*force=*/true))
                 UpdateClassBrowserView();
         }
+    }
+    else
+    {
+        fprintf(stderr, "ClassBrowser::%s:%d prevFocusState and current focus state are same\n", __FUNCTION__, __LINE__);
     }
 }
 // ----------------------------------------------------------------------------

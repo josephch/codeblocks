@@ -1735,17 +1735,23 @@ bool ParseManager::IsOkToUpdateClassBrowserView(bool force) //(ph 2023/10/21)
 
             }
         }
+        TRACE_PRINTF(stderr,"ParseManager::%s:%d: class browser builder thread is busy, return false\n", __FUNCTION__, __LINE__);
         return false; // say not ok to update //(ph 2023/11/15)
     }
 
     if ((not isSymbolsTabFocused) or isBusyClassBrowserBuilderThread)
-        return false; //cannot update, Symbols tab is unfocused or builderthread is busy
+    {
+         TRACE_PRINTF(stderr,"ParseManager::%s:%d: isSymbolsTabFocused %d, isBusyClassBrowserBuilderThread %d, return false\n", __FUNCTION__, __LINE__, isSymbolsTabFocused, isBusyClassBrowserBuilderThread);
+         return false; //cannot update, Symbols tab is unfocused or builderthread is busy
+    }
 
     // FIXME (ph#): #warning this is in the wrong place. Put it just after classBrowserCreation //(ph 2023/12/07)
     // or after "Disable symbols browser"has been unclicked
     //- RefreshSymbolsTab(); //(ph 2023/11/30)
 
     startMillisTOD = 0;
+    TRACE_PRINTF(stderr,"ParseManager::%s:%d: return true\n", __FUNCTION__, __LINE__);
+
     return true;
 }
 // ----------------------------------------------------------------------------

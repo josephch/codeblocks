@@ -220,7 +220,11 @@ public:
     /** Ask the worker thread to die
      *  Called from external: when the class browser window get destroyed
      */
-    void RequestTermination(bool terminate = true) {m_TerminationRequested = terminate;}
+    void RequestTermination()
+    {
+        TRACE_PRINTF(stderr, "ClassBrowserBuilderThread::%s:%d [%p] Request termination\n", __FUNCTION__, __LINE__, this);
+        m_TerminationRequested = true;
+    }
 
     /** Select what the worker thread should do when awakened
      *  Called before posting the semaphore
@@ -237,7 +241,7 @@ public:
     /** Increment or decrement the thread busy count
      * @return @a busy count
      */
-    int SetIsBusy(bool torf);
+    int SetIsBusy(bool torf, const char* caller);
     int GetIsBusy(); //just return the count
 
 protected:
