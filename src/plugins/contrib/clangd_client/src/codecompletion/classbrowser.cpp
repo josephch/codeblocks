@@ -63,7 +63,7 @@
 
 #if CC_CLASS_BROWSER_DEBUG_OUTPUT == 1
     #define TRACE(format, args...) \
-        CCLogger::Get()->DebugLog(wxString::Format(format, ##args))
+        fprintf(stderr, "%s\n",wxString::Format(format, ##args).ToUTF8().data())
     #define TRACE2(format, args...)
 #elif CC_CLASS_BROWSER_DEBUG_OUTPUT == 2
     #define TRACE(format, args...)                                              \
@@ -272,7 +272,6 @@ void ClassBrowser::OnClassBrowserSetFocus(wxFocusEvent& event)
 // ----------------------------------------------------------------------------
 {
     event.Skip();
-
     // NOTE: If you're debugging with the mouse, this event will produce
     // incorrect results. Use the debugger hotkeys to step and continue and
     // leave the mouse in the debuggee.
