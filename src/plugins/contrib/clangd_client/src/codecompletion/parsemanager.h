@@ -698,6 +698,8 @@ private:
 
     std::unordered_map<wxString, std::vector<std::pair<int, wxString>>> m_diagnosticsCache;
     std::mutex m_diagnosticsCacheMutex;
+
+    bool m_SymbolBrowserEnabled{false};
 };
 
 #endif // ParseManager_H

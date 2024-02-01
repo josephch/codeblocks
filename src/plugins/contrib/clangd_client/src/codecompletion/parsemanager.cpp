@@ -1583,6 +1583,7 @@ void ParseManager::CreateClassBrowser()
     m_ClassBrowser->SetParser(m_ActiveParser); // Also updates class browser
 
     RefreshSymbolsTab(); //(ph 2023/11/30)
+    m_SymbolBrowserEnabled = true;
 
     TRACE(_T("ParseManager::CreateClassBrowser: Leave"));
 }
@@ -1633,6 +1634,7 @@ void ParseManager::RemoveClassBrowser(cb_unused bool appShutDown)
         return;
 
     TRACE(_T("ParseManager::RemoveClassBrowser()"));
+    m_SymbolBrowserEnabled = false;
 
     if (m_ClassBrowserIsFloating)
     {
@@ -1694,9 +1696,55 @@ bool ParseManager::IsOkToUpdateClassBrowserView(bool force) //(ph 2023/10/21)
 
     // Dont update Sysmbols when debugger is running
     if (IsDebuggerRunning()) //(ph 2023/11/17)
+    {
+        TRACE_PRINTF(stderr,"ParseManager::%s:%d: debugger running, return false\n", __FUNCTION__, __LINE__);
         return false;
+    }
+    bool isSymbolsTabFocused;
+    if (not m_SymbolBrowserEnabled)
+    {
+        fprintf(stderr,"ParseManager::%s:%d: symbol browser not enabled\n", __FUNCTION__, __LINE__);
+        isSymbolsTabFocused = false;
+    }
+    else if (!m_ClassBrowserIsFloating)
+    {
+        cbAuiNotebook* pNotebook = Manager::Get()->GetProjectManager()->GetUI().GetNotebook();
+        int pageKnt = pNotebook->GetPageCount();
+        int pageID = -1;
+        for (int ii=0; ii<pageKnt; ++ii)
+        {
+            wxString tabtext = pNotebook->GetPageText(ii);
+            if (tabtext == _("Symbols") )
+            {
+                pageID = ii;
+                break;
+            }
+        }
+        if (pageID == -1)
+        {
+            fprintf(stderr,"ParseManager::%s:%d: could not get page id\n", __FUNCTION__, __LINE__);
+            isSymbolsTabFocused = false;
+        }
+        wxWindow* pSymbolsPage = pNotebook->GetPage(pageID);
+        if (pSymbolsPage)
+        {
+            if (pSymbolsPage->IsShown())
+            {
+                fprintf(stderr,"ParseManager::%s:%d: symbol browser visible\n", __FUNCTION__, __LINE__);
+                isSymbolsTabFocused = true;
+            }
+            else
+            {
+                fprintf(stderr,"ParseManager::%s:%d: symbol browser not visible\n", __FUNCTION__, __LINE__);
+                isSymbolsTabFocused =  false;
+            }
+        }
+    }
+    else
+    {
+        isSymbolsTabFocused = GetClassBrowser() ? GetClassBrowser()->IsSymbolsWindowFocused() : false;
+    }
 
-    bool isSymbolsTabFocused = GetClassBrowser() ? GetClassBrowser()->IsSymbolsWindowFocused() : false;
     // Only update Symbol browser window if it has focus.
     // Check again, wxWidgets focus event can be really slow sometimes
     // Experience shows this routine is faster than wxEVT_SET/KILL_FOCUS event.
