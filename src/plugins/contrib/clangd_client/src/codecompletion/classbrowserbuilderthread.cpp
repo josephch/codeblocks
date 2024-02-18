@@ -230,7 +230,6 @@ bool ClassBrowserBuilderThread::Init(ParseManager*         pParseManager,
     m_CurrentFileSet.clear();
     m_CurrentTokenSet.clear();
 
-    TokenTree* tree = m_ParseManager->GetParser().GetTokenTree();
 
     // fill filter set for current-file-filter
     if ( m_BrowserOptions.displayFilter == bdfFile
@@ -255,6 +254,7 @@ bool ClassBrowserBuilderThread::Init(ParseManager*         pParseManager,
         s_TokenTreeMutex_Owner = wxString::Format("%s %d",__FUNCTION__, __LINE__); /*record owner*/
 
         TokenFileSet result;
+        TokenTree* tree = m_ParseManager->GetParser().GetTokenTree();
         for (size_t i = 0; i < paths.GetCount(); ++i)
         {
             tree->GetFileMatches(paths[i], result, true, true);
@@ -281,6 +281,7 @@ bool ClassBrowserBuilderThread::Init(ParseManager*         pParseManager,
         s_TokenTreeMutex_Owner = wxString::Format("%s %d",__FUNCTION__, __LINE__); /*record owner*/
 
         cbProject* prj = static_cast <cbProject*> (m_UserData);
+        TokenTree* tree = m_ParseManager->GetParser().GetTokenTree();
         for (FilesList::const_iterator fl_it = prj->GetFilesList().begin();
                                        fl_it != prj->GetFilesList().end(); ++fl_it)
         {
@@ -316,6 +317,7 @@ bool ClassBrowserBuilderThread::Init(ParseManager*         pParseManager,
 
         m_CurrentTokenSet.clear();
         m_CurrentGlobalTokensSet.clear();
+        TokenTree* tree = m_ParseManager->GetParser().GetTokenTree();
         for (TokenFileSet::const_iterator itf = m_CurrentFileSet.begin(); itf != m_CurrentFileSet.end(); ++itf)
         {
             const TokenIdxSet* tokens = tree->GetTokensBelongToFile(*itf);
