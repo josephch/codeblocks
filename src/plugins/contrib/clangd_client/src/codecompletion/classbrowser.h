@@ -17,6 +17,8 @@
 #include "parser/parser.h"
 #include "parser/token.h"
 
+#include<atomic>
+
 class ParseManager;
 class wxComboBox;
 class wxTreeCtrl;
@@ -118,6 +120,10 @@ public:
             return false;
         }
     ClassBrowserBuilderThread* GetClassBrowserBuilderThread() { return m_ClassBrowserBuilderThread;}
+
+    bool IsUpdatePending() { return m_UpdatePending;}
+
+    void MarkUpdatePending() { m_UpdatePending = true;}
 
 private:
 
@@ -275,6 +281,8 @@ private:
 
     /** Store last searched symbol */
     wxString                   m_LastSearchedSymbol;   //patch 1409
+
+    std::atomic_bool           m_UpdatePending{false};
 
     DECLARE_EVENT_TABLE()
 };

@@ -379,7 +379,10 @@ void ClassBrowser::UpdateClassBrowserView(bool checkHeaderSwap, bool forceUpdate
 
     if ( (not forceUpdate) //(ph 2024/01/19)
         and (not GetParseManager()->IsOkToUpdateClassBrowserView()) ) //(ph 2023/12/01)
+    {
+        MarkUpdatePending();
         return;
+    }
 
     // Only the Active project updates the classBrowser View
     // Don't update ClassBrowser UI if parsing is paused
@@ -475,6 +478,7 @@ void ClassBrowser::UpdateClassBrowserView(bool checkHeaderSwap, bool forceUpdate
         splitter->Unsplit();
         m_CCTreeCtrlBottom->Show(false);
     }
+    m_UpdatePending = false;
 }
 
 void ClassBrowser::ShowMenu(wxTreeCtrl* tree, wxTreeItemId id, cb_unused const wxPoint& pt)
