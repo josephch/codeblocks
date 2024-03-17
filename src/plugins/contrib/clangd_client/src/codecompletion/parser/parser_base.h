@@ -17,15 +17,12 @@
 
 #include "configmanager.h"
 
-#include "json.hpp" //nlohmann json lib
 #include "../IdleCallbackHandler.h"
-#include "LSP_symbolsparser.h"
 #include "prep.h" //cb_unused
 #include "cbproject.h"
 #include "tokentree.h"
 #include "ParserCommon.h"
 
-using json = nlohmann::json;
 class ProcessLanguageClient;
 class ParseManager;
 
