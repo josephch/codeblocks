@@ -366,9 +366,12 @@ void ClassBrowser::UpdateClassBrowserView(bool checkHeaderSwap, bool forceUpdate
     if (GetParseManager()->IsDebuggerRunning())
         return;
 
-    if ( (not forceUpdate)
+    if ( (not forceUpdate) //(ph 2024/01/19)
         and (not GetParseManager()->IsOkToUpdateClassBrowserView()) )
+    {
+        MarkUpdatePending();
         return;
+    }
 
     // Only the Active project updates the classBrowser View
     // Don't update ClassBrowser UI if parsing is paused
@@ -464,6 +467,7 @@ void ClassBrowser::UpdateClassBrowserView(bool checkHeaderSwap, bool forceUpdate
         splitter->Unsplit();
         m_CCTreeCtrlBottom->Show(false);
     }
+    m_UpdatePending = false;
 }
 
 void ClassBrowser::ShowMenu(wxTreeCtrl* tree, wxTreeItemId id, cb_unused const wxPoint& pt)
@@ -483,14 +487,14 @@ void ClassBrowser::ShowMenu(wxTreeCtrl* tree, wxTreeItemId id, cb_unused const w
     wxMenu* menu = new wxMenu(wxEmptyString);
 
     CCTreeCtrlData* ctd = (CCTreeCtrlData*)tree->GetItemData(id);
-    if (ctd && ctd->m_Token)
+    if (ctd)
     {
-        switch (ctd->m_Token->m_TokenKind)
+        switch (ctd->m_TokenKind)
         {
             case tkConstructor:
             case tkDestructor:
             case tkFunction:
-                if (ctd->m_Token->m_ImplLine != 0 && !ctd->m_Token->GetImplFilename().IsEmpty())
+                if (ctd->m_Token.m_ImplLine != 0 && !ctd->m_Token.GetImplFilename().IsEmpty())
                     menu->Append(idMenuJumpToImplementation, _("Jump to &implementation"));
                 // intentionally fall through
             case tkNamespace:
@@ -705,9 +709,9 @@ void ClassBrowser::OnJumpTo(wxCommandEvent& event)
     {
         wxFileName fname;
         if (event.GetId() == idMenuJumpToImplementation)
-            fname.Assign(ctd->m_Token->GetImplFilename());
+            fname.Assign(ctd->m_Token.GetImplFilename());
         else
-            fname.Assign(ctd->m_Token->GetFilename());
+            fname.Assign(ctd->m_Token.GetFilename());
 
         cbProject* project;
         if (!m_ParseManager->IsParserPerWorkspace())
@@ -734,8 +738,8 @@ void ClassBrowser::OnJumpTo(wxCommandEvent& event)
         cbEditor* ed = Manager::Get()->GetEditorManager()->Open(fname.GetFullPath());
         if (ed)
         {
-            const int line = (event.GetId() == idMenuJumpToImplementation) ? (ctd->m_Token->m_ImplLine - 1) : (ctd->m_Token->m_Line - 1);
-            ed->GotoTokenPosition(line, ctd->m_Token->m_Name);
+            const int line = (event.GetId() == idMenuJumpToImplementation) ? (ctd->m_Token.m_ImplLine - 1) : (ctd->m_Token.m_Line - 1);
+            ed->GotoTokenPosition(line, ctd->m_Token.m_Name);
         }
     }
 }
@@ -786,14 +790,18 @@ void ClassBrowser::OnTreeItemDoubleClick(wxTreeEvent& event)
     } unlockTokenTree;
 
     CCTreeCtrlData* ctd = (CCTreeCtrlData*)wx_tree->GetItemData(id);
-    if (ctd && ctd->m_Token)
+    if (ctd)
     {
+        char* tokenDetails = ctd->m_Token.GetTokenDetails();
+        fprintf(stderr,"ClassBrowser::%s:%d: [%p] token details : %s\n", __FUNCTION__, __LINE__, this, tokenDetails);
+        free(tokenDetails);
+
         // when user double click on an item with ALT and SHIFT key pressed, then we
         // pop up a cc debugging dialog.
         if (wxGetKeyState(WXK_ALT) && wxGetKeyState(WXK_SHIFT))
         {
 //            TokenTree* tree = m_Parser->GetTokenTree(); // the one used inside CCDebugInfo
-            CCDebugInfo info(wx_tree, m_Parser, ctd->m_Token);
+            CCDebugInfo info(wx_tree, m_Parser, ctd->m_Token.GetToken());
             PlaceWindow(&info);
             info.ShowModal();
 
@@ -806,12 +814,12 @@ void ClassBrowser::OnTreeItemDoubleClick(wxTreeEvent& event)
         // jump to the implementation line only if the token is a function, and has a valid
         // implementation field
         bool toImp = false;
-        switch (ctd->m_Token->m_TokenKind)
+        switch (ctd->m_TokenKind)
         {
             case tkConstructor:
             case tkDestructor:
             case tkFunction:
-                if (ctd->m_Token->m_ImplLine != 0 && !ctd->m_Token->GetImplFilename().IsEmpty())
+                if (ctd->m_Token.m_ImplLine != 0 && !ctd->m_Token.GetImplFilename().IsEmpty())
                     toImp = true;
                 break;
             case tkNamespace:
@@ -831,9 +839,9 @@ void ClassBrowser::OnTreeItemDoubleClick(wxTreeEvent& event)
 
         wxFileName fname;
         if (toImp)
-            fname.Assign(ctd->m_Token->GetImplFilename());
+            fname.Assign(ctd->m_Token.GetImplFilename());
         else
-            fname.Assign(ctd->m_Token->GetFilename());
+            fname.Assign(ctd->m_Token.GetFilename());
 
         cbProject* project = nullptr;
         if (!m_ParseManager->IsParserPerWorkspace())
@@ -862,8 +870,8 @@ void ClassBrowser::OnTreeItemDoubleClick(wxTreeEvent& event)
         {
             // our Token's line is zero based, but Scintilla's one based, so we need to adjust the
             // line number
-            const int line = toImp ? (ctd->m_Token->m_ImplLine - 1) : (ctd->m_Token->m_Line - 1);
-            ed->GotoTokenPosition(line, ctd->m_Token->m_Name);
+            const int line = toImp ? (ctd->m_Token.m_ImplLine - 1) : (ctd->m_Token.m_Line - 1);
+            ed->GotoTokenPosition(line, ctd->m_Token.m_Name);
         }
     }
 
