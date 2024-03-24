@@ -67,7 +67,7 @@ public:
     /** Tokenizer constructor.
      * @param filename the file to be opened.
      */
-    Tokenizer(TokenTree* tokenTree, const wxString& filename = wxEmptyString);
+    Tokenizer(TokenTree* tokenTree, ParserBase* parser, const wxString& filename = wxEmptyString);
 
     /** Tokenizer destructor.*/
     ~Tokenizer();
@@ -657,6 +657,8 @@ private:
      *  @see Tokenizer::SkipComment for details
      */
     bool m_ReadingMacroDefinition;
+    
+    ParserBase* m_Parser;
 };
 
 #endif // TOKENIZER_H
