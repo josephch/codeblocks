@@ -1401,7 +1401,8 @@ std::vector<ClgdCompletion::CCToken> ClgdCompletion::GetAutocompList(bool isAuto
                     // Set the image index for each token
                     int semanticTokenType = cldToken.semanticTokenType;
                     // fake token to use for convertion to image index
-                    Token token(wxString(),0,0,0);
+                    Parser& parser = GetParseManager()->GetParser();
+                    Token token(wxString(),0,0,0,&parser);
                     token.m_TokenKind = (TokenKind)semanticTokenType;
                     if (semanticTokenType == LSP_SemanticTokenType::Unknown)
                         cldToken.category = (TokenKind)-1;

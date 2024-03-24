@@ -215,7 +215,7 @@ LSP_SymbolsParser::LSP_SymbolsParser(ParserBase*          parent,
                            TokenTree*           tokenTree,
                            cbStyledTextCtrl*    pHiddenEditor)
 // ----------------------------------------------------------------------------
-  : m_Tokenizer(tokenTree, pHiddenEditor), //This creates LSP_Tokenizer class/object
+  : m_Tokenizer(tokenTree, pHiddenEditor, parent), //This creates LSP_Tokenizer class/object
     m_Parent(parent),
     m_TokenTree(tokenTree),
     m_LastParent(0),
@@ -1605,7 +1605,7 @@ Token* LSP_SymbolsParser::FindTokenFromQueue(std::queue<wxString>& q, Token* par
 
     if (!result && createIfNotExist)
     {
-        result = new Token(ns, m_FileIdx, 0, ++m_TokenTree->m_TokenTicketCount);
+        result = new Token(ns, m_FileIdx, 0, ++m_TokenTree->m_TokenTicketCount, m_Parent);
         result->m_TokenKind = q.empty() ? tkClass : tkNamespace;
         result->m_IsLocal = m_IsLocal;
         result->m_ParentIndex = parentIfCreated ? parentIfCreated->m_Index : -1;
@@ -1726,7 +1726,7 @@ Token* LSP_SymbolsParser::DoAddToken(TokenKind       kind,
     }
     else
     {
-        newToken = new Token(newname, m_FileIdx, line, ++m_TokenTree->m_TokenTicketCount);
+        newToken = new Token(newname, m_FileIdx, line, ++m_TokenTree->m_TokenTicketCount, m_Parent);
         TRACE(_T("DoAddToken() : Created token='%s', file_idx=%u, line=%d, ticket=%lu"), newname.wx_str(),
               m_FileIdx, line, static_cast<unsigned long>(m_TokenTree->m_TokenTicketCount));
 
@@ -3122,7 +3122,7 @@ void LSP_SymbolsParser::HandleConditionalArguments()
     // parse small tokens inside for loop head
     TokenTree tree;
     wxString fileName = m_Tokenizer.GetFilename();
-    Tokenizer smallTokenizer(&tree);
+    Tokenizer smallTokenizer(&tree, m_Parent);
 
     smallTokenizer.InitFromBuffer(args, fileName, m_Tokenizer.GetLineNumber());
 
@@ -3199,7 +3199,7 @@ void LSP_SymbolsParser::HandleForLoopArguments()
     // parse small tokens inside for loop head
     TokenTree tree;
     wxString fileName = m_Tokenizer.GetFilename();
-    Tokenizer smallTokenizer(&tree);
+    Tokenizer smallTokenizer(&tree, m_Parent);
 
     smallTokenizer.InitFromBuffer(args, fileName, m_Tokenizer.GetLineNumber());
 

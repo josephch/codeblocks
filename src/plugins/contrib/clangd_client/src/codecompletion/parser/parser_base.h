@@ -17,16 +17,14 @@
 
 #include "configmanager.h"
 
-#include "json.hpp" //nlohmann json lib
 #include "../IdleCallbackHandler.h"
-#include "LSP_symbolsparser.h"
 #include "prep.h" //cb_unused
 #include "cbproject.h"
 #include "tokentree.h"
 #include "ParserCommon.h"
 
-using json = nlohmann::json;
 class ProcessLanguageClient;
+class ParseManager;
 
 // ----------------------------------------------------------------------------
 // Definitions from old parserthread.h
@@ -287,7 +285,8 @@ class ParserBase : public wxEvtHandler
     friend class LSP_SymbolsParser;
 
 public:
-    ParserBase();
+    ParserBase() = delete;
+    ParserBase(ParseManager* );
     virtual ~ParserBase();
 
     virtual void AddBatchParse(cb_unused const StringList& filenames)           { ; }
@@ -385,6 +384,8 @@ private:
 
     // Idle callback Handler pointer
     std::unique_ptr<IdleCallbackHandler> pIdleCallbacks;
+    
+    ParseManager* m_ParseManager;
 
 public:
 
@@ -577,6 +578,11 @@ public:
         {
             return pIdleCallbacks.get();
         }
+        
+    ParseManager* GetParseManager()
+    {
+        return m_ParseManager;
+    }
 };
 
 #endif

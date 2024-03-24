@@ -136,7 +136,6 @@ ClassBrowserBuilderThread::ClassBrowserBuilderThread(wxEvtHandler* evtHandler, w
     m_CCTreeBottom(nullptr),
     m_UserData(nullptr),
     m_BrowserOptions(),
-    m_TokenTree(nullptr),
     m_InitDone(false),
     //-m_Busy(false), Move to anonymouse namespace
     m_TerminationRequested(false),
@@ -200,30 +199,34 @@ bool ClassBrowserBuilderThread::Init(ParseManager*         pParseManager,
     } classBrowserBuilderThreadMutexUnlock;
 
     m_ParseManager     = pParseManager;
-
-    // patch 1444 tigerbeard 2024/01/11
-    if (not m_CCTreeTop )
+    // patch 1407 svn:r13354 Thanks Christo 2023/09/15
+    // Patch forces the tree to be created again which is required as all the items are rebuilt,
+    //  and the tokens are not valid anymore.
+    m_topCrc32         = CRC32_CCITT;
+    m_bottomCrc32      = CRC32_CCITT;
+    if (m_CCTreeTop)
     {
-        m_CCTreeTop = new CCTree();
-        m_topCrc32  = CRC32_CCITT;
+        CCTree* deleteMe = m_CCTreeTop; //(ph 2023/09/24)
+        m_CCTreeTop = nullptr;
+        delete deleteMe;
     }
-    if (not m_CCTreeBottom )
+    if (m_CCTreeBottom)
     {
-        m_CCTreeBottom = new CCTree();
-        m_bottomCrc32  = CRC32_CCITT;
+        CCTree* deleteMe = m_CCTreeBottom; //(ph 2023/09/24)
+        m_CCTreeBottom = nullptr;
+        delete deleteMe;
     }
-    //end patch
-
+    // End patch 1407
+    m_CCTreeTop        = new CCTree();
+    m_CCTreeBottom     = new CCTree();
     m_ActiveFilename   = active_filename;
     m_UserData         = user_data;
     m_BrowserOptions   = bo;
-    m_TokenTree        = tt;
     m_idThreadEvent    = idThreadEvent;
 
     m_CurrentFileSet.clear();
     m_CurrentTokenSet.clear();
 
-    TokenTree* tree = m_ParseManager->GetParser().GetTokenTree();
 
     // fill filter set for current-file-filter
     if ( m_BrowserOptions.displayFilter == bdfFile
@@ -248,6 +251,7 @@ bool ClassBrowserBuilderThread::Init(ParseManager*         pParseManager,
         s_TokenTreeMutex_Owner = wxString::Format("%s %d",__FUNCTION__, __LINE__); /*record owner*/
 
         TokenFileSet result;
+        TokenTree* tree = m_ParseManager->GetParser().GetTokenTree();
         for (size_t i = 0; i < paths.GetCount(); ++i)
         {
             tree->GetFileMatches(paths[i], result, true, true);
@@ -274,6 +278,7 @@ bool ClassBrowserBuilderThread::Init(ParseManager*         pParseManager,
         s_TokenTreeMutex_Owner = wxString::Format("%s %d",__FUNCTION__, __LINE__); /*record owner*/
 
         cbProject* prj = static_cast <cbProject*> (m_UserData);
+        TokenTree* tree = m_ParseManager->GetParser().GetTokenTree();
         for (FilesList::const_iterator fl_it = prj->GetFilesList().begin();
                                        fl_it != prj->GetFilesList().end(); ++fl_it)
         {
@@ -309,6 +314,7 @@ bool ClassBrowserBuilderThread::Init(ParseManager*         pParseManager,
 
         m_CurrentTokenSet.clear();
         m_CurrentGlobalTokensSet.clear();
+        TokenTree* tree = m_ParseManager->GetParser().GetTokenTree();
         for (TokenFileSet::const_iterator itf = m_CurrentFileSet.begin(); itf != m_CurrentFileSet.end(); ++itf)
         {
             const TokenIdxSet* tokens = tree->GetTokensBelongToFile(*itf);
@@ -432,7 +438,7 @@ void ClassBrowserBuilderThread::ExpandItem(CCTreeItem* item)
     // base class or derived class need to be shown
     CCTreeCtrlData* data = m_CCTreeTop->GetItemData(item);
     if (data)
-        m_TokenTree->RecalcInheritanceChain(data->m_Token);
+        m_ParseManager->GetParser().GetTokenTree()->RecalcInheritanceChain(data->m_Token.GetToken());
 
     CC_LOCKER_TRACK_TT_MTX_UNLOCK(s_TokenTreeMutex)
 
@@ -448,27 +454,28 @@ void ClassBrowserBuilderThread::ExpandItem(CCTreeItem* item)
                     AddChildrenOf(m_CCTreeTop, item, -1, ~(tkFunction | tkVariable | tkMacroDef | tkTypedef | tkMacroUse));
                 break;
             }
-            case sfBase:    AddAncestorsOf(m_CCTreeTop, item, data->m_Token->m_Index); break;
-            case sfDerived: AddDescendantsOf(m_CCTreeTop, item, data->m_Token->m_Index, false); break;
+            case sfBase:    AddAncestorsOf(m_CCTreeTop, item, data->m_Token.m_Index); break;
+            case sfDerived: AddDescendantsOf(m_CCTreeTop, item, data->m_Token.m_Index, false); break;
             case sfToken:
             {
                 short int kind = 0;
-                switch (data->m_Token->m_TokenKind)
+                switch (data->m_TokenKind)
                 {
                     case tkClass:
                     {
+                        Token* token = data->m_Token.GetToken();
                         // add base and derived classes folders
                         if (m_BrowserOptions.showInheritance)
                         {
                             CCTreeItem* base = m_CCTreeTop->AppendItem(item, _("Base classes"),
                                                PARSER_IMG_CLASS_FOLDER, PARSER_IMG_CLASS_FOLDER,
-                                               new CCTreeCtrlData(sfBase, data->m_Token, tkClass, data->m_Token->m_Index));
-                            if (!data->m_Token->m_DirectAncestors.empty())
+                                               new CCTreeCtrlData(sfBase, token, tkClass, data->m_Token.m_Index));
+                            if (!token->m_DirectAncestors.empty())
                                 m_CCTreeTop->SetItemHasChildren(base);
                             CCTreeItem* derived = m_CCTreeTop->AppendItem(item, _("Derived classes"),
                                                   PARSER_IMG_CLASS_FOLDER, PARSER_IMG_CLASS_FOLDER,
-                                                  new CCTreeCtrlData(sfDerived, data->m_Token, tkClass, data->m_Token->m_Index));
-                            if (!data->m_Token->m_Descendants.empty())
+                                                  new CCTreeCtrlData(sfDerived, token, tkClass, data->m_Token.m_Index));
+                            if (!token->m_Descendants.empty())
                                 m_CCTreeTop->SetItemHasChildren(derived);
                         }
                         kind = tkClass | tkEnum;
@@ -493,7 +500,7 @@ void ClassBrowserBuilderThread::ExpandItem(CCTreeItem* item)
                         break;
                 }
                 if (kind != 0)
-                    AddChildrenOf(m_CCTreeTop, item, data->m_Token->m_Index, kind);
+                    AddChildrenOf(m_CCTreeTop, item, data->m_Token.m_Index, kind);
                 break;
             }
             case sfGFuncs:
@@ -701,23 +708,23 @@ void ClassBrowserBuilderThread::RemoveInvalidNodes(CCTree* tree, CCTreeItem* par
 
         if (tree == m_CCTreeBottom)
             removeCurrent = true;
-        else if (data && data->m_Token)
+        else if (data)
         {
-            const Token* token = nullptr;
+            Token* token = nullptr;
             {
                 // ------------------------------------------------
                 CC_LOCKER_TRACK_TT_MTX_LOCK(s_TokenTreeMutex)
                 // ------------------------------------------------
 
-                token = m_TokenTree->at(data->m_TokenIndex);
+                token = m_ParseManager->GetParser().GetTokenTree()->at(data->m_TokenIndex);
 
                 // ------------------------------------------------
                 CC_LOCKER_TRACK_TT_MTX_UNLOCK(s_TokenTreeMutex)
                 // ------------------------------------------------
             }
-            if (    token != data->m_Token
-                || (data->m_Ticket && data->m_Ticket != data->m_Token->GetTicket())
-                || !TokenMatchesFilter(data->m_Token) )
+            if (   (!token) || ( data->m_Token != *token)
+                || (data->m_Ticket && data->m_Ticket != token->GetTicket())
+                || !TokenMatchesFilter(data->m_Token.GetToken()) )
             {
                 removeCurrent = true;
             }
@@ -762,10 +769,9 @@ void ClassBrowserBuilderThread::ExpandNamespaces(CCTreeItem* node, TokenKind tok
     {
         CCTreeCtrlData* data = m_CCTreeTop->GetItemData(existing);
         if (   data
-            && data->m_Token
-            && (data->m_Token->m_TokenKind == tokenKind) )
+            && (data->m_TokenKind == tokenKind) )
         {
-            TRACE(F("Auto-expanding: " + data->m_Token->m_Name));
+            TRACE(F("Auto-expanding: " + data->m_Token.m_Name));
             ExpandItem(existing);
             ExpandNamespaces(existing, tokenKind, level-1); // re-curse
         }
@@ -908,15 +914,15 @@ bool ClassBrowserBuilderThread::AddChildrenOf(CCTree* tree,
     {
 //        if (   m_BrowserOptions.displayFilter == bdfWorkspace //not supported in clangd_client
 //            || m_BrowserOptions.displayFilter == bdfEverything )
-//            tokens =  m_TokenTree->GetGlobalNameSpaces();
+//            tokens =  m_ParseManager->GetParser().GetTokenTree()->GetGlobalNameSpaces();
         if ( m_BrowserOptions.displayFilter == bdfEverything )
-            tokens =  m_TokenTree->GetGlobalNameSpaces();
+            tokens =  m_ParseManager->GetParser().GetTokenTree()->GetGlobalNameSpaces();
         else
             tokens = &m_CurrentGlobalTokensSet;
     }
     else
     {
-        parentToken = m_TokenTree->at(parentTokenIdx);
+        parentToken = m_ParseManager->GetParser().GetTokenTree()->at(parentTokenIdx);
         if (!parentToken)
         {
             TRACE("Token not found?!?");
@@ -949,9 +955,10 @@ bool ClassBrowserBuilderThread::AddAncestorsOf(CCTree* tree, CCTreeItem* parent,
     CC_LOCKER_TRACK_TT_MTX_LOCK(s_TokenTreeMutex)
     // ------------------------------------------------
 
-    Token* token = m_TokenTree->at(tokenIdx);
+    TokenTree* tokenTree = m_ParseManager->GetParser().GetTokenTree();
+    Token* token = tokenTree->at(tokenIdx);
     if (token)
-        m_TokenTree->RecalcInheritanceChain(token);
+        tokenTree->RecalcInheritanceChain(token);
 
     // ------------------------------------------------
     CC_LOCKER_TRACK_TT_MTX_UNLOCK(s_TokenTreeMutex)
@@ -974,9 +981,10 @@ bool ClassBrowserBuilderThread::AddDescendantsOf(CCTree* tree, CCTreeItem* paren
     CC_LOCKER_TRACK_TT_MTX_LOCK(s_TokenTreeMutex)
     // ------------------------------------------------
 
-    Token* token = m_TokenTree->at(tokenIdx);
+    TokenTree* tokenTree = m_ParseManager->GetParser().GetTokenTree();
+    Token* token = tokenTree->at(tokenIdx);
     if (token)
-        m_TokenTree->RecalcInheritanceChain(token);
+        tokenTree->RecalcInheritanceChain(token);
 
     // ------------------------------------------------
     CC_LOCKER_TRACK_TT_MTX_UNLOCK(s_TokenTreeMutex)
@@ -1000,7 +1008,7 @@ void ClassBrowserBuilderThread::AddMembersOf(CCTree* tree, CCTreeItem* node)
     if (CBBT_SANITY_CHECK || !node)
         return;
 
-    CCTreeCtrlData* data = m_CCTreeTop->GetItemData(node);
+    const CCTreeCtrlData* data = m_CCTreeTop->GetItemData(node);
     if (not data)
         return;
 
@@ -1052,7 +1060,7 @@ void ClassBrowserBuilderThread::AddMembersOf(CCTree* tree, CCTreeItem* node)
                 if (bottom)
                 {
                     if (   m_BrowserOptions.sortType == bstKind
-                        && !(data->m_Token->m_TokenKind & tkEnum))
+                        && !(data->m_TokenKind & tkEnum))
                     {
                         CCTreeItem* rootCtorDtor = tree->AppendItem(node, _("Ctors & Dtors"), PARSER_IMG_CLASS_FOLDER);
                         CCTreeItem* rootFuncs    = tree->AppendItem(node, _("Functions"), PARSER_IMG_FUNCS_FOLDER);
@@ -1060,26 +1068,26 @@ void ClassBrowserBuilderThread::AddMembersOf(CCTree* tree, CCTreeItem* node)
                         CCTreeItem* rootMacro    = tree->AppendItem(node, _("Macros"), PARSER_IMG_MACRO_USE_FOLDER);
                         CCTreeItem* rootOthers   = tree->AppendItem(node, _("Others"), PARSER_IMG_OTHERS_FOLDER);
 
-                        AddChildrenOf(tree, rootCtorDtor, data->m_Token->m_Index, tkConstructor | tkDestructor);
-                        AddChildrenOf(tree, rootFuncs,    data->m_Token->m_Index, tkFunction);
-                        AddChildrenOf(tree, rootVars,     data->m_Token->m_Index, tkVariable);
-                        AddChildrenOf(tree, rootMacro,    data->m_Token->m_Index, tkMacroUse);
-                        AddChildrenOf(tree, rootOthers,   data->m_Token->m_Index, ~(tkNamespace | tkClass | tkEnum | tkAnyFunction | tkVariable | tkMacroUse));
+                        AddChildrenOf(tree, rootCtorDtor, data->m_Token.m_Index, tkConstructor | tkDestructor);
+                        AddChildrenOf(tree, rootFuncs,    data->m_Token.m_Index, tkFunction);
+                        AddChildrenOf(tree, rootVars,     data->m_Token.m_Index, tkVariable);
+                        AddChildrenOf(tree, rootMacro,    data->m_Token.m_Index, tkMacroUse);
+                        AddChildrenOf(tree, rootOthers,   data->m_Token.m_Index, ~(tkNamespace | tkClass | tkEnum | tkAnyFunction | tkVariable | tkMacroUse));
                     }
                     else if (   m_BrowserOptions.sortType == bstScope
-                             && data->m_Token->m_TokenKind & tkClass )
+                             && data->m_TokenKind & tkClass )
                     {
                         CCTreeItem* rootPublic    = tree->AppendItem(node, _("Public"), PARSER_IMG_CLASS_FOLDER);
                         CCTreeItem* rootProtected = tree->AppendItem(node, _("Protected"), PARSER_IMG_FUNCS_FOLDER);
                         CCTreeItem* rootPrivate   = tree->AppendItem(node, _("Private"), PARSER_IMG_VARS_FOLDER);
 
-                        AddChildrenOf(tree, rootPublic,    data->m_Token->m_Index, ~(tkNamespace | tkClass | tkEnum), tsPublic);
-                        AddChildrenOf(tree, rootProtected, data->m_Token->m_Index, ~(tkNamespace | tkClass | tkEnum), tsProtected);
-                        AddChildrenOf(tree, rootPrivate,   data->m_Token->m_Index, ~(tkNamespace | tkClass | tkEnum), tsPrivate);
+                        AddChildrenOf(tree, rootPublic,    data->m_Token.m_Index, ~(tkNamespace | tkClass | tkEnum), tsPublic);
+                        AddChildrenOf(tree, rootProtected, data->m_Token.m_Index, ~(tkNamespace | tkClass | tkEnum), tsProtected);
+                        AddChildrenOf(tree, rootPrivate,   data->m_Token.m_Index, ~(tkNamespace | tkClass | tkEnum), tsPrivate);
                     }
                     else
                     {
-                        AddChildrenOf(tree, node, data->m_Token->m_Index, ~(tkNamespace | tkClass | tkEnum));
+                        AddChildrenOf(tree, node, data->m_Token.m_Index, ~(tkNamespace | tkClass | tkEnum));
                         break;
                     }
 
@@ -1102,10 +1110,10 @@ void ClassBrowserBuilderThread::AddMembersOf(CCTree* tree, CCTreeItem* node)
                     }
                 }
                 else
-                    AddChildrenOf(tree, node, data->m_Token->m_Index, ~(tkNamespace | tkClass | tkEnum));
+                    AddChildrenOf(tree, node, data->m_Token.m_Index, ~(tkNamespace | tkClass | tkEnum));
 
                 // add all children, except containers
-                // AddChildrenOf(tree, node, data->m_Token->GetSelf(), ~(tkNamespace | tkClass | tkEnum));
+                // AddChildrenOf(tree, node, data->m_Token.GetSelf(), ~(tkNamespace | tkClass | tkEnum));
                 break;
             }
             case sfRoot:
@@ -1156,7 +1164,7 @@ bool ClassBrowserBuilderThread::AddNodes(CCTree* tree, CCTreeItem* parent, const
             CC_LOCKER_TRACK_TT_MTX_LOCK(s_TokenTreeMutex)
             // ----------------------------------------------
 
-            Token* token = m_TokenTree->at(*start);
+            Token* token = m_ParseManager->GetParser().GetTokenTree()->at(*start);
 
             // -------------------------------------------------
             CC_LOCKER_TRACK_TT_MTX_UNLOCK(s_TokenTreeMutex)
@@ -1240,7 +1248,7 @@ bool ClassBrowserBuilderThread::TokenMatchesFilter(const Token* token, bool lock
             if (!locked)
                 CC_LOCKER_TRACK_TT_MTX_LOCK(s_TokenTreeMutex)
 
-            const Token* curr_token = m_TokenTree->at(*tis_it);
+            const Token* curr_token = m_ParseManager->GetParser().GetTokenTree()->at(*tis_it);
 
             if (!locked)
             {
@@ -1272,7 +1280,7 @@ bool ClassBrowserBuilderThread::TokenContainsChildrenOfKind(const Token* token, 
         return false;
 
     bool isOfKind = false;
-    const TokenTree* tree = token->GetTree();
+    const TokenTree* tree = m_ParseManager->GetParser().GetTokenTree();
 
     CC_LOCKER_TRACK_TT_MTX_LOCK(s_TokenTreeMutex)
 
@@ -1650,9 +1658,7 @@ int CCTree::CompareFunction(const CCTreeCtrlData* lhs, const CCTreeCtrlData* rhs
             case bstAlphabet:
                 if (lhs->m_SpecialFolder != sfToken || rhs->m_SpecialFolder != sfToken)
                     return -1;
-                if (!lhs->m_Token || !rhs->m_Token)
-                    return 1;
-                return wxStricmp(lhs->m_Token->m_Name, rhs->m_Token->m_Name);
+                return wxStricmp(lhs->m_Token.m_Name, rhs->m_Token.m_Name);
                 break;
             case bstKind:
                 if (lhs->m_SpecialFolder != sfToken || rhs->m_SpecialFolder != sfToken)
@@ -1664,18 +1670,16 @@ int CCTree::CompareFunction(const CCTreeCtrlData* lhs, const CCTreeCtrlData* rhs
             case bstScope:
                 if (lhs->m_SpecialFolder != sfToken || rhs->m_SpecialFolder != sfToken)
                     return -1;
-                if (lhs->m_Token->m_Scope == rhs->m_Token->m_Scope)
+                if (lhs->m_Token.m_Scope == rhs->m_Token.m_Scope)
                     return KindCompare(lhs, rhs);
-                return rhs->m_Token->m_Scope - lhs->m_Token->m_Scope;
+                return rhs->m_Token.m_Scope - lhs->m_Token.m_Scope;
                 break;
             case bstLine:
                 if (lhs->m_SpecialFolder != sfToken || rhs->m_SpecialFolder != sfToken)
                     return -1;
-                if (!lhs->m_Token || !rhs->m_Token)
-                    return 1;
-                if (lhs->m_Token->m_FileIdx == rhs->m_Token->m_FileIdx)
-                    return (lhs->m_Token->m_Line > rhs->m_Token->m_Line) * 2 - 1; // from 0,1 to -1,1
-                return (lhs->m_Token->m_FileIdx > rhs->m_Token->m_FileIdx) * 2 - 1;
+                if (lhs->m_Token.m_FileIdx == rhs->m_Token.m_FileIdx)
+                    return (lhs->m_Token.m_Line > rhs->m_Token.m_Line) * 2 - 1; // from 0,1 to -1,1
+                return (lhs->m_Token.m_FileIdx > rhs->m_Token.m_FileIdx) * 2 - 1;
                 break;
             default:
                 return 0;
@@ -1692,9 +1696,7 @@ int CCTree::AlphabetCompare(const CCTreeCtrlData* lhs, const CCTreeCtrlData* rhs
         return 1;
     if (lhs->m_SpecialFolder != sfToken || rhs->m_SpecialFolder != sfToken)
         return -1;
-    if (!lhs->m_Token || !rhs->m_Token)
-        return 1;
-    return wxStricmp(lhs->m_Token->m_Name, rhs->m_Token->m_Name);
+    return wxStricmp(lhs->m_Token.m_Name, rhs->m_Token.m_Name);
 }
 // ----------------------------------------------------------------------------
 int CCTree::KindCompare(const CCTreeCtrlData* lhs, const CCTreeCtrlData* rhs) const
