@@ -137,7 +137,7 @@ BEGIN_EVENT_TABLE(CCDebugInfo,wxScrollingDialog)
     //*)
 END_EVENT_TABLE()
 
-CCDebugInfo::CCDebugInfo(wxWindow* parent, ParserBase* parser, Token* token) :
+CCDebugInfo::CCDebugInfo(wxWindow* parent, ParserBase* parser, const Token* token) :
     m_Parser(parser),
     m_Token(token)
 {
@@ -467,7 +467,7 @@ void CCDebugInfo::DisplayTokenInfo()
     if (!tree) return;
 
     const Token* parent = tree->at(m_Token->m_ParentIndex);
-    tree->RecalcInheritanceChain(m_Token);
+    tree->RecalcInheritanceChain(const_cast<Token *>(m_Token));
 
     wxString args     = m_Token->GetFormattedArgs();
     wxString argsStr  = m_Token->m_BaseArgs;
