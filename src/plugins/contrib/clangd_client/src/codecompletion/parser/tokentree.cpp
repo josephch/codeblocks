@@ -535,7 +535,6 @@ int TokenTree::AddTokenToList(Token* newToken, int forceidx)
         }
     }
 
-    newToken->m_TokenTree = this;
     newToken->m_Index = result;
 
     // Clean up extra string memory

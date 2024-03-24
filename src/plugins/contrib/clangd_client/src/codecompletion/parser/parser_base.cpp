@@ -184,7 +184,7 @@ ParserCommon::EFileType ParserCommon::FileType(const wxString& filename, bool fo
 #endif //CC_PARSER_TEST
 
 // ----------------------------------------------------------------------------
-ParserBase::ParserBase()
+ParserBase::ParserBase(ParseManager* mgr) : m_ParseManager(mgr)
 // ----------------------------------------------------------------------------
 {
     m_TokenTree     = new TokenTree;
