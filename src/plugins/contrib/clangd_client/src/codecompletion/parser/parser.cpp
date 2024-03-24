@@ -146,7 +146,8 @@ namespace
 // ----------------------------------------------------------------------------
 Parser::Parser(ParseManager* parent, cbProject* project)
 // ----------------------------------------------------------------------------
-   : m_pParseManager(parent),
+   : ParserBase(parent),
+     m_pParseManager(parent),
      m_ParsersProject(project),
      //?m_BatchTimer(this, wxNewId()),
      m_BatchTimer(this, XRCID("BatchTimer")),
@@ -583,7 +584,7 @@ void Parser::LSP_ParseDocumentSymbols(wxCommandEvent& event)
             continue; //try next entry
         }
 
-
+#if 0
         // If classBrowser Symbols UI is busy, we can't add this json data to the TokenTree
         // because classBrowser UI tree will then contain invalid pointers. So we requeue for a callback.
         if (GetParseManager()->IsClassBrowserEnabled()
@@ -603,6 +604,7 @@ void Parser::LSP_ParseDocumentSymbols(wxCommandEvent& event)
             //-CCLogger::Get()->DebugLog(msg);
             return;
         }
+#endif
 
         // --------------------------------------------------
         /// CC_LOCKER_TRACK_TT_MTX_LOCK(s_TokenTreeMutex)
@@ -750,9 +752,7 @@ void Parser::LSP_ParseDocumentSymbols(wxCommandEvent& event)
     // Must have a clangd client running, Symbols window must be idle, or
     // no more files are being parsed.
     ProcessLanguageClient* pClient = GetLSPClient();
-    if ( (pClient and (not GetParseManager()->IsOkToUpdateClassBrowserView()))
-            or (pClient->LSP_GetServerFilesParsingCount() == 0)
-        )
+    if (pClient)
     {
         //Refresh the CC toolbar internal data if this file is the active editors file
         //   ie, if the user is currently looking at this file.

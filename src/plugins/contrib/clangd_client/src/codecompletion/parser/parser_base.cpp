@@ -220,7 +220,7 @@ ParserCommon::EFileType ParserCommon::FileType(const wxString& filename, bool fo
 ////    };
 ////}
 // ----------------------------------------------------------------------------
-ParserBase::ParserBase()
+ParserBase::ParserBase(ParseManager* mgr) : m_ParseManager(mgr)
 // ----------------------------------------------------------------------------
 {
     m_TokenTree     = new TokenTree;
@@ -244,6 +244,7 @@ ParserBase::~ParserBase()
     // ----------------------------------------------
     // CC_LOCKER_TRACK_TT_MTX_LOCK(s_TokenTreeMutex)       //Lock TokenTree
     // ----------------------------------------------
+    fprintf(stderr, "ParserBase::%s:%d this %p\n", __FUNCTION__, __LINE__, this);
 
     Delete(m_TokenTree);
     Delete(m_TempTokenTree);
