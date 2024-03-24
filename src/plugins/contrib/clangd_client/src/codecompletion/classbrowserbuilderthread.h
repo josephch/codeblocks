@@ -16,6 +16,13 @@
 
 #define CRC32_CCITT       0x04C11DB7
 
+#define TRACE_CBT
+#ifdef TRACE_CBT
+#define TRACE_PRINTF fprintf
+#else
+#define TRACE_PRINTF(x...)
+#endif
+
 #ifdef TRACE
 #define TRACE_PRINTF fprintf
 #else
@@ -344,7 +351,6 @@ private:
     wxString         m_ActiveFilename;
     void*            m_UserData; // active project
     BrowserOptions   m_BrowserOptions;
-    TokenTree*       m_TokenTree;
 
     // pair of current-file-filter
     /** A file set which contains a header file and the associated implementation file
