@@ -22,7 +22,6 @@
 // class CCTreeCtrlData
 
 CCTreeCtrlData::CCTreeCtrlData(SpecialFolder sf, Token* token, short int kindMask, int parentIdx) :
-    m_Token(token),
     m_KindMask(kindMask),
     m_SpecialFolder(sf),
     m_TokenIndex(token ? token->m_Index : -1),
@@ -32,7 +31,15 @@ CCTreeCtrlData::CCTreeCtrlData(SpecialFolder sf, Token* token, short int kindMas
     m_Ticket(token ? token->GetTicket() : 0),
     m_MirrorNode(nullptr)
 {
+    if (token)
+    {
+        m_Token = *token;
+    }
 }
+
+CCTreeCtrlData::~CCTreeCtrlData()
+{
+};
 
 // class CCTreeCtrlExpandedItemData
 
@@ -93,9 +100,7 @@ int CCTreeCntrl::CBAlphabetCompare (CCTreeCtrlData* lhs, CCTreeCtrlData* rhs)
         return 1;
     if (lhs->m_SpecialFolder != sfToken || rhs->m_SpecialFolder != sfToken)
         return -1;
-    if (!lhs->m_Token || !rhs->m_Token)
-        return 1;
-    return wxStricmp(lhs->m_Token->m_Name, rhs->m_Token->m_Name);
+    return wxStricmp(lhs->m_Token.m_Name, rhs->m_Token.m_Name);
 }
 
 int CCTreeCntrl::CBKindCompare(CCTreeCtrlData* lhs, CCTreeCtrlData* rhs)
@@ -117,10 +122,10 @@ int CCTreeCntrl::CBScopeCompare(CCTreeCtrlData* lhs, CCTreeCtrlData* rhs)
     if (lhs->m_SpecialFolder != sfToken || rhs->m_SpecialFolder != sfToken)
         return -1;
 
-    if (lhs->m_Token->m_Scope == rhs->m_Token->m_Scope)
+    if (lhs->m_Token.m_Scope == rhs->m_Token.m_Scope)
         return CBKindCompare(lhs, rhs);
 
-    return rhs->m_Token->m_Scope - lhs->m_Token->m_Scope;
+    return rhs->m_Token.m_Scope - lhs->m_Token.m_Scope;
 }
 
 int CCTreeCntrl::CBLineCompare (CCTreeCtrlData* lhs, CCTreeCtrlData* rhs)
@@ -129,15 +134,13 @@ int CCTreeCntrl::CBLineCompare (CCTreeCtrlData* lhs, CCTreeCtrlData* rhs)
         return 1;
     if (lhs->m_SpecialFolder != sfToken || rhs->m_SpecialFolder != sfToken)
         return -1;
-    if (!lhs->m_Token || !rhs->m_Token)
-        return 1;
-    if (lhs->m_Token->m_FileIdx == rhs->m_Token->m_FileIdx)
+    if (lhs->m_Token.m_FileIdx == rhs->m_Token.m_FileIdx)
     {
-        return (lhs->m_Token->m_Line > rhs->m_Token->m_Line) * 2 - 1; // from 0,1 to -1,1
+        return (lhs->m_Token.m_Line > rhs->m_Token.m_Line) * 2 - 1; // from 0,1 to -1,1
     }
     else
     {
-        return (lhs->m_Token->m_FileIdx > rhs->m_Token->m_FileIdx) * 2 - 1;
+        return (lhs->m_Token.m_FileIdx > rhs->m_Token.m_FileIdx) * 2 - 1;
     }
 }
 
@@ -170,9 +173,7 @@ void CCTreeCntrl::RemoveDoubles(const wxTreeItemId& parent)
            dataPrev &&
            dataExisting->m_SpecialFolder == sfToken &&
            dataPrev->m_SpecialFolder == sfToken &&
-           dataExisting->m_Token &&
-           dataPrev->m_Token &&
-           (dataExisting->m_Token->DisplayName() == dataPrev->m_Token->DisplayName()))
+           (dataExisting->m_Token.DisplayName() == dataPrev->m_Token.DisplayName()))
         {
             Delete(prevItem);
         }

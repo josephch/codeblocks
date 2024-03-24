@@ -1727,6 +1727,10 @@ void ParseManager::OnAUIProjectPageChanged(wxAuiNotebookEvent& event)
             if ( pCurrentPage->GetScreenRect().Contains( wxGetMousePosition()) )
                 SetSymbolsWindowHasFocus(true);
             else SetSymbolsWindowHasFocus(false);
+            if (m_ClassBrowser && m_ClassBrowser->IsUpdatePending())
+            {
+                UpdateClassBrowser(true);
+            }
         }
     }
 
@@ -1769,7 +1773,10 @@ void ParseManager::OnAUIProjectPageChanging(wxAuiNotebookEvent& event)
     {
         n_IsSymbolsTabSelected = true;  //say the Sysmbols tab is selected
         SetSymbolsWindowHasFocus(true);
-        UpdateClassBrowser();
+        if (m_ClassBrowser && m_ClassBrowser->IsUpdatePending())
+        {
+            UpdateClassBrowser(true);
+        }
     }
     else SetSymbolsWindowHasFocus(false);
     // alway reset the selection status to avoid confusing other's calls to UpdateClassBrowser()
@@ -1874,7 +1881,10 @@ void ParseManager::UpdateClassBrowser(bool force)
     if (not force)
     {
         if (not IsOkToUpdateClassBrowserView())
+        {
+            m_ClassBrowser->MarkUpdatePending();
             return;
+        }
 
         if ( m_ActiveParser != m_NullParser
             && m_ActiveParser->Done() )
@@ -1896,9 +1906,8 @@ bool ParseManager::IsOkToUpdateClassBrowserView()
     if (IsDebuggerRunning())
         return false;
 
-    bool isSymbolsTabFocused = GetClassBrowser() ? GetSymbolsWindowHasFocus() : false;
     bool isUpdatingClassBrowserBusy = GetUpdatingClassBrowserBusy();
-    isSymbolsTabFocused = isSymbolsTabFocused or n_IsSymbolsTabSelected;
+    bool isSymbolsTabFocused  = m_ClassBrowser && m_ClassBrowser->IsShown();
     // Only update Symbol browser window if it has focus.
     // Check again, wxWidgets focus event can be really slow sometimes
     // Experience shows this routine is faster than wxEVT_SET/KILL_FOCUS event.

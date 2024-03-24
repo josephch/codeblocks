@@ -220,7 +220,7 @@ ParserCommon::EFileType ParserCommon::FileType(const wxString& filename, bool fo
 ////    };
 ////}
 // ----------------------------------------------------------------------------
-ParserBase::ParserBase()
+ParserBase::ParserBase(ParseManager* mgr) : m_ParseManager(mgr)
 // ----------------------------------------------------------------------------
 {
     m_TokenTree     = new TokenTree;

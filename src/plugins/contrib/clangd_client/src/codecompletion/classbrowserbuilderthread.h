@@ -309,7 +309,6 @@ private:
     wxString         m_ActiveFilename;
     void*            m_UserData; // active project
     BrowserOptions   m_BrowserOptions;
-    TokenTree*       m_TokenTree;
 
     // pair of current-file-filter
     /** A file set which contains a header file and the associated implementation file
