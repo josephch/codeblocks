@@ -3792,11 +3792,14 @@ void Parser::OnRequestCodeActionApply(wxCommandEvent& event) //(ph 2024/02/12)
 
     if (not FixesFound.size())
     {
+        fprintf(stderr, "OnRequestCodeActionApply::%s:%d fixes not found\n", __FUNCTION__, __LINE__);
         // show a "no fix available" message
         msg = wxString::Format( _("No available fixes found.\n %s"), __FUNCTION__);
         InfoWindow::Display(_("No Fixes"), msg);
         return;
     }
+
+    fprintf(stderr, "OnRequestCodeActionApply::%s:%d [%p] FixesFound.size() %d FixesFound[0] %s\n", __FUNCTION__, __LINE__, this, (int)FixesFound.size(), FixesFound[0].ToUTF8().data());
 
     // ----------------------------------------------------
     // Apply the fixes from right to left to avoid any column shift adjustments
@@ -3821,6 +3824,7 @@ void Parser::OnRequestCodeActionApply(wxCommandEvent& event) //(ph 2024/02/12)
         }
         catch(std::exception &err)
         {
+			fprintf(stderr, "Parser::%s:%d [%p] Exception %s\n", __FUNCTION__, __LINE__, this, err.what());
             wxString errMsg(wxString::Format("ERROR: %s:%s", __FUNCTION__, err.what()) );
             CCLogger::Get()->DebugLogError(errMsg);
             return;
@@ -3836,6 +3840,7 @@ void Parser::OnRequestCodeActionApply(wxCommandEvent& event) //(ph 2024/02/12)
         int targetEnd = lineEndPosn + newEndLineCol;
         pControl->SetTargetEnd(targetEnd);
         pControl->ReplaceTarget(newText);
+        fprintf(stderr, "Parser::%s:%d [%p] lineNumInt %d newStartLine %d newEndLine %d targetStart %d targetEnd %d\n", __FUNCTION__, __LINE__, this,  lineNumInt, newStartLine, newEndLine, targetStart, targetEnd);
     }//endfor FixesFound
 
     // Reparse the editor after any changes
