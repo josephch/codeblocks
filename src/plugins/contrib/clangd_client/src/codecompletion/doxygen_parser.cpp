@@ -528,7 +528,7 @@ wxString DocumentationHelper::DoxygenToHTML(const wxString& doc)
 
 wxString DocumentationHelper::ConvertTypeToAnchor(wxString fullType)
 {
-    static Token ancestorChecker(_T(""), 0, 0, 0); // Because IsValidAncestor isn't static
+    static Token ancestorChecker(_T(""), 0, 0, 0, nullptr); // Because IsValidAncestor isn't static
     const wxString& argType = ExtractTypeAndName(fullType);
     if (!ancestorChecker.IsValidAncestor(argType))
         return fullType;
@@ -970,7 +970,7 @@ wxString DocumentationHelper::GenerateHTMLbyHover(const ClgdCCToken& cccToken, w
             }
             if (not pCCToken)
             {
-                pCCToken = new Token(semName, fileIdx, semLine+1, ++pTokenTree->m_TokenTicketCount);
+                pCCToken = new Token(semName, fileIdx, semLine+1, ++pTokenTree->m_TokenTicketCount, pParser);
                 pCCToken->m_FullType = hoverFullType;
                 pCCToken->m_BaseType = hoverTypeStr;
                 pCCToken->m_Name = semName;

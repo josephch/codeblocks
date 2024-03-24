@@ -29,7 +29,7 @@ class Token;
 class CCDebugInfo: public wxScrollingDialog
 {
 public:
-    CCDebugInfo(wxWindow* parent, ParserBase* parser, Token* token);
+    CCDebugInfo(wxWindow* parent, ParserBase* parser, const Token* token);
     virtual ~CCDebugInfo();
 
     void FillFiles();
@@ -132,7 +132,7 @@ protected:
 
 private:
     ParserBase* m_Parser;
-    Token*      m_Token;
+    const Token*      m_Token;
 
     DECLARE_EVENT_TABLE()
 };
