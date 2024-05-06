@@ -1856,7 +1856,7 @@ void Parser::OnLSP_DiagnosticsResponse(wxCommandEvent& event)
             }
         }//endfor diagnosticsKnt
         if (diagnosticsKnt)             //(ph 2024/05/02)
-            m_pParseManager->InsertDiagnostics(cbFilename, fileDiagnostics);  //(Christo 2024/03/30)
+            m_pParseManager->InsertDiagnostics(cbFilename, std::move(fileDiagnostics));  //(Christo 2024/03/30)
 
         // ------------------------------------------------------
         // Always put out a log message even if zero diagnostics
