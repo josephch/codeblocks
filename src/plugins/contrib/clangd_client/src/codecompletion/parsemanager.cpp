@@ -2822,11 +2822,11 @@ bool ParseManager::DoShowDiagnostics(wxString filename, int line)  //(Christo 20
 }
 
 // ----------------------------------------------------------------------------
-void ParseManager::InsertDiagnostics(wxString filename, std::vector<std::pair<int, wxString>> diagnostics)  //(Christo 2024/03/30)
+void ParseManager::InsertDiagnostics(wxString filename, std::vector<std::pair<int, wxString>> &&diagnostics)  //(Christo 2024/03/30)
 // ----------------------------------------------------------------------------
 {
     std::lock_guard < std::mutex > lock(m_diagnosticsCacheMutex);
-    m_diagnosticsCache[filename] = diagnostics;
+    m_diagnosticsCache[filename] = std::move(diagnostics);
 }
 
 // ----------------------------------------------------------------------------
