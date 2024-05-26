@@ -25,26 +25,14 @@
                 option="-march=nocona"/>
         <Option name="Intel Pentium M (MMX, SSE, SSE2)"
                 option="-march=pentium-m"/>
-        <if exec="C -dumpversion"
-            version_greater_equal="4.3"
-            default="true">
             <Option name="Intel Core2 (MMX, SSE, SSE2, SSE3, SSSE3, 64bit extensions)"
                     option="-march=core2"/>
-        </if>
-        <if exec="C -dumpversion"
-            version_greater_equal="4.6"
-            default="true">
             <Option name="Intel Core i7 CPU (MMX, SSE, SSE2, SSE3, SSSE3, SSE4.1, SSE4.2, 64-bit extensions)"
                     option="-march=corei7"/>
             <Option name="Intel Core i7 CPU (MMX, SSE, SSE2, SSE3, SSSE3, SSE4.1, SSE4.2, AVX, AES, PCLMUL, 64-bit extensions)"
                     option="-march=corei7-avx"/>
-        </if>
-        <if exec="C -dumpversion"
-            version_greater_equal="4.5"
-            default="true">
             <Option name="Intel Atom (MMX, SSE, SSE2, SSE3 SSSE3, 64-bit extensions)"
                     option="-march=atom"/>
-        </if>
         <Option name="AMD K6 (MMX)"
                 option="-march=k6"/>
         <Option name="AMD K6-2 (MMX, 3DNow!)"
