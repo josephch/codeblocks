@@ -130,6 +130,8 @@ bool CompilerFactory::CompilerInheritsFrom(Compiler* compiler, const wxString& f
 
 void CompilerFactory::RegisterCompiler(Compiler* compiler)
 {
+    Manager::Get()->GetLogManager()->DebugLog(wxString::Format("\"%s\":\"%d\" Enter", __FUNCTION__, __LINE__));
+
     size_t idx = CompilerFactory::Compilers.GetCount();
     for (; idx > 0; --idx)
     {
@@ -140,6 +142,7 @@ void CompilerFactory::RegisterCompiler(Compiler* compiler)
     // if it's the first one, set it as default
     if (!s_DefaultCompiler)
         s_DefaultCompiler = compiler;
+    Manager::Get()->GetLogManager()->DebugLog(wxString::Format("\"%s\":\"%d\" Exit", __FUNCTION__, __LINE__));
 }
 
 void CompilerFactory::RegisterUserCompilers()
@@ -184,7 +187,7 @@ Compiler* CompilerFactory::CreateCompilerCopy(Compiler* compiler, const wxString
     newC->ReloadOptions();
     RegisterCompiler(newC);
     newC->LoadSettings(_T("/user_sets"));
-    Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Added compiler \"%s\"", newC->GetName()));
+    Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Added compiler (copy) \"%s\"", newC->GetName()));
     return newC; // return the index for the new compiler
 }
 
