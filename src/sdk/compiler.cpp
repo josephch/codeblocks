@@ -157,19 +157,25 @@ Compiler::~Compiler()
 
 void Compiler::Reset()
 {
+    Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Compiler::Reset Enter"));
     m_Options.ClearOptions();
     for (int i = 0; i < ctCount; ++i)
         m_Commands[i].clear();
+    Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Compiler::After first clear"));
     LoadDefaultOptions(GetID());
+    Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Compiler::After LoadDefaultOptions"));
 
     LoadDefaultRegExArray();
+    Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Compiler::After LoadDefaultRegExArray"));
 
     m_CompilerOptions.Clear();
     m_LinkerOptions.Clear();
     m_LinkLibs.Clear();
     m_CmdsBefore.Clear();
     m_CmdsAfter.Clear();
+    Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Compiler::After all clear"));
     SetVersionString(); // Does nothing unless reimplemented
+    Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Compiler::Reset Exit"));
 }
 
 void Compiler::ReloadOptions()
@@ -819,6 +825,7 @@ void Compiler::LoadDefaultOptions(const wxString& name, int recursion)
 {
     wxXmlDocument options;
     wxString doc = ConfigManager::LocateDataFile(wxT("compilers/options_") + name + wxT(".xml"), sdDataUser | sdDataGlobal);
+    Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Compiler::LoadDefaultOptions After LocateDataFile"));
     if (doc.IsEmpty())
     {
         const wxString msg(wxString::Format(_("Error: file 'options_%s.xml' not found."), name));
@@ -840,6 +847,7 @@ void Compiler::LoadDefaultOptions(const wxString& name, int recursion)
         cbMessageBox(msg, _("Compiler options"), wxICON_ERROR);
         return;
     }
+    Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Compiler::LoadDefaultOptions After options.Load"));
     if (options.GetRoot()->GetName() != wxT("CodeBlocks_compiler_options"))
     {
         const wxString msg(wxString::Format(_("Error: Invalid Code::Blocks compiler options file for compiler '%s'."), name));
@@ -847,6 +855,7 @@ void Compiler::LoadDefaultOptions(const wxString& name, int recursion)
         cbMessageBox(msg, _("Compiler options"), wxICON_ERROR);
         return;
     }
+    Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Compiler::LoadDefaultOptions After GetRoot()->GetName()"));
     wxString extends = options.GetRoot()->GetAttribute(wxT("extends"), wxString());
     if (!extends.IsEmpty())
         LoadDefaultOptions(extends, recursion + 1);
@@ -857,18 +866,21 @@ void Compiler::LoadDefaultOptions(const wxString& name, int recursion)
 
     wxString baseKey = GetParentID().IsEmpty() ? wxT("/sets") : wxT("/user_sets");
     ConfigManager* cfg = Manager::Get()->GetConfigManager(wxT("compiler"));
+    Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Compiler::LoadDefaultOptions After GetConfigManager"));
     wxString cmpKey;
     cmpKey.Printf(wxT("%s/set%3.3d"), baseKey.c_str(), CompilerFactory::GetCompilerIndex(this) + 1);
     if (!cfg->Exists(cmpKey + wxT("/name")))
         cmpKey.Printf(wxT("%s/%s"), baseKey.c_str(), m_ID.c_str());
     if (!cfg->Exists(cmpKey + wxT("/name")))
         cmpKey.Replace(wxT("-"), wxString());
-
+    Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Compiler::LoadDefaultOptions Before node"));
     while (node)
     {
+        Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Compiler::LoadDefaultOptions switching to next node : ") + node->GetName());
         const wxString value = node->GetAttribute(wxT("value"), wxString());
         if (node->GetName() == wxT("if") && node->GetChildren())
         {
+            Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Compiler::LoadDefaultOptions if : content : ") + 	node->GetContent());
             if (EvalXMLCondition(node))
             {
                 node = node->GetChildren();
@@ -881,6 +893,10 @@ void Compiler::LoadDefaultOptions(const wxString& name, int recursion)
                 node = node->GetNext()->GetChildren();
                 ++depth;
                 continue;
+            }
+            else
+            {
+                Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Compiler::LoadDefaultOptions no else after if"));
             }
         }
         else if (node->GetName() == wxT("Program")) // configuration is read so execution of renamed programs work, m_Mirror is needed to reset before leaving this function
@@ -1005,6 +1021,8 @@ void Compiler::LoadDefaultOptions(const wxString& name, int recursion)
                     category = categ;
             }
             wxString exclusive;
+            const wxString option = node->GetAttribute(wxT("option"), wxString());
+            Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Compiler::LoadDefaultOptions Option option : ") + option);
             if (!node->GetAttribute(wxT("exclusive"), &exclusive))
                 exclusive = (exclu ? wxT("true") : wxT("false"));
             m_Options.AddOption(wxGetTranslation(node->GetAttribute(wxT("name"), wxString())),
@@ -1040,6 +1058,10 @@ void Compiler::LoadDefaultOptions(const wxString& name, int recursion)
                 cmdTp = ctLinkStaticCmd;
             else if (cmd == wxT("LinkNative"))
                 cmdTp = ctLinkNativeCmd;
+            else
+            {
+                Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Compiler::LoadDefaultOptions unexpected cmd : ") + cmd);
+            }
             if  (cmdTp != ctCount)
             {
                 bool assigned = false;
@@ -1079,6 +1101,10 @@ void Compiler::LoadDefaultOptions(const wxString& name, int recursion)
         {
             LoadDefaultOptions(wxT("common_") + node->GetAttribute(wxT("name"), wxString()), recursion + 1);
         }
+        else
+        {
+            Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Compiler::LoadDefaultOptions unexpected node : ") + node->GetName());
+        }
         while (!node->GetNext() && depth > 0)
         {
             node = node->GetParent();
@@ -1091,6 +1117,7 @@ void Compiler::LoadDefaultOptions(const wxString& name, int recursion)
         }
         node = node->GetNext();
     }
+    Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Compiler::LoadDefaultOptions After node"));
     if (recursion == 0) // reset programs to their actual defaults (customized settings are loaded in a different function)
     {
         m_Programs.C       = m_Mirror.Programs.C;
@@ -1100,6 +1127,7 @@ void Compiler::LoadDefaultOptions(const wxString& name, int recursion)
         m_Programs.WINDRES = m_Mirror.Programs.WINDRES;
         m_Programs.MAKE    = m_Mirror.Programs.MAKE;
     }
+    Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Compiler::LoadDefaultOptions Exit"));
 }
 
 void Compiler::LoadRegExArray(const wxString& name, bool globalPrecedence, int recursion)
@@ -1508,6 +1536,11 @@ bool Compiler::EvalXMLCondition(const wxXmlNode* node)
             LogManager *log = Manager::Get()->GetLogManager();
             log ->DebugLog(wxString::Format(_("EvalXMLCondition: Unknown compiler test \"%s\""), name));
         }
+    }
+    else
+    {
+        Manager::Get()->GetLogManager()->DebugLog(wxString::Format("Compiler::EvalXMLCondition unknown if : ") + 	node->GetContent());
+
     }
 
     return val;
