@@ -104,7 +104,10 @@ void LogManager::ClearLogInternal(int i)
 void LogManager::LogInternal(const wxString& msg, int i, Logger::level lv)
 {
     if (i >= 0 && i <= max_logs && slot[i].log != &g_null_log)
-        slot[i].log->Append(msg, lv);
+    {
+        const wxString msgWithTimeStamp = wxDateTime::UNow().Format("%Y:%m:%dT%H:%M:%S.%l") + " : " + msg;
+        slot[i].log->Append(msgWithTimeStamp, lv);
+    }
 }
 
 size_t LogManager::SetLog(Logger* l, int i)
