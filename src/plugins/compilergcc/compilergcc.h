@@ -24,6 +24,7 @@
 #include "compilermessages.h"
 #include "compilererrors.h"
 #include "compiler_defs.h"
+#include <string_view>
 
 enum CompilerOptionsType
 {
@@ -209,6 +210,7 @@ class CompilerGCC : public cbCompilerPlugin
         void InitBuildLog(bool workspaceBuild);
         void PrintBanner(BuildAction action, cbProject* prj = nullptr, ProjectBuildTarget* target = nullptr);
         bool UseMake(cbProject* project = nullptr);
+        CompilerLineType CheckForWarningsAndErrorsCTRE(std::string_view line);
 
         struct CompilerValidResult
         {
@@ -337,6 +339,10 @@ class CompilerGCC : public cbCompilerPlugin
         bool   m_LogBuildProgressPercentage;
 
         cbArtProvider *m_pArtProvider;
+
+        wxString            m_OutputLineFilename;
+        wxString            m_OutputLineLine;
+        wxString            m_OutputLineMessage;
 
         DECLARE_EVENT_TABLE()
 };
