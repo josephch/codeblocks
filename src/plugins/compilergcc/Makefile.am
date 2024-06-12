@@ -4,7 +4,8 @@ AM_CPPFLAGS = $(WX_CXXFLAGS) \
 		$(CB_SQUIRREL_CFLAGS) \
 		-I$(top_srcdir)/src/include \
 		-I$(top_srcdir)/src/sdk/wxscintilla/include \
-		-I$(top_srcdir)/src/plugins/compilergcc/depslib/src
+		-I$(top_srcdir)/src/plugins/compilergcc/depslib/src \
+		-std=c++20
 
 if CODEBLOCKS_NT
 AM_CPPFLAGS += -DDEPSLIB_WINDOWS
