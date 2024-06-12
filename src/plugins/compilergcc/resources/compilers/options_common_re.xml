@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0"?>
 <!DOCTYPE CodeBlocks_compiler_options>
 <CodeBlocks_compiler_options>
-    <RegEx name="Fatal error"
+    <!--RegEx name="Fatal error"
            type="error"
            msg="1">
         <![CDATA[FATAL:[[:blank:]]*(.*)]]>
@@ -227,11 +227,10 @@
         <![CDATA[([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):[[:blank:]]+(duplicate section.*has different size)]]>
     </RegEx>
 
-    <!-- Generic error: leave it *last* so it doesn't mask more specific rules -->
     <RegEx name="Generic Error"
            type="error"
            msg="1">
         <![CDATA[[[:blank:]]*(Error:.*)]]>
-    </RegEx>
+    </RegEx-->
 
 </CodeBlocks_compiler_options>
