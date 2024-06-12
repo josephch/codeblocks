@@ -75,6 +75,7 @@
 #include "compilerGNUFortran.h"
 #include "compilerG95.h"
 #include "compilerXML.h"
+#include "compiler_output_parser.hpp"
 
 namespace ScriptBindings
 {
@@ -3669,6 +3670,31 @@ void CompilerGCC::OnGCCTerminated(CodeBlocksEvent& event)
     OnJobEnd(index, event.GetInt());
 }
 
+CompilerLineType CompilerGCC::CheckForWarningsAndErrorsCTRE(std::string_view line)
+{
+    CompilerLineType ret;
+    CompilerOutputLineInfo compilerOutputLineInfo = GetCompilerOutputLineInfo(line);
+    switch (compilerOutputLineInfo.type)
+    {
+    case CompilerOutputLineType::normal:
+        ret = cltNormal;
+        break;
+    case CompilerOutputLineType::warning:
+        ret = cltWarning;
+        break;
+    case CompilerOutputLineType::error:
+        ret = cltError;
+        break;
+    case CompilerOutputLineType::info:
+        ret = cltInfo;
+        break;
+    }
+    m_OutputLineFilename = compilerOutputLineInfo.fileName;
+    m_OutputLineLine = compilerOutputLineInfo.line;
+    m_OutputLineMessage = wxString::FromUTF8Unchecked(compilerOutputLineInfo.message);
+    return ret;
+}
+
 void CompilerGCC::AddOutputLine(const wxString& output, bool forceErrorColour)
 {
     wxArrayString ignore_output = Manager::Get()->GetConfigManager("compiler")->ReadArrayString("/ignore_output");
@@ -3688,6 +3714,16 @@ void CompilerGCC::AddOutputLine(const wxString& output, bool forceErrorColour)
     if (!compiler)
         return;
     CompilerLineType clt = compiler->CheckForWarningsAndErrors(output);
+    if (cltNormal != clt)
+    {
+        m_OutputLineFilename = compiler->GetLastErrorFilename();
+        m_OutputLineLine = compiler->GetLastErrorLine();
+        m_OutputLineMessage = compiler->GetLastError();
+    }
+    else
+    {
+        clt = CheckForWarningsAndErrorsCTRE(output.ToUTF8().data());
+    }
 
     // if max_errors reached, display a one-time message and do not log any more
     size_t maxErrors = Manager::Get()->GetConfigManager(_T("compiler"))->ReadInt(_T("/max_reported_errors"), 50);
@@ -3711,7 +3747,7 @@ void CompilerGCC::AddOutputLine(const wxString& output, bool forceErrorColour)
     if (clt != cltNormal)
     {
         // actually log message
-        wxString last_error_filename = compiler->GetLastErrorFilename();
+        wxString last_error_filename = m_OutputLineFilename;
         if ( UseMake() )
         {
             wxFileName last_error_file(last_error_filename);
@@ -3730,9 +3766,8 @@ void CompilerGCC::AddOutputLine(const wxString& output, bool forceErrorColour)
                 last_error_filename = last_error_file.GetFullPath();
             }
         }
-        wxString msg = compiler->GetLastError();
-        if (!compiler->WithMultiLineMsg() || (compiler->WithMultiLineMsg() && !msg.IsEmpty()))
-            LogWarningOrError(clt, m_pBuildingProject, last_error_filename, compiler->GetLastErrorLine(), msg);
+        if (!compiler->WithMultiLineMsg() || (compiler->WithMultiLineMsg() && !m_OutputLineMessage.IsEmpty()))
+            LogWarningOrError(clt, m_pBuildingProject, last_error_filename, m_OutputLineLine, m_OutputLineMessage);
     }
 
     // add to log
