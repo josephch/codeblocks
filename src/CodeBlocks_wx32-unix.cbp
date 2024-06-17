@@ -397,7 +397,7 @@
 				</Linker>
 			</Target>
 			<Environment>
-				<Variable name="GTK_VERSION" value="gtk+-3.0" />
+				<Variable name="GTK_VERSION" value="gtk+-2.0" />
 				<Variable name="WX_CFG" value="" />
 				<Variable name="WX_CONFIG" value="wx-config --version=3.2" />
 				<Variable name="WX_SUFFIX" value="u" />
@@ -410,8 +410,9 @@
 			<Add alias="Third-party libs" targets="tinyXML;AutoRevision;ConsoleRunner;Squirrel;scintilla;Compiler depslib;" />
 		</VirtualTargets>
 		<Compiler>
+			<Add option="-Wextra" />
 			<Add option="-Wall" />
-			<Add option="-std=c++11" />
+			<Add option="-std=c++20" />
 			<Add option="-std=c90" />
 			<Add option="-fPIC" />
 			<Add option="$(#CB_RELEASE_TYPE)" />
@@ -1214,6 +1215,9 @@
 		<Unit filename="plugins/compilergcc/compiler_defs.h">
 			<Option target="Compiler" />
 		</Unit>
+		<Unit filename="plugins/compilergcc/compiler_output_parser.hpp">
+			<Option target="Compiler" />
+		</Unit>
 		<Unit filename="plugins/compilergcc/compilererrors.cpp">
 			<Option target="Compiler" />
 		</Unit>
@@ -1346,6 +1350,9 @@
 			<Option target="Compiler" />
 		</Unit>
 		<Unit filename="plugins/compilergcc/directcommands.h">
+			<Option target="Compiler" />
+		</Unit>
+		<Unit filename="plugins/compilergcc/options_re_ctre.h">
 			<Option target="Compiler" />
 		</Unit>
 		<Unit filename="plugins/compilergcc/resources/advanced_compiler_options.xrc">
