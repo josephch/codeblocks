@@ -389,6 +389,12 @@ class ProcessLanguageClient : public wxEvtHandler, private LanguageClient
 
         static LSPDiagnosticsResultsLog* m_pDiagnosticsLog;
 
+        json jdb = json::array();
+
+        std::vector<wxString> m_CompileCommandsFiles;
+
+        bool m_compileCommandsPopulated{false};
+
         // Default completion max busy time allowed is 2 secs
         // Set the current time + time allowed to be busy
         void SetCompletionTimeBusy(int msTime = 2000)
@@ -859,6 +865,20 @@ class ProcessLanguageClient : public wxEvtHandler, private LanguageClient
         int linePos = pCtrl->PositionFromLine(edLineNum); // Retrieve the position at the start of a line.
         int fauxColumn = edCaretPosn - linePos;
         return fauxColumn;
+    }
+
+    void SetCompileCommandsPopulated()
+    {
+        if(m_compileCommandsPopulated)
+            return;
+        m_compileCommandsPopulated = true;
+        m_CompileCommandsFiles.reserve(jdb.size());
+        for (const auto& elem : jdb)
+        {
+            const std::string &str = elem["file"];
+            m_CompileCommandsFiles.emplace_back(str);
+        }
+        jdb.clear();
     }
 
 };

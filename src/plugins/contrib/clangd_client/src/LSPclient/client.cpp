@@ -3889,6 +3889,15 @@ void ProcessLanguageClient::UpdateCompilationDatabase(cbProject* pProject, wxStr
         return;
     }
 
+    if(m_compileCommandsPopulated)
+    {
+        if ( m_CompileCommandsFiles.end() != std::find(m_CompileCommandsFiles.begin(), m_CompileCommandsFiles.end(), filename))
+        {
+            return;
+        }
+        jdb = json::array();
+    }
+
     // create compilation database 'compile_commands.json' from project files.
     // If compile_commands.json already exists, use it to insert project file data.
 
@@ -3906,15 +3915,13 @@ void ProcessLanguageClient::UpdateCompilationDatabase(cbProject* pProject, wxStr
     // If the file does not belong to a project, add it to proxy project
     // compile_commands.json file so Clangd can find  and parse it.
 
-    std::fstream jsonFile;           //("out.json", std::ofstream::in | std::ofstream::out);
-    json jdb = json::array();        //create the main array
-
     wxString editorProjectDotCBP = pProject->GetFilename();
     wxString compileCommandsFullPath = wxPathOnly(editorProjectDotCBP) + "\\compile_commands.json";
     if (not platform::windows) compileCommandsFullPath.Replace("\\","/");
-    if (wxFileExists(compileCommandsFullPath)) switch(1)
+    if ((jdb.size() == 0) && wxFileExists(compileCommandsFullPath)) switch(1)
     {
         default:
+        std::fstream jsonFile;           //("out.json", std::ofstream::in | std::ofstream::out);
         jsonFile.open (compileCommandsFullPath.ToStdString(), std::ofstream::in);
         if (not jsonFile.is_open())
         {
@@ -3994,6 +4001,7 @@ void ProcessLanguageClient::UpdateCompilationDatabase(cbProject* pProject, wxStr
 
     if (fileCount)
     {
+        std::fstream jsonFile;
         jsonFile.open (compileCommandsFullPath.ToStdString(), std::ofstream::out | std::ofstream::trunc);
         if (not jsonFile.is_open())
         {
@@ -4014,6 +4022,11 @@ void ProcessLanguageClient::UpdateCompilationDatabase(cbProject* pProject, wxStr
 ////        // was not previously added to compile_commands.json
 ////            if (GetLSP_Initialized())
 ////                SetCompileCommandsChangedTime(true);
+        }
+        if(m_compileCommandsPopulated)
+        {
+            jdb.clear();
+            m_CompileCommandsFiles.emplace_back(std::move(filename));
         }
     }
 
