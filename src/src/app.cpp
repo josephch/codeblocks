@@ -858,6 +858,10 @@ bool CodeBlocksApp::OnInit()
     {
         wxSafeShowMessage("Exception", cbC2U(message));
     }
+    catch (std::exception &ex)
+    {
+        wxSafeShowMessage("Exception std: ", cbC2U(ex.what()));
+    }
     catch (...)
     {
         wxSafeShowMessage("Exception", "Unknown exception was raised. The application will terminate immediately...");
