@@ -1,7 +1,24 @@
+/*
+ * Compiler Output Parser: Parse error, warning and messages
+ * Copyright (C) 2024  Christo Joseph
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef COMPILER_OUTPUT_PARSER_HPP_INCLUDED
 #define COMPILER_OUTPUT_PARSER_HPP_INCLUDED
 
-#include <iostream>
 #include "ctre.hpp"
 
 enum class CompilerOutputLineType
@@ -18,7 +35,6 @@ struct CompilerOutputLineInfo
     std::string fileName;
     std::string line;
     std::string message;
-    auto operator<=>(const CompilerOutputLineInfo&) const = default;
 };
 
 struct CompilerRegexInfo
@@ -51,7 +67,7 @@ inline CompilerOutputLineInfo GetCompilerOutputLineInfo(std::string_view line)
     }
     //<![CDATA[([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):[[:blank:]]+([iI]n
     //([cC]lass|[cC]onstructor|[dD]estructor|[fF]unction|[mM]ember [fF]unction).*)]]>
-    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+):[[:blank:]]+([iI]n "
+    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}):[[:blank:]]+([iI]n "
                                   "([cC]lass|[cC]onstructor|[dD]estructor|[fF]unction|[mM]ember [fF]unction).*)">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {
@@ -60,7 +76,7 @@ inline CompilerOutputLineInfo GetCompilerOutputLineInfo(std::string_view line)
     }
     //<![CDATA[([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):([0-9]+):[0-9]+:[[:blank:]]+(\[[[:blank:]]+[Ss]kipping [0-9]+ instantiation
     // contexts[[:blank:]]+\])]]>
-    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+):([0-9]+):[0-9]+:[[:blank:]]+(\\[[[:blank:]]+[Ss]kipping "
+    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}):([0-9]+):[0-9]+:[[:blank:]]+(\\[[[:blank:]]+[Ss]kipping "
                                   "[0-9]+ instantiation contexts[[:blank:]]+\\])">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {.name = "'Skipping N instantiation contexts' info (2)",
@@ -72,7 +88,7 @@ inline CompilerOutputLineInfo GetCompilerOutputLineInfo(std::string_view line)
     }
     //<![CDATA[([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):([0-9]+):[[:blank:]]+(\[[[:blank:]]+[Ss]kipping [0-9]+ instantiation
     // contexts[[:blank:]]+\])]]>
-    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+):([0-9]+):[[:blank:]]+(\\[[[:blank:]]+[Ss]kipping "
+    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}):([0-9]+):[[:blank:]]+(\\[[[:blank:]]+[Ss]kipping "
                                   "[0-9]+ instantiation contexts[[:blank:]]+\\])">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {.name = "'Skipping N instantiation contexts' info",
@@ -83,35 +99,36 @@ inline CompilerOutputLineInfo GetCompilerOutputLineInfo(std::string_view line)
         POPULATE_INFO(ret, m, compilerRegexInfo);
     }
     //<![CDATA[([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):[[:blank:]]+([Ii]n [Ii]nstantiation.*)]]>
-    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+):[[:blank:]]+([Ii]n [Ii]nstantiation.*)">(line))
+    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}):[[:blank:]]+([Ii]n [Ii]nstantiation.*)">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {
             .name = "'In instantiation' warning", .type = CompilerOutputLineType::warning, .fileNameIdx = 1, .lineIdx = 0, .messageIdx = 2};
         POPULATE_INFO(ret, m, compilerRegexInfo);
     }
     //<![CDATA[([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):([0-9]+):[0-9]+:[[:blank:]]+([Rr]equired from.*)]]>
-    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+):([0-9]+):[0-9]+:[[:blank:]]+([Rr]equired from.*)">(line))
+    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}):([0-9]+):[0-9]+:[[:blank:]]+([Rr]equired from.*)">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {
             .name = "'Required from' warning", .type = CompilerOutputLineType::warning, .fileNameIdx = 1, .lineIdx = 2, .messageIdx = 3};
         POPULATE_INFO(ret, m, compilerRegexInfo);
     }
     //<![CDATA[([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):([0-9]+):[0-9]+:[[:blank:]]+([Ii]nstantiated from .*)]]>
-    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+):([0-9]+):[0-9]+:[[:blank:]]+([Ii]nstantiated from .*)">(line))
+    else if (auto m =
+                 ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}):([0-9]+):[0-9]+:[[:blank:]]+([Ii]nstantiated from .*)">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {
             .name = "'Instantiated from' info (2)", .type = CompilerOutputLineType::info, .fileNameIdx = 1, .lineIdx = 2, .messageIdx = 3};
         POPULATE_INFO(ret, m, compilerRegexInfo);
     }
     //<![CDATA[([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):([0-9]+):[[:blank:]]+([Ii]nstantiated from .*)]]>
-    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+):([0-9]+):[[:blank:]]+([Ii]nstantiated from .*)">(line))
+    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}):([0-9]+):[[:blank:]]+([Ii]nstantiated from .*)">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {
             .name = "'Instantiated from' info", .type = CompilerOutputLineType::info, .fileNameIdx = 1, .lineIdx = 2, .messageIdx = 3};
         POPULATE_INFO(ret, m, compilerRegexInfo);
     }
     //<![CDATA[windres.exe:[[:blank:]]([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):([0-9]+):[[:blank:]](.*)]]>
-    else if (auto m = ctre::match<"windres.exe:[[:blank:]]([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+):([0-9]+):[[:blank:]](.*)">(line))
+    else if (auto m = ctre::match<"windres.exe:[[:blank:]]([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}):([0-9]+):[[:blank:]](.*)">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {
             .name = "Resource compiler error", .type = CompilerOutputLineType::error, .fileNameIdx = 1, .lineIdx = 2, .messageIdx = 3};
@@ -125,21 +142,22 @@ inline CompilerOutputLineInfo GetCompilerOutputLineInfo(std::string_view line)
         POPULATE_INFO(ret, m, compilerRegexInfo);
     }
     //<![CDATA[([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):([0-9]+):([0-9]+):[[:blank:]]([Ww]arning:[[:blank:]].*)]]>
-    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+):([0-9]+):([0-9]+):[[:blank:]]([Ww]arning:[[:blank:]].*)">(line))
+    else if (auto m =
+                 ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}):([0-9]+):([0-9]+):[[:blank:]]([Ww]arning:[[:blank:]].*)">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {
             .name = "Preprocessor warning", .type = CompilerOutputLineType::warning, .fileNameIdx = 1, .lineIdx = 2, .messageIdx = 4};
         POPULATE_INFO(ret, m, compilerRegexInfo);
     }
     //<![CDATA[([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):([0-9]+):[0-9]+:[[:blank:]]([Nn]ote:[[:blank:]].*)]]>
-    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+):([0-9]+):[0-9]+:[[:blank:]]([Nn]ote:[[:blank:]].*)">(line))
+    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}):([0-9]+):[0-9]+:[[:blank:]]([Nn]ote:[[:blank:]].*)">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {
             .name = "Compiler note (2)", .type = CompilerOutputLineType::info, .fileNameIdx = 1, .lineIdx = 2, .messageIdx = 3};
         POPULATE_INFO(ret, m, compilerRegexInfo);
     }
     //<![CDATA[([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):([0-9]+):[[:blank:]]([Nn]ote:[[:blank:]].*)]]>
-    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+):([0-9]+):[[:blank:]]([Nn]ote:[[:blank:]].*)">(line))
+    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}):([0-9]+):[[:blank:]]([Nn]ote:[[:blank:]].*)">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {
             .name = "Compiler note", .type = CompilerOutputLineType::info, .fileNameIdx = 1, .lineIdx = 2, .messageIdx = 3};
@@ -153,21 +171,22 @@ inline CompilerOutputLineInfo GetCompilerOutputLineInfo(std::string_view line)
         POPULATE_INFO(ret, m, compilerRegexInfo);
     }
     //<![CDATA[([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):([0-9]+):[0-9]+:[[:blank:]](.*)]]>
-    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+):([0-9]+):[0-9]+:[[:blank:]](.*)">(line))
+    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}):([0-9]+):[0-9]+:[[:blank:]](.*)">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {
             .name = "Preprocessor error", .type = CompilerOutputLineType::error, .fileNameIdx = 1, .lineIdx = 2, .messageIdx = 3};
         POPULATE_INFO(ret, m, compilerRegexInfo);
     }
     //<![CDATA[([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):([0-9]+):[0-9]+:[[:blank:]]([Ww]arning:[[:blank:]].*)]]>
-    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+):([0-9]+):[0-9]+:[[:blank:]]([Ww]arning:[[:blank:]].*)">(line))
+    else if (auto m =
+                 ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}):([0-9]+):[0-9]+:[[:blank:]]([Ww]arning:[[:blank:]].*)">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {
             .name = "Compiler warning (2)", .type = CompilerOutputLineType::warning, .fileNameIdx = 1, .lineIdx = 2, .messageIdx = 3};
         POPULATE_INFO(ret, m, compilerRegexInfo);
     }
     //<![CDATA[([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):([0-9]+):[[:blank:]]([Ww]arning:[[:blank:]].*)]]>
-    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+):([0-9]+):[[:blank:]]([Ww]arning:[[:blank:]].*)">(line))
+    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}):([0-9]+):[[:blank:]]([Ww]arning:[[:blank:]].*)">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {
             .name = "Compiler warning", .type = CompilerOutputLineType::warning, .fileNameIdx = 1, .lineIdx = 2, .messageIdx = 3};
@@ -175,22 +194,22 @@ inline CompilerOutputLineInfo GetCompilerOutputLineInfo(std::string_view line)
     }
     //<![CDATA[[][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+\.o:([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):([0-9]+):[[:blank:]](undefined
     // reference.*)]]>
-    else if (auto m = ctre::match<"[{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+\\.o:([{}()[:blank:]#%$~[:alnum:]!&_:+/"
-                                  "\\\\\\.\\-]+):([0-9]+):[[:blank:]](undefined reference.*)">(line))
+    else if (auto m = ctre::match<"[{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}\\.o:([{}()[:blank:]#%$~[:alnum:]!&_:+/"
+                                  "\\\\\\.\\-]{1,512}):([0-9]+):[[:blank:]](undefined reference.*)">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {
             .name = "Undefined reference (2)", .type = CompilerOutputLineType::error, .fileNameIdx = 1, .lineIdx = 2, .messageIdx = 3};
         POPULATE_INFO(ret, m, compilerRegexInfo);
     }
     //<![CDATA[([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):([0-9]+):[0-9]+:[[:blank:]](.*)]]>
-    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+):([0-9]+):[0-9]+:[[:blank:]](.*)">(line))
+    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}):([0-9]+):[0-9]+:[[:blank:]](.*)">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {
             .name = "Compiler error (2)", .type = CompilerOutputLineType::error, .fileNameIdx = 1, .lineIdx = 2, .messageIdx = 3};
         POPULATE_INFO(ret, m, compilerRegexInfo);
     }
     //<![CDATA[([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):([0-9]+):[[:blank:]](.*)]]>
-    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+):([0-9]+):[[:blank:]](.*)">(line))
+    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}):([0-9]+):[[:blank:]](.*)">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {
             .name = "Compiler error", .type = CompilerOutputLineType::error, .fileNameIdx = 1, .lineIdx = 2, .messageIdx = 3};
@@ -198,29 +217,29 @@ inline CompilerOutputLineInfo GetCompilerOutputLineInfo(std::string_view line)
     }
     //<![CDATA[([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):\(\.text\+[0-9a-fA-FxX]+\):[[:blank:]]([Ww]arning:[[:blank:]].*)]]>
     else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/"
-                                  "\\\\\\.\\-]+):\\(\\.text\\+[0-9a-fA-FxX]+\\):[[:blank:]]([Ww]arning:[[:blank:]].*)">(line))
+                                  "\\\\\\.\\-]{1,512}):\\(\\.text\\+[0-9a-fA-FxX]+\\):[[:blank:]]([Ww]arning:[[:blank:]].*)">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {
             .name = "Linker warning", .type = CompilerOutputLineType::warning, .fileNameIdx = 1, .lineIdx = 0, .messageIdx = 2};
         POPULATE_INFO(ret, m, compilerRegexInfo);
     }
     //<![CDATA[([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):([0-9]+):[0-9]+:[[:blank:]](.*)]]>
-    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+):([0-9]+):[0-9]+:[[:blank:]](.*)">(line))
+    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}):([0-9]+):[0-9]+:[[:blank:]](.*)">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {
             .name = "Linker error", .type = CompilerOutputLineType::error, .fileNameIdx = 1, .lineIdx = 2, .messageIdx = 3};
         POPULATE_INFO(ret, m, compilerRegexInfo);
     }
     //<![CDATA[[][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+\(.text\+[0-9A-Za-z]+\):([[:blank:]A-Za-z0-9_:+/\.-]+):[[:blank:]](.*)]]>
-    else if (auto m = ctre::match<"[{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+\\(.text\\+[0-9A-Za-z]+\\):([[:blank:]A-Za-z0-9_:+/"
-                                  "\\.\\-]+):[[:blank:]](.*)">(line))
+    else if (auto m = ctre::match<"[{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}\\(.text\\+[0-9A-Za-z]+\\):([[:blank:]A-Za-z0-9_:+/"
+                                  "\\.\\-]{1,512}):[[:blank:]](.*)">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {
             .name = "Linker error (2)", .type = CompilerOutputLineType::error, .fileNameIdx = 1, .lineIdx = 0, .messageIdx = 2};
         POPULATE_INFO(ret, m, compilerRegexInfo);
     }
     //<![CDATA[([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):\(\.text\+[0-9a-fA-FxX]+\):(.*)]]>
-    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+):\\(\\.text\\+[0-9a-fA-FxX]+\\):(.*)">(line))
+    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}):\\(\\.text\\+[0-9a-fA-FxX]+\\):(.*)">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {
             .name = "Linker error (3)", .type = CompilerOutputLineType::error, .fileNameIdx = 1, .lineIdx = 0, .messageIdx = 2};
@@ -263,7 +282,7 @@ inline CompilerOutputLineInfo GetCompilerOutputLineInfo(std::string_view line)
         POPULATE_INFO(ret, m, compilerRegexInfo);
     }
     //<![CDATA[([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):[[:blank:]](undefined reference.*)]]>
-    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+):[[:blank:]](undefined reference.*)">(line))
+    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}):[[:blank:]](undefined reference.*)">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {
             .name = "Undefined reference", .type = CompilerOutputLineType::error, .fileNameIdx = 1, .lineIdx = 0, .messageIdx = 2};
@@ -291,7 +310,7 @@ inline CompilerOutputLineInfo GetCompilerOutputLineInfo(std::string_view line)
         POPULATE_INFO(ret, m, compilerRegexInfo);
     }
     //<![CDATA[([][{}()[:blank:]#%$~[:alnum:]!&_:+/\\\.-]+):[[:blank:]]+(duplicate section.*has different size)]]>
-    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]+):[[:blank:]]+(duplicate section.*has different size)">(line))
+    else if (auto m = ctre::match<"([{}()[:blank:]#%$~[:alnum:]!&_:+/\\\\\\.\\-]{1,512}):[[:blank:]]+(duplicate section.*has different size)">(line))
     {
         static constexpr CompilerRegexInfo compilerRegexInfo = {.name = "Linker warning (different sized sections)",
                                                                 .type = CompilerOutputLineType::warning,
