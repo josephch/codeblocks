@@ -752,7 +752,8 @@ ProcessLanguageClient::~ProcessLanguageClient()
                 wxString dirName = fnProjectFilename.GetPath();
                 if (wxDirExists(dirName + fileSep + ".cache"))
                     wxDir::Remove(dirName + fileSep + ".cache", wxPATH_RMDIR_RECURSIVE);
-                if (wxFileExists(dirName + fileSep + "compile_commands.json"))
+                const bool isMakefileCustom = (m_pCBProject && m_pCBProject->IsMakefileCustom());
+                if (!isMakefileCustom && wxFileExists(dirName + fileSep + "compile_commands.json"))
                     wxRemoveFile(dirName + fileSep + "compile_commands.json");
             }
         }//endfor
