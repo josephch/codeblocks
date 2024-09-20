@@ -4,13 +4,13 @@
 	<Project>
 		<Option title="Clangd_client (Unix)" />
 		<Option default_target="clangd_client" />
-		<Option compiler="gcc" />
+		<Option compiler="gnu_gcc_compiler_13" />
 		<Build>
 			<Target title="clangd_client">
 				<Option output="clangd_client" prefix_auto="1" extension_auto="1" />
 				<Option object_output=".objs/default" />
 				<Option type="3" />
-				<Option compiler="gcc" />
+				<Option compiler="gnu_gcc_compiler_13" />
 				<Option parameters="--debug-log --multiple-instance --no-splash-screen --verbose -p debug --no-ipc " />
 				<Option projectLinkerOptionsRelation="1" />
 				<Compiler>
