@@ -162,10 +162,9 @@ void wxSpellCheckEngineInterface::ShowOption(const wxString& strOption, bool bSh
 const wxCharBuffer wxSpellCheckEngineInterface::ConvertToUnicode(const wxString& inputString)
 {
 #if wxUSE_UNICODE
-  wxString strEncoding = GetCharacterEncoding();
-  if (strEncoding != wxEmptyString)
+  if (IsCharacterEncodingAvailable())
   {
-    wxCSConv conv(strEncoding);
+    wxCSConv conv(GetCharacterEncoding());
     wxCharBuffer returnBuffer(conv.cWC2MB(inputString.wc_str(*wxConvCurrent)));
     return returnBuffer;
   }
@@ -183,10 +182,9 @@ const wxCharBuffer wxSpellCheckEngineInterface::ConvertToUnicode(const wxString&
 wxString wxSpellCheckEngineInterface::ConvertFromUnicode(const char* inputBuffer)
 {
 #if wxUSE_UNICODE
-  wxString strEncoding = GetCharacterEncoding();
-  if (strEncoding != wxEmptyString)
+  if (IsCharacterEncodingAvailable())
   {
-    wxCSConv conv(strEncoding);
+    wxCSConv conv(GetCharacterEncoding());
     wxString returnString(conv.cMB2WC(inputBuffer), *wxConvCurrent);
     return returnString;
   }
