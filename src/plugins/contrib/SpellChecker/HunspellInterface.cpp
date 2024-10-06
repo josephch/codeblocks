@@ -22,6 +22,7 @@
 #include <wx/tokenzr.h>
 #include <wx/textfile.h>
 #include <wx/config.h>
+#include <wx/fontmap.h>
 
 HunspellInterface::HunspellInterface(wxSpellCheckUserInterface* pDlg /* = nullptr */)
 {
@@ -70,6 +71,16 @@ int HunspellInterface::InitializeSpellCheckEngine()
         if (m_pHunhandle)
             Hunspell_destroy(m_pHunhandle);
         m_pHunhandle = Hunspell_create(affixFileCharBuffer, dictionaryFileCharBuffer);
+        wxString strEncoding = GetCharacterEncodingStr();
+        if (strEncoding != wxEmptyString)
+        {
+            m_CharacterEncodingAvailable = true;
+            m_CharacterEncoding = wxFontMapper::GetEncodingFromName(strEncoding);
+        }
+        else
+        {
+            m_CharacterEncodingAvailable = false;
+        }
     }
 
     m_bEngineInitialized = (m_pHunhandle != nullptr);
@@ -427,7 +438,7 @@ void HunspellInterface::OpenPersonalDictionary(const wxString& strPersonalDictio
     m_PersonalDictionary.LoadPersonalDictionary();
 }
 
-wxString HunspellInterface::GetCharacterEncoding()
+wxString HunspellInterface::GetCharacterEncodingStr()
 {
     wxString character_encoding = wxEmptyString;
 
