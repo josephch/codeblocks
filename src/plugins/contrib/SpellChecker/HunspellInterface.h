@@ -69,7 +69,9 @@ public:
     void AddCustomMySpellDictionary(const wxString& strDictionaryName, const wxString& strDictionaryFileRoot);
     void CleanCustomMySpellDictionaries() { m_CustomMySpellDictionaryMap.clear(); }
 
-    virtual wxString GetCharacterEncoding();
+    wxFontEncoding GetCharacterEncoding() override {return m_CharacterEncoding;}
+
+    bool IsCharacterEncodingAvailable() override {return m_CharacterEncodingAvailable;}
 
 private:
     void PopulateDictionaryMap(StringToStringMap* pLookupMap, const wxString& strDictionaryPath);
@@ -79,6 +81,7 @@ private:
     wxString GetAffixFileName(const wxString& strDictionaryName);
     wxString GetDictionaryFileName();
     wxString GetDictionaryFileName(const wxString& strDictionaryName);
+    wxString GetCharacterEncodingStr();
 
     Hunhandle* m_pHunhandle;
 
@@ -87,6 +90,8 @@ private:
     wxString m_strDictionaryPath;
 
     PersonalDictionary m_PersonalDictionary;
+    wxFontEncoding m_CharacterEncoding {wxFONTENCODING_DEFAULT};
+    bool m_CharacterEncodingAvailable{false};
 };
 
 #endif  // __MYSPELL_CHECK_INTERFACE__
