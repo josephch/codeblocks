@@ -81,7 +81,8 @@ public:
   const wxCharBuffer ConvertToUnicode(const wxString& inputString);
   wxString ConvertFromUnicode(const char* inputBuffer);
 
-  virtual wxString GetCharacterEncoding() = 0;
+  virtual wxFontEncoding GetCharacterEncoding() = 0;
+  virtual bool IsCharacterEncodingAvailable() = 0;
 
   class MisspellingContext
   {
