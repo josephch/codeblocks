@@ -3113,7 +3113,7 @@ void ProjectManagerUI::CheckForExternallyModifiedProjects()
             cbProject* prj = ProjectPointers[idxProject];
             wxFileName fname(prj->GetFilename());
             wxDateTime last = fname.GetModificationTime();
-            if (last.IsLaterThan(prj->GetLastModificationTime()))
+            if (last.IsValid() && last.IsLaterThan(prj->GetLastModificationTime()))
             {    // was modified -> reload
                 int ret = -1;
                 if (!reloadAll)
