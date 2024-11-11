@@ -265,7 +265,12 @@ bool PluginManager::InstallPlugin(const wxString& pluginName, bool forAllUsers, 
         }
 
         if (!UninstallPlugin(existingPlugin))
+        {
+            fprintf(stderr, "PluginManager::%s:%d: %s uninstall failed\n", __FUNCTION__, __LINE__, pluginName.ToUTF8().data());
             return false;
+        }
+        fprintf(stderr, "PluginManager::%s:%d: %s uninstall success\n", __FUNCTION__, __LINE__, pluginName.ToUTF8().data());
+
     }
 
     wxString pluginDir;
@@ -700,24 +705,33 @@ void PluginManager::RegisterPlugin(const wxString& name,
                                     FreePluginProc freeProc,
                                     PluginSDKVersionProc versionProc)
 {
+    fprintf(stderr, "%s : %s enter \n", __FUNCTION__, name.ToUTF8().data());
     // sanity checks
     if (name.empty() || !createProc || !freeProc || !versionProc)
+    {
+        fprintf(stderr, "%s : %s sanity checks failed \n", __FUNCTION__, name.ToUTF8().data());
         return;
+    }
 
     // first check to see it's not already loaded
     if (FindPluginByName(name))
+    {
+        fprintf(stderr, "%s : %s already loaded \n", __FUNCTION__, name.ToUTF8().data());
         return; // yes, already loaded
+    }
 
     // read manifest file for plugin
     PluginInfo info;
     if (!ReadManifestFile(m_CurrentlyLoadingFilename, name, &info))
     {
+        fprintf(stderr, "%s : %s No manifest file for plugin \n", __FUNCTION__, name.ToUTF8().data());
         Manager::Get()->GetLogManager()->LogError(wxString::Format(_("No manifest file for plugin \"%s\" filename: %s"), name, m_CurrentlyLoadingFilename));
         return;
     }
 
     if (info.name.empty())
     {
+        fprintf(stderr, "%s : %s Invalid manifest file for plugin \n", __FUNCTION__, name.ToUTF8().data());
         Manager::Get()->GetLogManager()->LogError(wxString::Format(_("Invalid manifest file for plugin \"%s\" filename: %s"), name, m_CurrentlyLoadingFilename));
         return;
     }
@@ -1066,9 +1080,18 @@ int PluginManager::ScanForPlugins(const wxString& path)
         if (ReadManifestFile(filename))
         {
             if (LoadPlugin(path + wxFILE_SEP_PATH + filename))
+            {
                 ++count;
+            }
             else
+            {
+                fprintf(stderr, "%s : LoadPlugin failed for %s\n", __FUNCTION__, (path + wxFILE_SEP_PATH + filename).ToUTF8().data());
                 failed << '\n' << filename;
+            }
+        }
+        else
+        {
+            fprintf(stderr, "%s : ReadManifestFile failed for %s\n", __FUNCTION__, filename.ToUTF8().data());
         }
 
         if (m_pCurrentlyLoadingManifestDoc)
@@ -1105,6 +1128,7 @@ bool PluginManager::LoadPlugin(const wxString& pluginName)
     m_pCurrentlyLoadingLib = LibLoader::LoadLibrary(pluginName);
     if (!m_pCurrentlyLoadingLib->IsLoaded())
     {
+        fprintf(stderr, "%s : not loaded (missing symbols?) %s\n", __FUNCTION__, pluginName.ToUTF8().data());
         Manager::Get()->GetLogManager()->LogError(wxString::Format(_("%s: not loaded (missing symbols?)"), pluginName));
         LibLoader::RemoveLibrary(m_pCurrentlyLoadingLib);
         m_pCurrentlyLoadingLib = nullptr;
@@ -1112,6 +1136,7 @@ bool PluginManager::LoadPlugin(const wxString& pluginName)
         return false;
     }
 
+     fprintf(stderr, "%s : loaded plugin pluginName %s\n", __FUNCTION__, pluginName.ToUTF8().data());
     // by now, the library has loaded and its global variables are initialized.
     // this means it has already called RegisterPlugin()
     // now we can actually create the plugin(s) instance(s) :)
@@ -1150,6 +1175,7 @@ bool PluginManager::LoadPlugin(const wxString& pluginName)
 
     if (m_RegisteredPlugins.empty())
     {
+        fprintf(stderr, "%s : no plugins loaded from this library  %s \n", __FUNCTION__, m_CurrentlyLoadingFilename.ToUTF8().data());
         // no plugins loaded from this library, but it's not an error
         LibLoader::RemoveLibrary(m_pCurrentlyLoadingLib);
     }
