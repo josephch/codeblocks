@@ -361,6 +361,8 @@ CPPFLAGS="$CPPFLAGS -DPIC $CB_TINYXML_CFLAGS"
 CXXFLAGS="$CXXFLAGS $PIC_CFLAGS -fexceptions"
 AC_SUBST(codeblocks_PCH_FLAGS, "$PCH_FLAGS")
 
+AX_CXX_COMPILE_STDCXX(17, noext)
+
 dnl AM_PATH_GTK(1.2.7, ,
 dnl             AC_MSG_ERROR(Cannot find GTK: Is gtk-config in path?),
 dnl             gthread)
