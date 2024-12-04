@@ -91,8 +91,8 @@ debug_default="no"
 AC_ARG_ENABLE(debug, [AC_HELP_STRING([--enable-debug], [turn on debugging (default is OFF)])],,
                        enable_debug=$debug_default)
     if test "x$enable_debug" = "xyes"; then
-        CFLAGS="-g $CFLAGS -fno-omit-frame-pointer"
-        CXXFLAGS="-g $CXXFLAGS"
+        CFLAGS="-g $CFLAGS -fno-omit-frame-pointer -Wnrvo"
+        CXXFLAGS="-g $CXXFLAGS -Wnrvo"
         CPPFLAGS="-DDEBUG -DcbDEBUG $CPPFLAGS -fno-omit-frame-pointer"
         AC_MSG_RESULT(yes)
     else
