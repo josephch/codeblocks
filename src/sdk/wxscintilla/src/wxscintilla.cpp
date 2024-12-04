@@ -5124,13 +5124,12 @@ void wxScintilla::InsertTextRaw(int pos, const char* text)
 wxCharBuffer wxScintilla::GetCurLineRaw(int* linePos)
 {
     int len = LineLength(GetCurrentLine());
+    wxCharBuffer buf(len);
     if (!len) {
         if (linePos)  *linePos = 0;
-        wxCharBuffer empty;
-        return empty;
+        return buf;
     }
 
-    wxCharBuffer buf(len);
     int pos = SendMsg(SCI_GETCURLINE, len, (sptr_t)buf.data());
     if (linePos)  *linePos = pos;
     return buf;
@@ -5139,12 +5138,10 @@ wxCharBuffer wxScintilla::GetCurLineRaw(int* linePos)
 wxCharBuffer wxScintilla::GetLineRaw(int line)
 {
     int len = LineLength(line);
-    if (!len) {
-        wxCharBuffer empty;
-        return empty;
-    }
-
     wxCharBuffer buf(len);
+    if (!len) {
+        return buf;
+    }
     SendMsg(SCI_GETLINE, line, (sptr_t)buf.data());
     return buf;
 }
@@ -5179,12 +5176,11 @@ wxCharBuffer wxScintilla::GetTextRangeRaw(int startPos, int endPos)
 /* C::B end */
     }
     int len  = endPos - startPos;
+    wxCharBuffer buf(len);
     if (!len) {
-        wxCharBuffer empty;
-        return empty;
+        return buf;
     }
 
-    wxCharBuffer buf(len);
     Sci_TextRange tr;
     tr.lpstrText = buf.data();
     tr.chrg.cpMin = startPos;
