@@ -165,13 +165,11 @@ const wxCharBuffer wxSpellCheckEngineInterface::ConvertToUnicode(const wxString&
   if (IsCharacterEncodingAvailable())
   {
     wxCSConv conv(GetCharacterEncoding());
-    wxCharBuffer returnBuffer(conv.cWC2MB(inputString.wc_str(*wxConvCurrent)));
-    return returnBuffer;
+    return wxCharBuffer(conv.cWC2MB(inputString.wc_str(*wxConvCurrent)));
   }
   else
   {
-    wxCharBuffer returnBuffer(wxConvUTF8.cWC2MB(inputString.wc_str(*wxConvCurrent)));
-    return returnBuffer;
+    return wxCharBuffer(wxConvUTF8.cWC2MB(inputString.wc_str(*wxConvCurrent)));
   }
 #else
   wxCharBuffer returnBuffer = inputString.c_str();
@@ -185,13 +183,11 @@ wxString wxSpellCheckEngineInterface::ConvertFromUnicode(const char* inputBuffer
   if (IsCharacterEncodingAvailable())
   {
     wxCSConv conv(GetCharacterEncoding());
-    wxString returnString(conv.cMB2WC(inputBuffer), *wxConvCurrent);
-    return returnString;
+    return wxString(conv.cMB2WC(inputBuffer), *wxConvCurrent);
   }
   else
   {
-    wxString returnString(wxConvUTF8.cMB2WC(inputBuffer), *wxConvCurrent);
-    return returnString;
+    return wxString(wxConvUTF8.cMB2WC(inputBuffer), *wxConvCurrent);
   }
 #else
   wxString returnString(inputBuffer);
