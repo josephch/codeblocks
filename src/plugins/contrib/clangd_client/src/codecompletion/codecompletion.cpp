@@ -3496,9 +3496,7 @@ wxString ClgdCompletion::GetFilenameFromLSP_Response(wxCommandEvent& event)
 
     if (URI.empty()) return wxString();
     wxFileName fnFilename = fileUtils.FilePathFromURI(URI);
-    wxString filename = fnFilename.GetFullPath();
-    if (filename.Length()) return filename;
-    return wxString();
+    return fnFilename.GetFullPath();
 }
 // ----------------------------------------------------------------------------
 void ClgdCompletion::OnLSP_Event(wxCommandEvent& event)
@@ -5652,7 +5650,7 @@ wxString ClgdCompletion::GetTargetsOutFilename(cbProject* pProject)
             if (tgtIdx == -1)
             {
                 //-Log(_("canceled"));
-                return wxString();
+                return buildOutputFile;
             }
             pTarget = pProject->GetBuildTarget(tgtIdx);
             activeBuildTarget = (pTarget ? pTarget->GetTitle() : wxString(wxEmptyString));
@@ -5666,7 +5664,7 @@ wxString ClgdCompletion::GetTargetsOutFilename(cbProject* pProject)
             //cbMessageBox(_("The selected target is only running pre/post build step commands\n"
             //               "Can't debug such a target..."), _("Information"), wxICON_INFORMATION);
             //Log(_("aborted"));
-            return wxString();
+            return buildOutputFile;
         }
         //-if (target) Log(target->GetTitle());
 
@@ -5674,12 +5672,7 @@ wxString ClgdCompletion::GetTargetsOutFilename(cbProject* pProject)
             buildOutputFile = pTarget->GetOutputFilename();
     }
 
-    if (buildOutputFile.Length())
-    {
-        return buildOutputFile;
-    }
-
-    return wxString();
+    return buildOutputFile;
 
 }
 // ----------------------------------------------------------------------------
