@@ -1316,7 +1316,7 @@ wxString LSP_SymbolsParser::DoGetDocumentSymbolFunctionArgs(const wxString& deta
     if (not detail.Length()) return args;
     if (not detail.EndsWith(')'))
     {
-        return wxString();
+        return args;
     }
     // There must be only arguments or arguments following the type
     // Find the opening paren to arguments and remove arguments to get type only
@@ -1324,10 +1324,10 @@ wxString LSP_SymbolsParser::DoGetDocumentSymbolFunctionArgs(const wxString& deta
     if (wxFound(openingParen))
     {
         args = detail.SubString(openingParen,detail.Length()-1);
-        return args.Trim(true).Trim(false);
+        args.Trim(true).Trim(false);
     }
 
-    return wxString();
+    return args;
 }
 // ----------------------------------------------------------------------------
 int LSP_SymbolsParser::FindOpeningEnclosureChar(const wxString source, int index)
@@ -1458,7 +1458,8 @@ wxString LSP_SymbolsParser::GetFullTypeFromDetail(const wxString& detail)
     if (not detail.EndsWith(')'))
     {
         fullType = detail;
-        return fullType.Trim(true).Trim(false);
+        fullType.Trim(true).Trim(false);
+        return fullType;
     }
     // There must be only arguments or arguments following the type
     // Find the opening paren to arguments and remove arguments to get type only
@@ -1466,9 +1467,9 @@ wxString LSP_SymbolsParser::GetFullTypeFromDetail(const wxString& detail)
     if (wxFound(openingParen))
     {
         fullType = detail.Mid(0,openingParen);
-        return fullType.Trim(true).Trim(false);
+        fullType.Trim(true).Trim(false);
     }
-    return wxString();
+    return fullType;
 }
 // ----------------------------------------------------------------------------
 Token* LSP_SymbolsParser::TokenExists(const wxString& name, const Token* parent, short int kindMask)
@@ -4458,7 +4459,10 @@ wxString LSP_SymbolsParser::ReadAngleBrackets()
 {
     wxString str = m_Tokenizer.GetToken();
     if (str != wxT("<"))
-        return wxEmptyString;
+    {
+        str.Clear();
+        return str;
+    }
 
     int level = 1; // brace level of '<' and '>'
 
