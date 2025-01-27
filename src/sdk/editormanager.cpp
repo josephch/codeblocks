@@ -594,7 +594,7 @@ bool EditorManager::CloseAll(bool dontsave)
         if (startPage != eb)
             editors.push_back(eb);
     }
-    return CloseEditors(editors, dontsave);
+    return CloseEditors(std::move(editors), dontsave);
 }
 
 bool EditorManager::QueryCloseAll()
@@ -617,7 +617,7 @@ bool EditorManager::CloseAllExcept(EditorBase* editor, bool dontsave)
 
     editors.erase(std::remove(editors.begin(), editors.end(), editor), editors.end());
 
-    return CloseEditors(editors, dontsave);
+    return CloseEditors(std::move(editors), dontsave);
 }
 
 bool EditorManager::CloseAllInTabCtrl(bool dontsave)
