@@ -433,8 +433,6 @@ CompilerOptionsDlg::CompilerOptionsDlg(wxWindow* parent, CompilerGCC* compiler, 
     {
         nb->RemovePage(2); // remove "Search directories" page
         nb->RemovePage(1); // remove "Linker settings" page
-        nb->RemovePage(0); // remove "Compiler settings" page
-        XRCCTRL(*this, "tabCompiler", wxPanel)->Show(false);
         XRCCTRL(*this, "tabLinker", wxPanel)->Show(false);
         XRCCTRL(*this, "tabDirs", wxPanel)->Show(false);
     }
