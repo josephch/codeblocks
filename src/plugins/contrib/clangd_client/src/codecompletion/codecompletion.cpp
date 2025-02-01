@@ -4333,6 +4333,12 @@ void ClgdCompletion::OnEditorActivated(CodeBlocksEvent& event)
 
     }//endif parse non-ActiveProject editor
 
+    cbStyledTextCtrl* stc = pEd->GetControl();
+    stc->StyleSetBackground(STC_STYLE_WARNING, wxColour(255, 255, 255));
+    stc->StyleSetForeground(STC_STYLE_WARNING, wxColour(0xCC, 0xCC, 0x00));
+    stc->StyleSetBackground(STC_STYLE_ERROR, wxColour(255, 255, 255));
+    stc->StyleSetForeground(STC_STYLE_ERROR, wxColour(255, 0, 0));
+
     TRACE(_T("CodeCompletion::OnEditorActivated(): Leave"));
 }
 // ----------------------------------------------------------------------------

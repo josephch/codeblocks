@@ -239,6 +239,7 @@ void Parser::OnDebuggerStarting(CodeBlocksEvent& event)
             if (not pEdProject) continue;
             if (pEdProject != pActiveProject) continue;
             pcbEd->DeleteAllErrorAndWarningMarkers();
+            pcbEd->GetControl()->AnnotationClearAll();
         }
     }//endFor
 }
@@ -1938,8 +1939,12 @@ void Parser::OnLSP_DiagnosticsResponse(wxCommandEvent& event)
             LSPdiagnostic.Add(lspDiagTxt);
             // hold msg in array
             aLogLinesToWrite.Add(STX+ LSPdiagnostic[0] +STX+ LSPdiagnostic[1] +STX+ LSPdiagnostic[2]);
-            wxString diagMsgAndTitle = diagMsg +":\n"+ codeActionTitle;
-            fileDiagnostics.emplace_back(diagLine, diagMsgAndTitle);  //(Christo 2024/03/30)
+            wxString diagMsgAndTitle = diagMsg;
+            if (!codeActionTitle.IsEmpty())
+            {
+                diagMsgAndTitle += ":\n" + codeActionTitle;
+            }
+            fileDiagnostics.emplace_back(diagLine, std::move(diagMsgAndTitle)); //(Christo 2024/03/30)
 
             if (diagSeverity >= 2) //(christo 2024/03/23) 8lines
             {
@@ -1950,8 +1955,6 @@ void Parser::OnLSP_DiagnosticsResponse(wxCommandEvent& event)
                 lineWarningMap[diagLine] = false; //insert or replace as error takes precedence
             }
         }//endfor diagnosticsKnt
-        if (diagnosticsKnt)
-            m_pParseManager->InsertDiagnostics(cbFilename, std::move(fileDiagnostics));  //(Christo 2024/03/30)
 
         // ------------------------------------------------------
         // Always put out a log message even if zero diagnostics
@@ -1970,7 +1973,11 @@ void Parser::OnLSP_DiagnosticsResponse(wxCommandEvent& event)
             GetLSPClient()->LSP_GetLog()->Append(LSPdiagnostic);
             logFocusLine = GetLSPClient()->LSP_GetLog()->GetItemsCount();
             // Clear error marks for this editor
-            if (pEditor) pEditor->SetErrorLine(-1);
+            if (pEditor)
+            {
+                pEditor->DeleteAllErrorAndWarningMarkers();
+                pEditor->GetControl()->AnnotationClearAll();
+            }
         }// <== Inner block dtor
 
         // ------------------------------------------------------
@@ -2007,9 +2014,21 @@ void Parser::OnLSP_DiagnosticsResponse(wxCommandEvent& event)
                         //-        diagLine);
                         pEd->SetErrorLine(diagLine);
                     }
+                    cbStyledTextCtrl* control = pEd->GetControl();
+                    for (const auto& diag : fileDiagnostics)
+                    {
+                        if (diag.first == diagLine)
+                        {
+                            control->AnnotationSetText(diagLine, diag.second);
+                            control->AnnotationSetStyle(diagLine, warning ? STC_STYLE_WARNING : STC_STYLE_ERROR);
+                            control->AnnotationSetVisible(wxSCI_ANNOTATION_BOXED);
+                        }
+                    }
                 }
             }
         }//(christo 2024/03/23) end
+        if (diagnosticsKnt)
+            m_pParseManager->InsertDiagnostics(cbFilename, std::move(fileDiagnostics)); //(Christo 2024/03/30)
     }//endTry
     catch ( std::exception &e) {
         wxString errmsg(wxString::Format("LSP OnLSP_DiagnosticsResponse() error:\n%s", e.what()) );
@@ -2068,6 +2087,7 @@ void Parser::OnLSP_DiagnosticsResponse(wxCommandEvent& event)
     {
         // when no diagnostics for active editor clear error markers
         pEditor->DeleteAllErrorAndWarningMarkers(); //(christo 2024/03/23)
+        pEditor->GetControl()->AnnotationClearAll();
     }
 
     // ----------------------------------------------------------------------------

@@ -85,6 +85,9 @@ class Parser;
 #define PARSER_IMG_MIN PARSER_IMG_CLASS_FOLDER
 #define PARSER_IMG_MAX PARSER_IMG_MACRO_USE_FOLDER
 
+#define STC_STYLE_WARNING 101
+#define STC_STYLE_ERROR 102
+
 extern wxMutex s_ParserMutex;
 
 /** Tree data associate with the symbol tree item */
