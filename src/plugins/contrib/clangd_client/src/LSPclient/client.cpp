@@ -2377,6 +2377,7 @@ void ProcessLanguageClient::LSP_DidSave(cbEditor* pcbEd)
 
     //clear any error/warning indicator in editor //(christo 2024/03/23)
     pcbEd->DeleteAllErrorAndWarningMarkers();
+    pcbEd->GetControl()->AnnotationClearAll();
 
     // There's a bug in clangd that causes completions to stop after a DidSave(uri).
     // Clangd gets an unhandled exception (see server log and clangd #320 bug),
