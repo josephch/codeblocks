@@ -3881,7 +3881,6 @@ bool ProcessLanguageClient::AddFileToCompileDBJson(cbProject* pProject, ProjectB
 
     // Remove the older entry if any
     size_t found = 0, changed = 0;
-    const bool isMakefileCustom = pProject->IsMakefileCustom(); //Christo patch 1430
 
     for (int ii=0; ii<ccjEntryknt; ++ii)
     {
@@ -3911,7 +3910,6 @@ bool ProcessLanguageClient::AddFileToCompileDBJson(cbProject* pProject, ProjectB
             if (not found)
             {
                 found++; // update first entry only
-                if (not isMakefileCustom) // Christo patch 1430
                 {
                     const std::string& ccjCommand = ccjEntry["command"]; // Christo patch 1430
                     try
@@ -4041,6 +4039,47 @@ void ProcessLanguageClient::UpdateCompilationDatabase(cbProject* pProject, wxStr
 
     ProjectFile* pProjectFile = pProject->GetFileByFilename(filename, false);
     if (not pProjectFile) return;
+
+    if (pProject->IsMakefileCustom())
+    {
+        if (ParserCommon::FileType(pProjectFile->relativeFilename) == ParserCommon::ftHeader)
+        {
+            return;
+        }
+        for (int ii = 0; ii < jdb.size(); ++ii)
+        {
+            json ccjEntry;
+            try
+            {
+                ccjEntry = jdb.at(ii);
+            }
+            catch (std::exception& err)
+            {
+                wxString errMsg(wxString::Format("UpdateCompilationDatabase() error: '%s' for file '%s'\n", err.what(), filename));
+                writeClientLog(GetstdUTF8Str(errMsg));
+                cbMessageBox(errMsg);
+            }
+
+            const std::string& ccjFile = ccjEntry["file"];
+            if (ccjFile == GetstdUTF8Str(pProjectFile->file.GetFullPath()))
+            {
+                fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] filename %s already present in compile commands\n", __FUNCTION__, __LINE__, this, filename.ToUTF8().data());
+                return;
+            }
+            else
+            {
+                wxFileName file = pProjectFile->file;
+                file.MakeRelativeTo(wxFileName::GetCwd());
+                if (ccjFile == GetstdUTF8Str(file.GetFullPath()))
+                {
+                    fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] relative filename %s already present in compile commands\n", __FUNCTION__, __LINE__, this, file.GetFullPath().ToUTF8().data());
+                    m_CompileCommandsFiles.emplace_back(std::move(filename));
+                    return;
+                }
+            }
+        }
+        fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] filename %s not present in compile commands\n", __FUNCTION__, __LINE__, this, filename.ToUTF8().data());
+    }
 
     // create array of compiler built-in include files needed for for clang '-fsyntax-only'
     // The files arn't found by clang for some unknown reason to me.
