@@ -55,7 +55,6 @@ BEGIN_EVENT_TABLE(OpenFilesListPlugin, cbPlugin)
     EVT_UPDATE_UI_RANGE(idViewOpenFilesTree, idViewPreserveOpenEditors, OpenFilesListPlugin::OnUpdateUI)
     EVT_MENU(idViewOpenFilesTree, OpenFilesListPlugin::OnViewOpenFilesTree)
     EVT_MENU(idViewPreserveOpenEditors, OpenFilesListPlugin::OnViewPreserveOpenEditors)
-    EVT_TREE_ITEM_ACTIVATED(idOpenFilesTree, OpenFilesListPlugin::OnTreeItemActivated)
     EVT_TREE_ITEM_RIGHT_CLICK(idOpenFilesTree, OpenFilesListPlugin::OnTreeItemRightClick)
 END_EVENT_TABLE()
 
@@ -84,6 +83,7 @@ void OpenFilesListPlugin::OnAttach()
     // create tree
     m_pTree = new wxTreeCtrl(Manager::Get()->GetAppWindow(), idOpenFilesTree,wxDefaultPosition,wxSize(150, 100),
                             wxTR_HAS_BUTTONS | wxNO_BORDER | wxTR_HIDE_ROOT);
+    m_pTree->Bind(wxEVT_LEFT_DOWN, &OpenFilesListPlugin::OnLeftMouseDown, this);
 
     // load bitmaps
     const double scaleFactor = cbGetContentScaleFactor(*m_pTree);
@@ -302,15 +302,21 @@ void OpenFilesListPlugin::RefreshOpenFilesTree(EditorBase* ed, bool remove)
     m_pTree->Thaw();
 }
 
-// tree item double-clicked
-void OpenFilesListPlugin::OnTreeItemActivated(wxTreeEvent& event)
+// tree item single-clicked
+void OpenFilesListPlugin::OnLeftMouseDown(wxMouseEvent& event)
 {
     if (Manager::IsAppShuttingDown())
         return;
 
-    EditorBase* ed = static_cast<EditorBase*>( static_cast<OpenFilesListData*>(m_pTree->GetItemData(event.GetItem()))->GetEditor() );
-    if (ed)
-        Manager::Get()->GetEditorManager()->SetActiveEditor(ed);
+    wxPoint pos = event.GetPosition();
+    int flags = 0;
+    wxTreeItemId item = m_pTree->HitTest(pos, flags);
+    if (item.IsOk())
+    {
+        EditorBase* ed = static_cast<EditorBase*>(static_cast<OpenFilesListData*>(m_pTree->GetItemData(item))->GetEditor());
+        if (ed)
+            Manager::Get()->GetEditorManager()->SetActiveEditor(ed);
+    }
 }
 
 // tree item right-clicked
