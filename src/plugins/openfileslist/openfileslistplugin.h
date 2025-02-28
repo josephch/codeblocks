@@ -48,7 +48,7 @@ class OpenFilesListPlugin : public cbPlugin
         void RebuildOpenFilesTree();
         void RefreshOpenFilesTree(EditorBase* ed, bool remove = false);
 
-        void OnTreeItemActivated(wxTreeEvent& event);
+        void OnLeftMouseDown(wxMouseEvent& event);
         void OnTreeItemRightClick(wxTreeEvent& event);
         void OnViewOpenFilesTree(wxCommandEvent& event);
         void OnViewPreserveOpenEditors(wxCommandEvent& event);
