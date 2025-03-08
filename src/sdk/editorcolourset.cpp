@@ -147,7 +147,7 @@ void EditorColourSet::LoadAvailableSets()
 
     for (OptionSetsMap::iterator it = m_Sets.begin(); it != m_Sets.end(); ++it)
     {
-        wxString lang = it->second.m_Langs;
+        const wxString& lang = it->second.m_Langs;
         if (lang.IsEmpty())
             continue;
 
@@ -858,7 +858,7 @@ void EditorColourSet::SetKeywords(HighlightLanguage lang, int idx, const wxStrin
         tmp.Truncate(len);
 
         OptionSet& mset = m_Sets[lang];
-        mset.m_Keywords[idx] = tmp;
+        mset.m_Keywords[idx] = std::move(tmp);
     }
 }
 
