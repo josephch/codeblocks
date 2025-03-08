@@ -30,7 +30,7 @@ class DLLIMPORT EncodingDetector
         int GetBOMSizeInBytes() const;
         /** @return The detected encoding. Currently ISO8859-1 is returned if no BOM is present. */
         wxFontEncoding GetFontEncoding() const;
-        wxString GetWxStr() const;
+        const wxString& GetWxStr() const;
     private:
         wxString m_ConvStr;
         wxFontEncoding m_Encoding;
