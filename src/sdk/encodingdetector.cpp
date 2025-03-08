@@ -559,7 +559,7 @@ EncodingDetector::EncodingDetector(const wxString& filename, bool useLog)
 {
     EncodingDetectorImpl detector(useLog);
     m_IsOK = detector.DetectEncoding(filename);
-    m_ConvStr = detector.m_ConvStr;
+    m_ConvStr = std::move(detector.m_ConvStr);
     m_Encoding = detector.m_Encoding;
     m_BOMSizeInBytes = detector.m_BOMSizeInBytes;
     m_UseBOM = detector.m_UseBOM;
@@ -569,7 +569,7 @@ EncodingDetector::EncodingDetector(LoaderBase* fileLdr, bool useLog)
 {
     EncodingDetectorImpl detector(useLog);
     m_IsOK = detector.DetectEncoding((wxByte*)fileLdr->GetData(), fileLdr->GetLength());
-    m_ConvStr = detector.m_ConvStr;
+    m_ConvStr = std::move(detector.m_ConvStr);
     m_Encoding = detector.m_Encoding;
     m_BOMSizeInBytes = detector.m_BOMSizeInBytes;
     m_UseBOM = detector.m_UseBOM;
@@ -579,7 +579,7 @@ EncodingDetector::EncodingDetector(const wxByte* buffer, size_t size, bool useLo
 {
     EncodingDetectorImpl detector(useLog);
     m_IsOK = detector.DetectEncoding(buffer, size);
-    m_ConvStr = detector.m_ConvStr;
+    m_ConvStr = std::move(detector.m_ConvStr);
     m_Encoding = detector.m_Encoding;
     m_BOMSizeInBytes = detector.m_BOMSizeInBytes;
     m_UseBOM = detector.m_UseBOM;
@@ -609,7 +609,7 @@ wxFontEncoding EncodingDetector::GetFontEncoding() const
     return m_Encoding;
 }
 
-wxString EncodingDetector::GetWxStr() const
+const wxString& EncodingDetector::GetWxStr() const
 {
     return m_ConvStr;
 }
