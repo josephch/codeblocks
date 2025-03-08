@@ -164,6 +164,7 @@ ProjectFile* ProjectBuildTarget::GetFile(int index)
 {
     if (m_FileArray.GetCount() == 0)
     {
+        m_FileArray.Alloc(m_Files.size());
         for (FilesList::iterator it = m_Files.begin(); it != m_Files.end(); ++it)
         {
             if (!*it)
