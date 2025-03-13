@@ -1,0 +1,5 @@
+Checks: '-*,clang-analyzer-*,-clang-analyzer-deadcode.DeadStores,-clang-diagnostic-unused-variable,-clang-analyzer-security.insecureAPI.strcpy'
+WarningsAsErrors: ''
+FormatStyle:     none
+CheckOptions:    []
+
