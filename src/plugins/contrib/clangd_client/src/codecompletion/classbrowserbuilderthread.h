@@ -81,7 +81,15 @@ class CCTreeItem
 public:
     CCTreeItem(CCTreeItem* parent, const wxString& text, int image = -1, int selImage = -1, CCTreeCtrlData* data = nullptr);
     virtual ~CCTreeItem();
-    void DeleteChildren() {while (m_firstChild) delete m_firstChild; m_hasChildren = false;}
+    void DeleteChildren()
+    {
+        if (m_firstChild)
+        {
+            delete m_firstChild;
+            m_firstChild = nullptr;
+        }
+        m_hasChildren = false;
+    }
     static void Swap(CCTreeItem* a, CCTreeItem* b);
 
     CCTreeItem* m_parent;
