@@ -485,7 +485,7 @@ bool ProjectManager::CloseProject(cbProject* project, bool dontsave, bool refres
     project->CloseAllFiles(true);
     if (refresh)
         m_ui->RemoveProject(project);
-    if (wasActive && m_pProjects->GetCount())
+    if (wasActive && m_pProjects->GetCount() && !m_IsClosingWorkspace)
         SetProject(m_pProjects->Item(0), refresh);
     delete project;
     if (!m_InitialDir.IsEmpty()) // Restore the working directory
