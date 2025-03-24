@@ -1654,7 +1654,8 @@ wxString realpath(const wxString& path)
 #else
     char buf[2048] = {};
     struct stat buffer;
-    std::string ret = (const char*)cbU2C(path);
+    const wxWX2MBbuf pathC = cbU2C(path);
+    std::string ret = (const char*)pathC;
     size_t lastPos = 0;
     size_t slashPos = ret.find('/', lastPos);
     while (slashPos != std::string::npos)
