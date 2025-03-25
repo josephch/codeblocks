@@ -1225,14 +1225,37 @@ bool cbProject::CloseAllFiles(bool dontsave)
     if (!dontsave && !QueryCloseAllFiles())
             return false;
 
+    wxFileName activeEditorFileName;
+    ProjectFile* activeFile = nullptr;
+    EditorBase* activeEditor = Manager::Get()->GetEditorManager()->GetActiveEditor();
+    if (activeEditor)
+    {
+        activeEditorFileName = activeEditor->GetFilename();
+    }
+
     // now free the rest of the project files
     Manager::Get()->GetEditorManager()->HideNotebook();
     for (FilesList::iterator it = m_Files.begin(); it != m_Files.end(); ++it)
     {
         ProjectFile* f = *it;
         if (f)
-            Manager::Get()->GetEditorManager()->Close(f->file.GetFullPath(),true);
-        delete f;
+        {
+            wxString fullFilePath = f->file.GetFullPath();
+            if (!activeFile && (activeEditorFileName == fullFilePath))
+            {
+                activeFile = f;
+            }
+            else
+            {
+                Manager::Get()->GetEditorManager()->Close(fullFilePath, true);
+                delete f;
+            }
+        }
+    }
+    if (activeFile)
+    {
+        Manager::Get()->GetEditorManager()->Close(activeEditorFileName.GetFullPath(), true);
+        delete activeFile;
     }
     m_FileArray.Clear();
     m_Files.clear();
