@@ -558,6 +558,7 @@ private:
     cbProject* m_PrevProject         = nullptr;
     cbProject* m_CurrProject         = nullptr;
     wxString m_PreviousCompletionPattern = "~~abuseme~~";
+    std::shared_ptr<ProcessLanguageClient> m_LastInactiveClient;
 
     FileUtils fileUtils;
 

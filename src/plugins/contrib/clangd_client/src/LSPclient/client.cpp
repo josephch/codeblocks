@@ -636,7 +636,14 @@ ProcessLanguageClient::~ProcessLanguageClient()
 // ----------------------------------------------------------------------------
 {
     // dtor
+    Terminate();
+}
 
+void ProcessLanguageClient::Terminate()
+{
+    if (m_terminated)
+        return;
+    m_terminated = true;
     m_terminateLSP = true; //tell the json read thread to terminate
     m_MapMsgHndlr.SetLSP_TerminateFlag(1);
     m_CondInputBuf.Signal();  // post jsonRead wait
