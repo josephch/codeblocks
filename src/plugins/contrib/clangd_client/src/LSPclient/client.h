@@ -365,6 +365,7 @@ class ProcessLanguageClient : public wxEvtHandler, private LanguageClient
         int             m_idLSP_Process = wxNewId(); //event id for this client instance
         std::string     m_std_LSP_IncomingStr;
         bool            m_terminateLSP = false;
+        bool            m_terminated = false;
         int             m_LSP_UserEventID = -1;
         cbProject*      m_pCBProject;
         Parser*         m_pParser = nullptr;
@@ -754,6 +755,7 @@ class ProcessLanguageClient : public wxEvtHandler, private LanguageClient
 
     explicit ProcessLanguageClient(const cbProject* pProject, const char* program = "", const char* arguments = "");
     ~ProcessLanguageClient() override;
+    void Terminate();
 
     bool Has_LSPServerProcess();
     void OnClangd_stderr(wxThreadEvent& event);

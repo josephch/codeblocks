@@ -3766,8 +3766,8 @@ void ClgdCompletion::ShutdownLSPclient(cbProject* pProject)
             // Tell LSP server to quit
             pClient->LSP_Shutdown();
             GetParseManager()->m_LSP_Clients.erase(pProject); // erase first or crash
-            delete pClient;
-            pClient = nullptr;
+            pClient->Terminate();
+            m_LastInactiveClient.reset(pClient);
 
             // The clangd process is probably already terminated by LSP_Shutdown above.
             // but it sometimes gets stuck waiting for cpu access
