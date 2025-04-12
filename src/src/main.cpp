@@ -114,6 +114,7 @@ struct MainStatusBar : cbStatusBar
         dc.GetTextExtent(_(" Modified "),                        &widths[num++], &h);
         dc.GetTextExtent(_(" Read/Write "),                      &widths[num++], &h);
         dc.GetTextExtent(_(" name_of_profile "),                 &widths[num++], &h);
+        dc.GetTextExtent(_(" vcs:branch_name "),                 &widths[num++], &h);
 
         SetFieldsCount(num);
         SetStatusWidths(num, widths);
@@ -132,6 +133,21 @@ struct MainStatusBar : cbStatusBar
 
         SetStatusText(wxString::Format(_("Welcome to %s!"), appglobals::AppName));
         SetStatusText(wxString(), 1);
+    }
+
+    static wxString GetVcsInfo(cbEditor* ed)
+    {
+        wxString vcsInfo;
+        ProjectFile* projectFile = ed->GetProjectFile();
+        if (projectFile)
+        {
+            cbProject* project = projectFile->GetParentProject();
+            if (project)
+            {
+                vcsInfo = project->GetVcsInfo();
+            }
+        }
+        return vcsInfo;
     }
 
     void UpdateFields()
@@ -172,6 +188,7 @@ struct MainStatusBar : cbStatusBar
             SetStatusText(ed->GetModified() ? _("Modified") : wxString(), panel++);
             SetStatusText(control->GetReadOnly() ? _("Read only") : _("Read/Write"), panel++);
             SetStatusText(personality, panel++);
+            SetStatusText(GetVcsInfo(ed), panel++);
         }
         else
         {
@@ -193,6 +210,7 @@ struct MainStatusBar : cbStatusBar
             SetStatusText(wxString(), panel++);
             SetStatusText(wxString(), panel++);
             SetStatusText(personality, panel++);
+            SetStatusText(wxString(), panel++);
         }
     }
 private:
