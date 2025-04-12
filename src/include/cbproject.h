@@ -908,6 +908,17 @@ class DLLIMPORT cbProject : public CompileTargetBase
           */
         virtual void SetNotifications(bool onOrOff) { m_Notifications = onOrOff; }
 
+#define PROJECTMANAGER_VCSINFO_SUPPORT
+        void SetVcsInfo(wxString info)
+        {
+            m_vcsInfo = std::move(info);
+        }
+
+        wxString GetVcsInfo()
+        {
+            return m_vcsInfo;
+        }
+
     private:
         void Open();
         void ExpandVirtualBuildTargetGroup(const wxString& alias, wxArrayString& result) const;
@@ -959,6 +970,8 @@ class DLLIMPORT cbProject : public CompileTargetBase
 
         // Turn event notifications for this cbProject on or off (default on)
         bool     m_Notifications;
+
+        wxString m_vcsInfo;
 };
 
 /// Returns a string valid to be used as LD_LIBRARY_PATH (or equivalent).
