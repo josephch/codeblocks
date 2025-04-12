@@ -137,6 +137,7 @@ int MyThes::thInitialize(const char* idxpath, const char* datpath)
     {
         fprintf(stderr,"Error - bad memory allocation\n");
         fflush(stderr);
+        fclose(pifile);
         return 0;
     }
 

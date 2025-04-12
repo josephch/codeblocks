@@ -31,8 +31,7 @@ void SpellCheckCmdLineInterface::PrintMisspelling()
     // Append the closing marker first since the opening marker would shift where the closing marker would have to go
     strContext.insert(Context.GetOffset() + Context.GetLength(), _T("<-**"));
     strContext.insert(Context.GetOffset(), _T("**->"));
-    wxCharBuffer contextCharBuffer(wxConvUTF8.cWC2MB(strContext.wc_str(*wxConvCurrent)));
-    wxPrintf(_T("%s\n"), (const char*)contextCharBuffer);
+    wxPrintf(_T("%s\n"), (const char*)wxConvUTF8.cWC2MB(strContext.wc_str(*wxConvCurrent)));
   }
 }
 
