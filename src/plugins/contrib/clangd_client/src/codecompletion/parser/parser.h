@@ -239,6 +239,7 @@ public:
     void OnLSP_GoToNextFunctionResponse(wxCommandEvent& event);
     void OnLSP_GoToFunctionResponse(wxCommandEvent& event); //unused
     void OnLSP_CompletionPopupHoverResponse(wxCommandEvent& event);
+    void OnLSP_RangeFormattingResponse(wxCommandEvent& event);
     void OnRequestCodeActionApply(wxCommandEvent& event);
 
     wxString GetCompletionPopupDocumentation(const ClgdCCToken& token);
