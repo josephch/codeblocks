@@ -1073,11 +1073,9 @@ void ClgdCompletion::BuildModuleMenu(const ModuleType type, wxMenu* menu, const 
         const wxString labelAStyle = _("Format use AStyle");
         const wxString label = _("Format use Clangd"); // (christo 25/05/02)
         int position = Manager::Get()->GetPluginManager()->FindSortedMenuItemPosition(*menu, labelAStyle);
-        wxMenuItem* item = menu->FindItemByPosition(position);
-        if (item)  {
-            wxString itemLabel = item->GetItemLabelText();
-            if (itemLabel == labelAStyle)
-                position += 1;
+        if (position != menu->GetMenuItemCount())
+        {
+            position += 1;
         }
         menu->Insert(position, idCodeFormatterActiveFile, label, _("Format the selected source code (selected line) in the current file"));
 
