@@ -1,0 +1,73 @@
+--- src/CallTip.cxx	2025-08-03 10:30:54.292376679 +0530
++++ src/CallTip.cxx	2020-09-12 21:03:27.000000000 +0530
+@@ -22,24 +26,24 @@
+ 
+ #include "Scintilla.h"
+ 
+-#include "StringCopy.h"
+ #include "Position.h"
++#include "IntegerRectangle.h"
+ #include "CallTip.h"
+ 
+-#ifdef SCI_NAMESPACE
+ using namespace Scintilla;
+-#endif
+ 
+-CallTip::CallTip() {
+-	wCallTip = 0;
++size_t Chunk::Length() const noexcept {
++	return end - start;
++}
++
++CallTip::CallTip() noexcept {
++	wCallTip = {};
+ 	inCallTipMode = false;
+ 	posStartCallTip = 0;
+ 	rectUp = PRectangle(0,0,0,0);
+ 	rectDown = PRectangle(0,0,0,0);
+ 	lineHeight = 1;
+ 	offsetMain = 0;
+-	startHighlight = 0;
+-	endHighlight = 0;
+ 	tabSize = 0;
+ 	above = false;
+ 	useStyleCallTip = false;    // for backwards compatibility
+@@ -281,32 +299,25 @@
+ 	surfaceMeasure->Init(wParent.GetID());
+ 	surfaceMeasure->SetUnicodeMode(SC_CP_UTF8 == codePage);
+ 	surfaceMeasure->SetDBCSMode(codePage);
+-	startHighlight = 0;
+-	endHighlight = 0;
++	highlight = Chunk();
+ 	inCallTipMode = true;
+ 	posStartCallTip = pos;
+-	XYPOSITION deviceHeight = static_cast<XYPOSITION>(surfaceMeasure->DeviceHeightFont(size));
+-	FontParameters fp(faceName, deviceHeight / SC_FONT_SIZE_MULTIPLIER, SC_WEIGHT_NORMAL, false, 0, technology, characterSet);
++	const XYPOSITION deviceHeight = static_cast<XYPOSITION>(surfaceMeasure->DeviceHeightFont(size));
++	const FontParameters fp(faceName, deviceHeight / SC_FONT_SIZE_MULTIPLIER, SC_WEIGHT_NORMAL, false, 0, technology, characterSet);
+ 	font.Create(fp);
+ 	// Look for multiple lines in the text
+ 	// Only support \n here - simply means container must avoid \r!
+-	int numLines = 1;
+-	const char *newline;
+-	const char *look = val.c_str();
++	const int numLines = 1 + static_cast<int>(std::count(val.begin(), val.end(), '\n'));
+ 	rectUp = PRectangle(0,0,0,0);
+ 	rectDown = PRectangle(0,0,0,0);
+ 	offsetMain = insetX;            // changed to right edge of any arrows
+ 	const int width = PaintContents(surfaceMeasure.get(), false) + insetX;
+-	while ((newline = strchr(look, '\n')) != NULL) {
+-		look = newline + 1;
+-		numLines++;
+-	}
+-	lineHeight = RoundXYPosition(surfaceMeasure->Height(font));
++	lineHeight = static_cast<int>(Sci::lround(surfaceMeasure->Height(font)));
+ 
+ 	// The returned
+ 	// rectangle is aligned to the right edge of the last arrow encountered in
+ 	// the tip text, else to the tip text left edge.
+-	int height = lineHeight * numLines - static_cast<int>(surfaceMeasure->InternalLeading(font)) + borderHeight * 2;
++	const int height = lineHeight * numLines - static_cast<int>(surfaceMeasure->InternalLeading(font)) + borderHeight * 2;
+ 	if (above) {
+ 		return PRectangle(pt.x - offsetMain, pt.y - verticalOffset - height, pt.x + width - offsetMain, pt.y - verticalOffset);
+ 	} else {

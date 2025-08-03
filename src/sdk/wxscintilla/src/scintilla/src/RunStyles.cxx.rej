@@ -1,0 +1,20 @@
+--- src/RunStyles.cxx	2025-08-03 10:30:54.296376649 +0530
++++ src/RunStyles.cxx	2020-09-12 21:03:27.000000000 +0530
+@@ -299,9 +322,16 @@
+ 	if (styles->ValueAt(styles->Length()-1) != 0) {
+ 		throw std::runtime_error("RunStyles: Unused style at end changed.");
+ 	}
+-	for (int j=1; j<styles->Length()-1; j++) {
++	for (ptrdiff_t j=1; j<styles->Length()-1; j++) {
+ 		if (styles->ValueAt(j) == styles->ValueAt(j-1)) {
+ 			throw std::runtime_error("RunStyles: Style of a partition same as previous.");
+ 		}
+ 	}
+ }
++
++template class Scintilla::RunStyles<int, int>;
++template class Scintilla::RunStyles<int, char>;
++#if (PTRDIFF_MAX != INT_MAX) || PLAT_HAIKU
++template class Scintilla::RunStyles<ptrdiff_t, int>;
++template class Scintilla::RunStyles<ptrdiff_t, char>;
++#endif
