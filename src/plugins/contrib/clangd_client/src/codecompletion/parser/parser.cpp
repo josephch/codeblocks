@@ -2402,8 +2402,16 @@ wxString Parser::GetLineTextFromFile(const wxString& filename, const int lineNum
 
     //-unused- wxWindow* parent = edMan->GetBuiltinActiveEditor()->GetParent();
     cbStyledTextCtrl* pControl = GetStaticHiddenEditor(filename);
+    wxString resultText;
 
-   wxString resultText;
+    if (!pControl)
+    {
+        wxString msg = wxString::Format("Could not get hiddon editor for file %s", filename);
+        CCLogger::Get()->DebugLog(msg);
+        cbMessageBox(msg);
+        return resultText;
+    }
+
    switch(1) //once only
     {
         default:
