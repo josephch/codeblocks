@@ -111,8 +111,8 @@ void cbStyledTextCtrl::OnContextMenu(wxContextMenuEvent& event)
         if ( EditorBase* pParent = dynamic_cast<EditorBase*>(m_pParent) )
         {
             // To prevent generating EVT_MOUSE_CAPTURE_LOST.
-            if (HaveMouseCapture())
-                SetMouseCapture(false);
+            if (GetMouseDownCaptures())
+                	SetMouseDownCaptures(false);
 
             const bool is_right_click = event.GetPosition() != wxDefaultPosition;
             const wxPoint mp(is_right_click ? event.GetPosition() : wxDefaultPosition);

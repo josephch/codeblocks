@@ -39,6 +39,7 @@
 #include <wx/dnd.h>
 #include <wx/stopwatch.h>
 /* C::B begin */
+#include <wx/stc/stc.h>
 #include <wx/scrolbar.h>
 #if wxCHECK_VERSION(3, 0, 0)
 #include <wx/versioninfo.h>
@@ -2836,7 +2837,6 @@ class WXDLLIMPEXP_FWD_CORE wxScrollBar;
 //}}}
 //----------------------------------------------------------------------
 
-class  ScintillaWX;                      // forward declare
 class  WordList;
 
 #ifdef SCI_NAMESPACE
@@ -2862,7 +2862,7 @@ class  WXDLLIMPEXP_SCI wxScintillaEvent;
 
 //----------------------------------------------------------------------
 
-class WXDLLIMPEXP_SCI wxScintilla : public wxControl {
+class WXDLLIMPEXP_SCI wxScintilla : public wxStyledTextCtrl {
 public:
 
 #ifdef SWIG
@@ -2879,12 +2879,13 @@ public:
     wxScintilla (wxWindow *parent, wxWindowID id=wxID_ANY,
                  const wxPoint& pos = wxDefaultPosition,
                  const wxSize& size = wxDefaultSize, long style = 0,
-                 const wxString& name = wxSCINameStr);
-    wxScintilla() { m_swx = NULL; }
-    ~wxScintilla();
+                 const wxString& name = wxSCINameStr) : wxStyledTextCtrl(parent, id, pos, size, style, name) {}
+    wxScintilla() = default;
+    virtual ~wxScintilla() = default;
 
 #endif
 
+#if 0
     bool Create(wxWindow *parent, wxWindowID id=wxID_ANY,
                 const wxPoint& pos = wxDefaultPosition,
                 const wxSize& size = wxDefaultSize, long style = 0,
@@ -2938,11 +2939,15 @@ public:
     // history and discarding them.
     void SetUndoCollection(bool collectUndo);
 
+
+#endif
 /* CHANGEBAR begin */
     // Choose between collecting actions into the changes
     // history and discarding them.
     void SetChangeCollection(bool collectChange);
 
+
+#if 0
     // Find a changed line, if fromLine > toLine search is performed backwards.
     int FindChangedLine (const int fromLine, const int toLine) const;
 /* CHANGEBAR end */
@@ -3642,11 +3647,12 @@ public:
 
     // Are there any undoable actions in the undo history?
     bool CanUndo() const;
-
+#endif
     // Delete the undo history.
 /* CHANGEBAR begin */
     void EmptyUndoBuffer(bool collectChangeHistory=false);
 /* CHANGEBAR end */
+#if 0
 
     // Undo one action in the undo history.
     void Undo();
@@ -4293,9 +4299,10 @@ public:
 
     // Get which document modification events are sent to the container.
     int GetModEventMask() const;
-
+#endif
     // Change internal focus flag.
-    void SetSCIFocus(bool focus);
+    void SetSCIFocus(bool focus) { SetSTCFocus (focus);}
+#if 0
 
     // Get internal focus flag.
     bool GetSCIFocus() const;
@@ -4778,7 +4785,7 @@ public:
 
     // Clear selections to a single empty stream selection
     void ClearSelections();
-
+#endif
 /* C::B begin */
     // Select a range of text.
     void SetSelectionVoid(int startPos, int endPos);
@@ -4787,6 +4794,7 @@ public:
     int SetSelectionInt(int caret, int anchor);
 /* C::B end */
 
+#if 0
     // Add a selection
     int AddSelection(int caret, int anchor);
 
@@ -5410,18 +5418,21 @@ protected:
     friend class ScintillaWX;
     friend class Platform;
 #endif // !SWIG
+#endif
 };
 
 //----------------------------------------------------------------------
 
-class WXDLLIMPEXP_SCI wxScintillaEvent : public wxCommandEvent {
+class WXDLLIMPEXP_SCI wxScintillaEvent : public wxStyledTextEvent {
 public:
-    wxScintillaEvent(wxEventType commandType=0, int id=0);
+    wxScintillaEvent() : wxStyledTextEvent(0, 0) {};
+    wxScintillaEvent(wxEventType commandType=0, int id=0): wxStyledTextEvent(commandType, id){};
 #ifndef SWIG
-    wxScintillaEvent(const wxScintillaEvent& event);
+    wxScintillaEvent(const wxScintillaEvent& event) : wxStyledTextEvent(event){};
 #endif
-    ~wxScintillaEvent() {}
+    ~wxScintillaEvent() = default;
 
+#if 0
     void SetPosition(int pos)             { m_position = pos; }
     void SetKey(int k)                    { m_key = k; }
     void SetModifiers(int m)              { m_modifiers = m; }
@@ -5532,6 +5543,7 @@ private:
 #if wxUSE_DRAG_AND_DROP
     int      m_dragFlags;       // wxEVT_SCI_START_DRAG
     wxDragResult m_dragResult;  // wxEVT_SCI_DRAG_OVER,wxEVT_SCI_DO_DROP
+#endif
 #endif
 #endif
 };

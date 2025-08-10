@@ -9,9 +9,7 @@
 ##############################################################################
 
 # list of source files
-SRC = PlatWX.cpp \
-      ScintillaWX.cpp \
-      wxscintilla.cpp \
+SRC = wxscintilla.cpp \
       AutoComplete.cxx \
       CallTip.cxx \
       CellBuffer.cxx \

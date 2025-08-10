@@ -2663,13 +2663,14 @@ void cbEditor::GotoNextChanged()
         fromLine = 0;
     else
         fromLine++;
-
+#if 0
     int newLine = p_Control->FindChangedLine(fromLine, toLine);
     if (newLine != wxSCI_INVALID_POSITION)
     {
         p_Control->GotoLine(newLine);
         p_Control->MakeNearbyLinesVisible(p_Control->GetCurrentLine());
     }
+#endif
 }
 
 void cbEditor::GotoPreviousChanged()
@@ -2683,18 +2684,22 @@ void cbEditor::GotoPreviousChanged()
     else
         fromLine--;
 
+#if 0
     int newLine = p_Control->FindChangedLine(fromLine, toLine);
     if (newLine != wxSCI_INVALID_POSITION)
     {
         p_Control->GotoLine(newLine);
         p_Control->MakeNearbyLinesVisible(p_Control->GetCurrentLine());
     }
+#endif
 }
 
 void cbEditor::SetChangeCollection(bool collectChange)
 {
+    #if 0
     cbAssert(GetControl());
     GetControl()->SetChangeCollection(collectChange);
+    #endif
 }
 
 void cbEditor::Cut()

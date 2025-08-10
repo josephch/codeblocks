@@ -43,7 +43,6 @@
     #include <wx/dcbuffer.h>
 #endif
 
-#include "ScintillaWX.h"
 #include "wx/wxscintilla.h"
 
 #ifdef SCI_NAMESPACE
@@ -130,7 +129,7 @@ DEFINE_EVENT_TYPE( wxEVT_SCI_CLIPBOARD_PASTE );
 DEFINE_EVENT_TYPE( wxEVT_SCI_AUTOCOMP_COMPLETED );
 DEFINE_EVENT_TYPE( wxEVT_SCI_MARGIN_RIGHT_CLICK );
 
-
+#if 0
 BEGIN_EVENT_TABLE(wxScintilla, wxControl)
     EVT_PAINT                   (wxScintilla::OnPaint)
     EVT_SCROLLWIN               (wxScintilla::OnScrollWin)
@@ -159,16 +158,17 @@ BEGIN_EVENT_TABLE(wxScintilla, wxControl)
     EVT_LISTBOX_DCLICK          (wxID_ANY, wxScintilla::OnListBox)
     EVT_MOUSE_CAPTURE_LOST      (wxScintilla::OnMouseCaptureLost)
 END_EVENT_TABLE()
-
-
-IMPLEMENT_CLASS(wxScintilla, wxControl)
+//IMPLEMENT_CLASS(wxScintilla, wxStyledTextCtrl)
 IMPLEMENT_DYNAMIC_CLASS(wxScintillaEvent, wxCommandEvent);
 
 #ifdef LINK_LEXERS
 // forces the linking of the lexer modules
 int Scintilla_LinkLexers();
 #endif
+#endif
 
+
+#if 0
 //----------------------------------------------------------------------
 // Constructor and Destructor
 
@@ -366,15 +366,17 @@ void wxScintilla::SetUndoCollection(bool collectUndo)
 {
     SendMsg(SCI_SETUNDOCOLLECTION, collectUndo, 0);
 }
-
+#endif
 /* CHANGEBAR begin */
 // Choose between collecting actions into the changes
 // history and discarding them.
 void wxScintilla::SetChangeCollection(bool collectChange)
 {
-    SendMsg(SCI_SETCHANGECOLLECTION, collectChange, 0);
+	//TODO
+    //SendMsg(SCI_SETCHANGECOLLECTION, collectChange, 0);
 }
 
+#if 0
 // Find a changed line, if fromLine > toLine search is performed backwards.
 int wxScintilla::FindChangedLine(const int fromLine, const int toLine) const
 {
@@ -1901,13 +1903,15 @@ bool wxScintilla::CanUndo() const
     return SendMsg(SCI_CANUNDO, 0, 0) != 0;
 }
 
+#endif
 // Delete the undo history.
 /* CHANGEBAR begin */
 void wxScintilla::EmptyUndoBuffer(bool collectChangeHistory)
 {
-    SendMsg(SCI_EMPTYUNDOBUFFER, collectChangeHistory, 0);
+    wxStyledTextCtrl::EmptyUndoBuffer();
 }
 /* CHANGEBAR end */
+#if 0
 
 // Undo one action in the undo history.
 void wxScintilla::Undo()
@@ -4167,20 +4171,23 @@ void wxScintilla::ClearSelections()
 {
     SendMsg(SCI_CLEARSELECTIONS, 0, 0);
 }
+#endif
 
 /* C::B begin */
 // Select a range of text.
 void wxScintilla::SetSelectionVoid(int startPos, int endPos)
 {
-    SendMsg(SCI_SETSEL, startPos, endPos);
+    wxStyledTextCtrl::SetSelection(startPos, endPos);
 }
 
 // Set a simple selection
 int wxScintilla::SetSelectionInt(int caret, int anchor)
 {
-    return SendMsg(SCI_SETSELECTION, caret, anchor);
+     wxStyledTextCtrl::AddSelection(caret, anchor);
+     return 0;
 }
 /* C::B end */
+#if 0
 
 // Add a selection
 int wxScintilla::AddSelection(int caret, int anchor)
@@ -5729,5 +5736,6 @@ wxScintillaEvent::wxScintillaEvent(const wxScintillaEvent& event):
     /* C::B -> Don't forget to change version number here and in wxscintilla.h at the top */
     return wxVersionInfo("Scintilla", 3, 7, 5, "Scintilla 3.7.5");
 }
+#endif
 #endif
 /* C::B end */
