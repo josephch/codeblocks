@@ -37,10 +37,9 @@
 #include "CharacterSet.h"
 #include "LexerModule.h"
 #include "OptionSet.h"
+#include "DefaultLexer.h"
 
-#ifdef SCI_NAMESPACE
 using namespace Scintilla;
-#endif
 
 /* Bits:
  * 1  - whitespace
@@ -226,14 +225,16 @@ struct OptionSetBasic : public OptionSet<OptionsBasic> {
 	}
 };
 
-class LexerBasic : public ILexer {
+class LexerBasic : public DefaultLexer {
 	char comment_char;
 	int (*CheckFoldPoint)(char const *, int &);
 	WordList keywordlists[4];
 	OptionsBasic options;
 	OptionSetBasic osBasic;
 public:
-	LexerBasic(char comment_char_, int (*CheckFoldPoint_)(char const *, int &), const char * const wordListDescriptions[]) :
+	LexerBasic(const char *languageName_, int language_, char comment_char_,
+		int (*CheckFoldPoint_)(char const *, int &), const char * const wordListDescriptions[]) :
+						 DefaultLexer(languageName_, language_),
 						 comment_char(comment_char_),
 						 CheckFoldPoint(CheckFoldPoint_),
 						 osBasic(wordListDescriptions) {
@@ -244,7 +245,7 @@ public:
 		delete this;
 	}
 	int SCI_METHOD Version() const override {
-		return lvOriginal;
+		return lvIdentity;
 	}
 	const char * SCI_METHOD PropertyNames() override {
 		return osBasic.PropertyNames();
@@ -256,6 +257,9 @@ public:
 		return osBasic.DescribeProperty(name);
 	}
 	Sci_Position SCI_METHOD PropertySet(const char *key, const char *val) override;
+	const char * SCI_METHOD PropertyGet(const char *key) override {
+		return osBasic.PropertyGet(key);
+	}
 	const char * SCI_METHOD DescribeWordListSets() override {
 		return osBasic.DescribeWordListSets();
 	}
@@ -267,13 +271,13 @@ public:
 		return 0;
 	}
 	static ILexer *LexerFactoryBlitzBasic() {
-		return new LexerBasic(';', CheckBlitzFoldPoint, blitzbasicWordListDesc);
+		return new LexerBasic("blitzbasic", SCLEX_BLITZBASIC, ';', CheckBlitzFoldPoint, blitzbasicWordListDesc);
 	}
 	static ILexer *LexerFactoryPureBasic() {
-		return new LexerBasic(';', CheckPureFoldPoint, purebasicWordListDesc);
+		return new LexerBasic("purebasic", SCLEX_PUREBASIC, ';', CheckPureFoldPoint, purebasicWordListDesc);
 	}
 	static ILexer *LexerFactoryFreeBasic() {
-		return new LexerBasic('\'', CheckFreeFoldPoint, freebasicWordListDesc );
+		return new LexerBasic("freebasic", SCLEX_FREEBASIC, '\'', CheckFreeFoldPoint, freebasicWordListDesc );
 	}
 };
 

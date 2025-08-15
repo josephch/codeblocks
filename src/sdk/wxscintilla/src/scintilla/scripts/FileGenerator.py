@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # FileGenerator.py - implemented 2013 by Neil Hodgson neilh@scintilla.org
 # Released to the public domain.
 
@@ -28,7 +28,7 @@ def UpdateFile(filename, updated):
             # Same as before so don't write
             return
         os.unlink(filename)
-    except IOError:	# File is not there yet
+    except IOError: # File is not there yet
         newOrChanged = "New"
     with codecs.open(filename, "w", "utf-8") as outfile:
         outfile.write(updated)
@@ -175,13 +175,13 @@ def ReadFileAsList(path):
     """
     with codecs.open(path, "rU", "utf-8") as f:
         return [l.rstrip('\n') for l in f]
-    
+
 def UpdateFileFromLines(path, lines, lineEndToUse):
     """Join the lines with the lineEndToUse then update file if the result is different.
     """
     contents = lineEndToUse.join(lines) + lineEndToUse
     UpdateFile(path, contents)
-    
+
 def FindSectionInList(lines, markers):
     """Find a section defined by an initial start marker, an optional secondary
     marker and an end marker.
@@ -214,8 +214,8 @@ def FindSectionInList(lines, markers):
         raise Exception("Could not find end marker " + markers[2])
     return slice(start, end)
 
-def ReplaceREInFile(path, match, replace):
+def ReplaceREInFile(path, match, replace, count=0):
     with codecs.open(path, "r", "utf-8") as f:
         contents = f.read()
-    contents = re.sub(match, replace, contents)
+    contents = re.sub(match, replace, contents, count)
     UpdateFile(path, contents)

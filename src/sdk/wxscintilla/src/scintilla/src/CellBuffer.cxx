@@ -7,11 +7,13 @@
 
 #include <cstddef>
 #include <cstdlib>
+#include <cassert>
 #include <cstring>
 #include <cstdio>
 #include <cstdarg>
 
 #include <stdexcept>
+#include <string>
 #include <vector>
 #include <algorithm>
 #include <memory>
@@ -25,201 +27,408 @@
 #include "CellBuffer.h"
 #include "UniConversion.h"
 
-#ifdef SCI_NAMESPACE
-using namespace Scintilla;
-#endif
+namespace Scintilla {
+
+struct CountWidths {
+	// Measures the number of characters in a string divided into those
+	// from the Base Multilingual Plane and those from other planes.
+	Sci::Position countBasePlane;
+	Sci::Position countOtherPlanes;
+	CountWidths(Sci::Position countBasePlane_=0, Sci::Position countOtherPlanes_=0) noexcept :
+		countBasePlane(countBasePlane_),
+		countOtherPlanes(countOtherPlanes_) {
+	}
+	CountWidths operator-() const noexcept {
+		return CountWidths(-countBasePlane , -countOtherPlanes);
+	}
+	Sci::Position WidthUTF32() const noexcept {
+		// All code points take one code unit in UTF-32.
+		return countBasePlane + countOtherPlanes;
+	}
+	Sci::Position WidthUTF16() const noexcept {
+		// UTF-16 takes 2 code units for other planes
+		return countBasePlane + 2 * countOtherPlanes;
+	}
+	void CountChar(int lenChar) noexcept {
+		if (lenChar == 4) {
+			countOtherPlanes++;
+		} else {
+			countBasePlane++;
+		}
+	}
+};
+
+class ILineVector {
+public:
+	virtual void Init() = 0;
+	virtual void SetPerLine(PerLine *pl) = 0;
+/* CHANGEBAR begin */
+	virtual void InsertText(Sci::Line line, Sci::Position delta, int edition, bool undoing, bool lineUnchanged) noexcept = 0;
+	virtual void InsertLine(Sci::Line line, Sci::Position position, bool lineStart, int edition, bool undoing) noexcept = 0;
+/* CHANGEBAR end */
+	virtual void SetLineStart(Sci::Line line, Sci::Position position) noexcept = 0;
+/* CHANGEBAR begin */
+	virtual void RemoveLine(Sci::Line line, bool undoing) = 0;
+/* CHANGEBAR end */
+	virtual Sci::Line Lines() const noexcept = 0;
+	virtual Sci::Line LineFromPosition(Sci::Position pos) const noexcept = 0;
+	virtual Sci::Position LineStart(Sci::Line line) const noexcept = 0;
+	virtual void InsertCharacters(Sci::Line line, CountWidths delta) noexcept = 0;
+	virtual void SetLineCharactersWidth(Sci::Line line, CountWidths width) noexcept = 0;
+	virtual int LineCharacterIndex() const noexcept = 0;
+	virtual bool AllocateLineCharacterIndex(int lineCharacterIndex, Sci::Line lines) = 0;
+	virtual bool ReleaseLineCharacterIndex(int lineCharacterIndex) = 0;
+	virtual Sci::Position IndexLineStart(Sci::Line line, int lineCharacterIndex) const noexcept = 0;
+	virtual Sci::Line LineFromPositionIndex(Sci::Position pos, int lineCharacterIndex) const noexcept = 0;
 
 /* CHANGEBAR begin */
-LineChanges::LineChanges() : collecting(0), edition(0) {
+	virtual void EnableChangeCollection(bool changesCollecting_) = 0;
+	virtual void DeleteChangeCollection() = 0;
+	virtual int GetChanged(Sci::Line line) const = 0;
+	virtual int GetChangesEdition() const = 0;
+	virtual void SetSavePoint() = 0;
+	virtual char *PersistantForm() const = 0;
+	virtual void SetChanges(const char *changesState) = 0;
+/* CHANGEBAR end */
+	virtual ~ILineVector() {}
+};
+
 }
 
-LineChanges::~LineChanges() {
-}
-
-void LineChanges::AdvanceEdition() {
-	edition = (edition + 1) % 0x40000000;
-}
-
-int LineChanges::GetEdition() const {
-	return edition;
-}
-
-char *LineChanges::PersistantForm() const {
-	if (collecting)
-		return state.PersistantForm();
-	else
-		return 0;
-}
-
-void LineChanges::SetChanges(const char *changesState) {
-	if (collecting && changesState) {
-		state.FromPersistant(changesState);
-		AdvanceEdition();
+/* CHANGEBAR begin */
+#include "RunStyles.h"
+class LineChanges {
+	bool collecting;
+	Scintilla::RunStyles<int,int> state;
+	int edition;
+public:
+	LineChanges() : collecting(0), edition(0) {
 	}
-}
 
-void LineChanges::InsertText(int line, int edition, bool undoing) {
-	if (collecting && !undoing) {
-		int position = line;
-		int fillLength = 1;
-		if (state.FillRange(position, edition, fillLength)) {
-			if (fillLength > 0) {
-				AdvanceEdition();
+	void AdvanceEdition() {
+		edition = (edition + 1) % 0x40000000;
+	}
+
+	int GetEdition() const{
+		return edition;
+	}
+
+	char *PersistantForm() const {
+		if (collecting)
+			return state.PersistantForm();
+		else
+			return 0;
+	}
+
+	void SetChanges(const char *changesState) {
+		if (collecting && changesState) {
+			state.FromPersistant(changesState);
+			AdvanceEdition();
+		}
+	}
+
+	void InsertText(int line, int edition, bool undoing) {
+		if (collecting && !undoing) {
+			int position = line;
+			int fillLength = 1;
+			if (state.FillRange(position, edition, fillLength).changed) {
+				if (fillLength > 0) {
+					AdvanceEdition();
+				}
 			}
 		}
 	}
-}
 
-void LineChanges::InsertLine(int line, int edition, bool undoing) {
-	if (collecting && !undoing) {
-		state.InsertSpace(line, 1);
-		int linePosition = line;
-		int fillLength = 1;
-		if (state.FillRange(linePosition, edition, fillLength))
+	void InsertLine(int line, int edition, bool undoing) {
+		if (collecting && !undoing) {
+			state.InsertSpace(line, 1);
+			int linePosition = line;
+			int fillLength = 1;
+			if (state.FillRange(linePosition, edition, fillLength).changed)
+				AdvanceEdition();
+		}
+	}
+
+	void RemoveLine(int line, bool undoing) {
+		if (collecting && !undoing) {
+			state.DeleteRange(line, 1);
 			AdvanceEdition();
+		}
 	}
-}
 
-void LineChanges::RemoveLine(int line, bool undoing) {
-	if (collecting && !undoing) {
-		state.DeleteRange(line, 1);
-		AdvanceEdition();
+	void EnableChangeCollection(bool collecting_, int lines) {
+		collecting = collecting_;
+		if (collecting) {
+			state.InsertSpace(0, lines);
+		}
 	}
-}
 
-void LineChanges::EnableChangeCollection(bool collecting_, int lines) {
-	collecting = collecting_;
-	if (collecting) {
-		state.InsertSpace(0, lines);
+	void ClearChanged() {
+		if (collecting) {
+			int position = 0;
+			int length = state.Length();
+			if (state.FillRange(position, 0, length).changed)
+				AdvanceEdition();
+		}
 	}
-}
 
-void LineChanges::ClearChanged() {
-	if (collecting) {
-		int position = 0;
-		int length = state.Length();
-		if (state.FillRange(position, 0, length))
-			AdvanceEdition();
+	int GetChanged(int line) const{
+		if (collecting) {
+			return state.ValueAt(line);
+		}
+		return 0;
 	}
-}
-
-int LineChanges::GetChanged(int line) const {
-	if (collecting) {
-		return state.ValueAt(line);
-	}
-	return 0;
-}
+};
 /* CHANGEBAR end */
 
-LineVector::LineVector() : starts(256), perLine(0) {
-	Init();
-}
+using namespace Scintilla;
 
-LineVector::~LineVector() {
-	starts.DeleteAll();
-}
+template <typename POS>
+class LineStartIndex {
+public:
+	int refCount;
+	Partitioning<POS> starts;
 
-void LineVector::Init() {
-	starts.DeleteAll();
-	if (perLine) {
-		perLine->Init();
+	LineStartIndex() : refCount(0), starts(4) {
+		// Minimal initial allocation
 	}
-}
+	// Deleted so LineStartIndex objects can not be copied.
+	LineStartIndex(const LineStartIndex &) = delete;
+	LineStartIndex(LineStartIndex &&) = delete;
+	void operator=(const LineStartIndex &) = delete;
+	void operator=(LineStartIndex &&) = delete;
+	virtual ~LineStartIndex() {
+	}
+	bool Allocate(Sci::Line lines) {
+		refCount++;
+		Sci::Position length = starts.PositionFromPartition(starts.Partitions());
+		for (Sci::Line line = starts.Partitions(); line < lines; line++) {
+			// Produce an ascending sequence that will be filled in with correct widths later
+			length++;
+			starts.InsertPartition(static_cast<POS>(line), static_cast<POS>(length));
+		}
+		return refCount == 1;
+	}
+	bool Release() {
+		if (refCount == 1) {
+			starts.DeleteAll();
+		}
+		refCount--;
+		return refCount == 0;
+	}
+	bool Active() const noexcept {
+		return refCount > 0;
+	}
+	Sci::Position LineWidth(Sci::Line line) const noexcept {
+		return starts.PositionFromPartition(static_cast<POS>(line) + 1) -
+			starts.PositionFromPartition(static_cast<POS>(line));
+	}
+	void SetLineWidth(Sci::Line line, Sci::Position width) noexcept {
+		const Sci::Position widthCurrent = LineWidth(line);
+		starts.InsertText(static_cast<POS>(line), static_cast<POS>(width - widthCurrent));
+	}
+};
 
-void LineVector::SetPerLine(PerLine *pl) {
-	perLine = pl;
-}
+template <typename POS>
+class LineVector : public ILineVector {
+	Partitioning<POS> starts;
+	PerLine *perLine;
+/* CHANGEBAR begin */
+	LineChanges changes;
+/* CHANGEBAR end */
+	LineStartIndex<POS> startsUTF16;
+	LineStartIndex<POS> startsUTF32;
+	int activeIndices;
+
+	void SetActiveIndices() noexcept {
+		activeIndices = (startsUTF32.Active() ? SC_LINECHARACTERINDEX_UTF32 : 0)
+			| (startsUTF16.Active() ? SC_LINECHARACTERINDEX_UTF16 : 0);
+	}
+
+public:
+	LineVector() : starts(256), perLine(nullptr), activeIndices(0) {
+	}
+	// Deleted so LineVector objects can not be copied.
+	LineVector(const LineVector &) = delete;
+	LineVector(LineVector &&) = delete;
+	LineVector &operator=(const LineVector &) = delete;
+	LineVector &operator=(LineVector &&) = delete;
+	~LineVector() override {
+	}
+	void Init() override {
+		starts.DeleteAll();
+		if (perLine) {
+			perLine->Init();
+		}
+		startsUTF32.starts.DeleteAll();
+		startsUTF16.starts.DeleteAll();
+	}
+	void SetPerLine(PerLine *pl) noexcept override {
+		perLine = pl;
+	}
+/* CHANGEBAR begin */
+	void InsertText(Sci::Line line, Sci::Position delta, int edition, bool undoing, bool lineUnchanged)  noexcept override {
+/* CHANGEBAR end */
+		starts.InsertText(static_cast<POS>(line), static_cast<POS>(delta));
+/* CHANGEBAR begin */
+		// Line stays unchanged if inserted/deleted "something\n" at line start
+		// or "\nsomething" at line end
+		if (!lineUnchanged) {
+			changes.InsertText(line, edition, undoing);
+		}
+/* CHANGEBAR end */
+	}
+/* CHANGEBAR begin */
+	void InsertLine(Sci::Line line, Sci::Position position, bool lineStart, int edition, bool undoing) noexcept override {
+/* CHANGEBAR end */
+		const POS lineAsPos = static_cast<POS>(line);
+		starts.InsertPartition(lineAsPos, static_cast<POS>(position));
+		if (activeIndices) {
+			if (activeIndices & SC_LINECHARACTERINDEX_UTF32) {
+				startsUTF32.starts.InsertPartition(lineAsPos,
+					static_cast<POS>(startsUTF32.starts.PositionFromPartition(lineAsPos - 1) + 1));
+			}
+			if (activeIndices & SC_LINECHARACTERINDEX_UTF16) {
+				startsUTF16.starts.InsertPartition(lineAsPos,
+					static_cast<POS>(startsUTF16.starts.PositionFromPartition(lineAsPos - 1) + 1));
+			}
+		}
+		if (perLine) {
+			if ((line > 0) && lineStart)
+				line--;
+			perLine->InsertLine(line);
+		}
+/* CHANGEBAR begin */
+		changes.InsertLine(line, edition, undoing);
+/* CHANGEBAR end */
+	}
+	void SetLineStart(Sci::Line line, Sci::Position position) noexcept override {
+		starts.SetPartitionStartPosition(static_cast<POS>(line), static_cast<POS>(position));
+	}
+/* CHANGEBAR begin */
+	void RemoveLine(Sci::Line line, bool undoing) override {
+/* CHANGEBAR end */
+		starts.RemovePartition(static_cast<POS>(line));
+		if (activeIndices & SC_LINECHARACTERINDEX_UTF32) {
+			startsUTF32.starts.RemovePartition(static_cast<POS>(line));
+		}
+		if (activeIndices & SC_LINECHARACTERINDEX_UTF16) {
+			startsUTF16.starts.RemovePartition(static_cast<POS>(line));
+		}
+		if (perLine) {
+			perLine->RemoveLine(line);
+		}
+/* CHANGEBAR begin */
+		changes.RemoveLine(line, undoing);
+/* CHANGEBAR end */
+	}
+	Sci::Line Lines() const noexcept override {
+		return static_cast<Sci::Line>(starts.Partitions());
+	}
+	Sci::Line LineFromPosition(Sci::Position pos) const noexcept override {
+		return static_cast<Sci::Line>(starts.PartitionFromPosition(static_cast<POS>(pos)));
+	}
+	Sci::Position LineStart(Sci::Line line) const noexcept override {
+		return starts.PositionFromPartition(static_cast<POS>(line));
+	}
+	void InsertCharacters(Sci::Line line, CountWidths delta) noexcept override {
+		if (activeIndices & SC_LINECHARACTERINDEX_UTF32) {
+			startsUTF32.starts.InsertText(static_cast<POS>(line), static_cast<POS>(delta.WidthUTF32()));
+		}
+		if (activeIndices & SC_LINECHARACTERINDEX_UTF16) {
+			startsUTF16.starts.InsertText(static_cast<POS>(line), static_cast<POS>(delta.WidthUTF16()));
+		}
+	}
+	void SetLineCharactersWidth(Sci::Line line, CountWidths width) noexcept override {
+		if (activeIndices & SC_LINECHARACTERINDEX_UTF32) {
+			assert(startsUTF32.starts.Partitions() == starts.Partitions());
+			startsUTF32.SetLineWidth(line, width.WidthUTF32());
+		}
+		if (activeIndices & SC_LINECHARACTERINDEX_UTF16) {
+			assert(startsUTF16.starts.Partitions() == starts.Partitions());
+			startsUTF16.SetLineWidth(line, width.WidthUTF16());
+		}
+	}
+
+	int LineCharacterIndex() const noexcept override {
+		return activeIndices;
+	}
+	bool AllocateLineCharacterIndex(int lineCharacterIndex, Sci::Line lines) override {
+		const int activeIndicesStart = activeIndices;
+		if ((lineCharacterIndex & SC_LINECHARACTERINDEX_UTF32) != 0) {
+			startsUTF32.Allocate(lines);
+			assert(startsUTF32.starts.Partitions() == starts.Partitions());
+		}
+		if ((lineCharacterIndex & SC_LINECHARACTERINDEX_UTF16) != 0) {
+			startsUTF16.Allocate(lines);
+			assert(startsUTF16.starts.Partitions() == starts.Partitions());
+		}
+		SetActiveIndices();
+		return activeIndicesStart != activeIndices;
+	}
+	bool ReleaseLineCharacterIndex(int lineCharacterIndex) override {
+		const int activeIndicesStart = activeIndices;
+		if ((lineCharacterIndex & SC_LINECHARACTERINDEX_UTF32) != 0) {
+			startsUTF32.Release();
+		}
+		if ((lineCharacterIndex & SC_LINECHARACTERINDEX_UTF16) != 0) {
+			startsUTF16.Release();
+		}
+		SetActiveIndices();
+		return activeIndicesStart != activeIndices;
+	}
+	Sci::Position IndexLineStart(Sci::Line line, int lineCharacterIndex) const noexcept override {
+		if (lineCharacterIndex == SC_LINECHARACTERINDEX_UTF32) {
+			return startsUTF32.starts.PositionFromPartition(static_cast<POS>(line));
+		} else {
+			return startsUTF16.starts.PositionFromPartition(static_cast<POS>(line));
+		}
+	}
+	Sci::Line LineFromPositionIndex(Sci::Position pos, int lineCharacterIndex) const noexcept override {
+		if (lineCharacterIndex == SC_LINECHARACTERINDEX_UTF32) {
+			return static_cast<Sci::Line>(startsUTF32.starts.PartitionFromPosition(static_cast<POS>(pos)));
+		} else {
+			return static_cast<Sci::Line>(startsUTF16.starts.PartitionFromPosition(static_cast<POS>(pos)));
+		}
+	}
 
 /* CHANGEBAR begin */
-void LineVector::InsertText(Sci::Line line, Sci::Position delta, int edition, bool undoing, bool lineUnchanged) {
-/* CHANGEBAR end */
-	starts.InsertText(line, delta);
-/* CHANGEBAR begin */
-	// Line stays unchanged if inserted/deleted "something\n" at line start
-	// or "\nsomething" at line end
-	if (!lineUnchanged) {
-		changes.InsertText(line, edition, undoing);
+	void EnableChangeCollection(bool changesCollecting_) {
+		DeleteChangeCollection();
+		changes.EnableChangeCollection(changesCollecting_, Lines());
+	}
+
+	void DeleteChangeCollection() {
+		changes.ClearChanged();
+	}
+
+	int GetChanged(Sci::Line line) const {
+		return changes.GetChanged(line);
+	}
+
+	int GetChangesEdition() const {
+		return changes.GetEdition();
+	}
+
+	void SetSavePoint() {
+		changes.AdvanceEdition();
+	}
+
+	char *PersistantForm() const {
+		return changes.PersistantForm();
+	}
+
+	void SetChanges(const char *changesState) {
+		changes.SetChanges(changesState);
 	}
 /* CHANGEBAR end */
-}
+};
 
-/* CHANGEBAR begin */
-void LineVector::InsertLine(Sci::Line line, Sci::Position position, bool lineStart, int edition, bool undoing) {
-/* CHANGEBAR end */
-	starts.InsertPartition(line, position);
-	if (perLine) {
-		if ((line > 0) && lineStart)
-			line--;
-		perLine->InsertLine(line);
-	}
-/* CHANGEBAR begin */
-	changes.InsertLine(line, edition, undoing);
-/* CHANGEBAR end */
-}
-
-void LineVector::SetLineStart(Sci::Line line, Sci::Position position) {
-	starts.SetPartitionStartPosition(line, position);
-}
-
-/* CHANGEBAR begin */
-void LineVector::RemoveLine(Sci::Line line, bool undoing) {
-/* CHANGEBAR end */
-	starts.RemovePartition(line);
-	if (perLine) {
-		perLine->RemoveLine(line);
-	}
-/* CHANGEBAR begin */
-	changes.RemoveLine(line, undoing);
-/* CHANGEBAR end */
-}
-
-Sci::Line LineVector::LineFromPosition(Sci::Position pos) const {
-	return starts.PartitionFromPosition(pos);
-}
-/* CHANGEBAR begin */
-void LineVector::EnableChangeCollection(bool changesCollecting_) {
-    DeleteChangeCollection();
-    changes.EnableChangeCollection(changesCollecting_, Lines());
-}
-
-void LineVector::DeleteChangeCollection() {
-    changes.ClearChanged();
-}
-
-int LineVector::GetChanged(Sci::Line line) const {
-    return changes.GetChanged(line);
-}
-
-int LineVector::GetChangesEdition() const {
-    return changes.GetEdition();
-}
-
-void LineVector::SetSavePoint() {
-    changes.AdvanceEdition();
-}
-
-char *LineVector::PersistantForm() const {
-    return changes.PersistantForm();
-}
-
-void LineVector::SetChanges(const char *changesState) {
-    changes.SetChanges(changesState);
-}
-/* CHANGEBAR end */
-
-Action::Action() {
+Action::Action() noexcept {
 	at = startAction;
 	position = 0;
 	lenData = 0;
 	mayCoalesce = false;
-}
-
-Action::Action(Action &&other) {
-	at = other.at;
-	position = other.position;
-	data = std::move(other.data);
-	lenData = other.lenData;
-	mayCoalesce = other.mayCoalesce;
 }
 
 Action::~Action() {
@@ -230,14 +439,14 @@ void Action::Create(actionType at_, Sci::Position position_, const char *data_, 
 	position = position_;
 	at = at_;
 	if (lenData_) {
-		data = std::unique_ptr<char []>(new char[lenData_]);
+		data = Sci::make_unique<char[]>(lenData_);
 		memcpy(&data[0], data_, lenData_);
 	}
 	lenData = lenData_;
 	mayCoalesce = mayCoalesce_;
 }
 
-void Action::Clear() {
+void Action::Clear() noexcept {
 	data = nullptr;
 	lenData = 0;
 }
@@ -435,8 +644,9 @@ void UndoHistory::DeleteUndoHistory() {
 /* CHANGEBAR end */
 }
 
+
 /* CHANGEBAR begin */
-void UndoHistory::DeleteChangeHistory() {
+void UndoHistory::DeleteChangeHistory() noexcept{
     if (changeActions) {
         for (std::vector<Action>::size_type i=0;i<actions.size();i++) {
             delete []changeActions[i];
@@ -460,14 +670,14 @@ void UndoHistory::EnableChangeHistory(bool enable) {
 }
 /* CHANGEBAR end */
 
-void UndoHistory::SetSavePoint() {
+void UndoHistory::SetSavePoint() noexcept{
 	savePoint = currentAction;
 /* CHANGEBAR begin */
 	savePointEffective = currentAction;
 /* CHANGEBAR end */
 }
 
-bool UndoHistory::IsSavePoint() const {
+bool UndoHistory::IsSavePoint() const noexcept {
 	return savePoint == currentAction;
 }
 
@@ -487,7 +697,11 @@ void UndoHistory::TentativeCommit() {
 	maxAction = currentAction;
 }
 
-int UndoHistory::TentativeSteps() {
+bool UndoHistory::TentativeActive() const noexcept {
+	return tentativePoint >= 0; 
+}
+
+int UndoHistory::TentativeSteps() noexcept {
 	// Drop any trailing startAction
 	if (actions[currentAction].at == startAction && currentAction > 0)
 		currentAction--;
@@ -497,7 +711,7 @@ int UndoHistory::TentativeSteps() {
 		return -1;
 }
 
-bool UndoHistory::CanUndo() const {
+bool UndoHistory::CanUndo() const noexcept {
 	return (currentAction > 0) && (maxAction > 0);
 }
 
@@ -528,7 +742,7 @@ char *UndoHistory::GetChangesStep() const {
 }
 /* CHANGEBAR end */
 
-bool UndoHistory::CanRedo() const {
+bool UndoHistory::CanRedo() const noexcept {
 	return maxAction > currentAction;
 }
 
@@ -559,16 +773,27 @@ int UndoHistory::Edition() const {
 }
 /* CHANGEBAR end */
 
-CellBuffer::CellBuffer() {
+CellBuffer::CellBuffer(bool hasStyles_, bool largeDocument_) :
+	hasStyles(hasStyles_), largeDocument(largeDocument_) {
+
 	readOnly = false;
+	utf8Substance = false;
 	utf8LineEnds = 0;
 	collectingUndo = true;
+	if (largeDocument)
+		plv = Sci::make_unique<LineVector<Sci::Position>>();
+	else
+		plv = Sci::make_unique<LineVector<int>>();
 }
 
 CellBuffer::~CellBuffer() {
 }
 
-char CellBuffer::CharAt(Sci::Position position) const {
+char CellBuffer::CharAt(Sci::Position position) const noexcept {
+	return substance.ValueAt(position);
+}
+
+unsigned char CellBuffer::UCharAt(Sci::Position position) const noexcept {
 	return substance.ValueAt(position);
 }
 
@@ -578,15 +803,17 @@ void CellBuffer::GetCharRange(char *buffer, Sci::Position position, Sci::Positio
 	if (position < 0)
 		return;
 	if ((position + lengthRetrieve) > substance.Length()) {
-		Platform::DebugPrintf("Bad GetCharRange %d for %d of %d\n", position,
-		                      lengthRetrieve, substance.Length());
+		Platform::DebugPrintf("Bad GetCharRange %.0f for %.0f of %.0f\n",
+				      static_cast<double>(position),
+				      static_cast<double>(lengthRetrieve),
+				      static_cast<double>(substance.Length()));
 		return;
 	}
 	substance.GetRange(buffer, position, lengthRetrieve);
 }
 
-char CellBuffer::StyleAt(Sci::Position position) const {
-	return style.ValueAt(position);
+char CellBuffer::StyleAt(Sci::Position position) const noexcept {
+	return hasStyles ? style.ValueAt(position) : 0;
 }
 
 void CellBuffer::GetStyleRange(unsigned char *buffer, Sci::Position position, Sci::Position lengthRetrieve) const {
@@ -594,9 +821,15 @@ void CellBuffer::GetStyleRange(unsigned char *buffer, Sci::Position position, Sc
 		return;
 	if (position < 0)
 		return;
+	if (!hasStyles) {
+		std::fill(buffer, buffer + lengthRetrieve, static_cast<unsigned char>(0));
+		return;
+	}
 	if ((position + lengthRetrieve) > style.Length()) {
-		Platform::DebugPrintf("Bad GetStyleRange %d for %d of %d\n", position,
-		                      lengthRetrieve, style.Length());
+		Platform::DebugPrintf("Bad GetStyleRange %.0f for %.0f of %.0f\n",
+				      static_cast<double>(position),
+				      static_cast<double>(lengthRetrieve),
+				      static_cast<double>(style.Length()));
 		return;
 	}
 	style.GetRange(reinterpret_cast<char *>(buffer), position, lengthRetrieve);
@@ -606,11 +839,11 @@ const char *CellBuffer::BufferPointer() {
 	return substance.BufferPointer();
 }
 
-const char *CellBuffer::RangePointer(Sci::Position position, Sci::Position rangeLength) {
+const char *CellBuffer::RangePointer(Sci::Position position, Sci::Position rangeLength) noexcept {
 	return substance.RangePointer(position, rangeLength);
 }
 
-Sci::Position CellBuffer::GapPosition() const {
+Sci::Position CellBuffer::GapPosition() const noexcept {
 	return substance.GapPosition();
 }
 
@@ -623,7 +856,7 @@ const char *CellBuffer::InsertString(Sci::Position position, const char *s, Sci:
 			// Save into the undo/redo stack, but only the characters - not the formatting
 			// This takes up about half load time
 /* CHANGEBAR begin */
-			char *persistantForm = lv.PersistantForm();
+			char *persistantForm = plv->PersistantForm();
 			data = uh.AppendAction(insertAction, position, s, insertLength, startSequence, persistantForm);
 /* CHANGEBAR end */
 		}
@@ -635,7 +868,10 @@ const char *CellBuffer::InsertString(Sci::Position position, const char *s, Sci:
 	return data;
 }
 
-bool CellBuffer::SetStyleAt(Sci::Position position, char styleValue) {
+bool CellBuffer::SetStyleAt(Sci::Position position, char styleValue) noexcept {
+	if (!hasStyles) {
+		return false;
+	}
 	const char curVal = style.ValueAt(position);
 	if (curVal != styleValue) {
 		style.SetValueAt(position, styleValue);
@@ -645,7 +881,10 @@ bool CellBuffer::SetStyleAt(Sci::Position position, char styleValue) {
 	}
 }
 
-bool CellBuffer::SetStyleFor(Sci::Position position, Sci::Position lengthStyle, char styleValue) {
+bool CellBuffer::SetStyleFor(Sci::Position position, Sci::Position lengthStyle, char styleValue) noexcept {
+	if (!hasStyles) {
+		return false;
+	}
 	bool changed = false;
 	PLATFORM_ASSERT(lengthStyle == 0 ||
 		(lengthStyle > 0 && lengthStyle + position <= style.Length()));
@@ -664,14 +903,14 @@ bool CellBuffer::SetStyleFor(Sci::Position position, Sci::Position lengthStyle, 
 const char *CellBuffer::DeleteChars(Sci::Position position, Sci::Position deleteLength, bool &startSequence) {
 	// InsertString and DeleteChars are the bottleneck though which all changes occur
 	PLATFORM_ASSERT(deleteLength > 0);
-	const char *data = 0;
+	const char *data = nullptr;
 	if (!readOnly) {
 		if (collectingUndo) {
 			// Save into the undo/redo stack, but only the characters - not the formatting
 			// The gap would be moved to position anyway for the deletion so this doesn't cost extra
 			data = substance.RangePointer(position, deleteLength);
 /* CHANGEBAR begin */
-			char *persistantForm = lv.PersistantForm();
+			char *persistantForm = plv->PersistantForm();
 			data = uh.AppendAction(removeAction, position, data, deleteLength, startSequence, persistantForm);
 /* CHANGEBAR end */
 		}
@@ -683,25 +922,33 @@ const char *CellBuffer::DeleteChars(Sci::Position position, Sci::Position delete
 	return data;
 }
 
-Sci::Position CellBuffer::Length() const {
+Sci::Position CellBuffer::Length() const noexcept {
 	return substance.Length();
 }
 
 void CellBuffer::Allocate(Sci::Position newSize) {
 	substance.ReAllocate(newSize);
-	style.ReAllocate(newSize);
+	if (hasStyles) {
+		style.ReAllocate(newSize);
+	}
+}
+
+void CellBuffer::SetUTF8Substance(bool utf8Substance_) noexcept {
+	utf8Substance = utf8Substance_;
 }
 
 void CellBuffer::SetLineEndTypes(int utf8LineEnds_) {
 	if (utf8LineEnds != utf8LineEnds_) {
+		const int indexes = plv->LineCharacterIndex();
 		utf8LineEnds = utf8LineEnds_;
 /* CHANGEBAR begin */
 		ResetLineEnds(false);
 /* CHANGEBAR end */
+		AllocateLineCharacterIndex(indexes);
 	}
 }
 
-bool CellBuffer::ContainsLineEnd(const char *s, Sci::Position length) const {
+bool CellBuffer::ContainsLineEnd(const char *s, Sci::Position length) const noexcept {
 	unsigned char chBeforePrev = 0;
 	unsigned char chPrev = 0;
 	for (Sci::Position i = 0; i < length; i++) {
@@ -720,39 +967,76 @@ bool CellBuffer::ContainsLineEnd(const char *s, Sci::Position length) const {
 	return false;
 }
 
-void CellBuffer::SetPerLine(PerLine *pl) {
-	lv.SetPerLine(pl);
+void CellBuffer::SetPerLine(PerLine *pl) noexcept {
+	plv->SetPerLine(pl);
 }
 
-Sci::Line CellBuffer::Lines() const {
-	return lv.Lines();
+int CellBuffer::LineCharacterIndex() const noexcept {
+	return plv->LineCharacterIndex();
 }
 
-Sci::Position CellBuffer::LineStart(Sci::Line line) const {
+void CellBuffer::AllocateLineCharacterIndex(int lineCharacterIndex) {
+	if (utf8Substance) {
+		if (plv->AllocateLineCharacterIndex(lineCharacterIndex, Lines())) {
+			// Changed so recalculate whole file
+			RecalculateIndexLineStarts(0, Lines() - 1);
+		}
+	}
+}
+
+void CellBuffer::ReleaseLineCharacterIndex(int lineCharacterIndex) {
+	plv->ReleaseLineCharacterIndex(lineCharacterIndex);
+}
+
+Sci::Line CellBuffer::Lines() const noexcept {
+	return plv->Lines();
+}
+
+Sci::Position CellBuffer::LineStart(Sci::Line line) const noexcept {
 	if (line < 0)
 		return 0;
 	else if (line >= Lines())
 		return Length();
 	else
-		return lv.LineStart(line);
+		return plv->LineStart(line);
 }
 
-bool CellBuffer::IsReadOnly() const {
+Sci::Line CellBuffer::LineFromPosition(Sci::Position pos) const noexcept {
+	return plv->LineFromPosition(pos);
+}
+
+Sci::Position CellBuffer::IndexLineStart(Sci::Line line, int lineCharacterIndex) const noexcept {
+	return plv->IndexLineStart(line, lineCharacterIndex);
+}
+
+Sci::Line CellBuffer::LineFromPositionIndex(Sci::Position pos, int lineCharacterIndex) const noexcept {
+	return plv->LineFromPositionIndex(pos, lineCharacterIndex);
+}
+
+bool CellBuffer::IsReadOnly() const noexcept {
 	return readOnly;
 }
 
-void CellBuffer::SetReadOnly(bool set) {
+void CellBuffer::SetReadOnly(bool set) noexcept {
 	readOnly = set;
+}
+
+bool CellBuffer::IsLarge() const noexcept {
+	return largeDocument;
+}
+
+bool CellBuffer::HasStyles() const noexcept {
+	return hasStyles;
 }
 
 void CellBuffer::SetSavePoint() {
 	uh.SetSavePoint();
 /* CHANGEBAR begin */
-	lv.SetSavePoint();
+	plv->SetSavePoint();
 /* CHANGEBAR end */
 }
 
-bool CellBuffer::IsSavePoint() const {
+bool CellBuffer::IsSavePoint() const noexcept {
 	return uh.IsSavePoint();
 }
 
@@ -764,11 +1048,11 @@ void CellBuffer::TentativeCommit() {
 	uh.TentativeCommit();
 }
 
-int CellBuffer::TentativeSteps() {
+int CellBuffer::TentativeSteps() noexcept {
 	return uh.TentativeSteps();
 }
 
-bool CellBuffer::TentativeActive() const {
+bool CellBuffer::TentativeActive() const noexcept {
 	return uh.TentativeActive();
 }
 
@@ -776,17 +1060,17 @@ bool CellBuffer::TentativeActive() const {
 
 /* CHANGEBAR begin */
 void CellBuffer::InsertLine(Sci::Line line, Sci::Position position, bool lineStart, int edition, bool undoing) {
-	lv.InsertLine(line, position, lineStart, edition, undoing);
+	plv->InsertLine(line, position, lineStart, edition, undoing);
 /* CHANGEBAR end */
 }
 
 /* CHANGEBAR begin */
 void CellBuffer::RemoveLine(Sci::Line line, bool undoing) {
-	lv.RemoveLine(line, undoing);
+	plv->RemoveLine(line, undoing);
 /* CHANGEBAR end */
 }
 
-bool CellBuffer::UTF8LineEndOverlaps(Sci::Position position) const {
+bool CellBuffer::UTF8LineEndOverlaps(Sci::Position position) const noexcept {
 	const unsigned char bytes[] = {
 		static_cast<unsigned char>(substance.ValueAt(position-2)),
 		static_cast<unsigned char>(substance.ValueAt(position-1)),
@@ -796,18 +1080,49 @@ bool CellBuffer::UTF8LineEndOverlaps(Sci::Position position) const {
 	return UTF8IsSeparator(bytes) || UTF8IsSeparator(bytes+1) || UTF8IsNEL(bytes+1);
 }
 
+bool CellBuffer::UTF8IsCharacterBoundary(Sci::Position position) const {
+	assert(position >= 0 && position <= Length());
+	if (position > 0) {
+		std::string back;
+		for (int i = 0; i < UTF8MaxBytes; i++) {
+			const Sci::Position posBack = position - i;
+			if (posBack < 0) {
+				return false;
+			}
+			back.insert(0, 1, substance.ValueAt(posBack));
+			if (!UTF8IsTrailByte(back.front())) {
+				if (i > 0) {
+					// Have reached a non-trail
+					const int cla = UTF8Classify(reinterpret_cast<const unsigned char*>(back.data()), back.size());
+					if ((cla & UTF8MaskInvalid) || (cla != i)) {
+						return false;
+					}
+				}
+				break;
+			}
+		}
+	}
+	if (position < Length()) {
+		const unsigned char fore = substance.ValueAt(position);
+		if (UTF8IsTrailByte(fore)) {
+			return false;
+		}
+	}
+	return true;
+}
+
 /* CHANGEBAR begin */
 void CellBuffer::ResetLineEnds(bool undoing) {
 /* CHANGEBAR end */
 	// Reinitialize line data -- too much work to preserve
-	lv.Init();
+	plv->Init();
 
-	Sci::Position position = 0;
-	Sci::Position length = Length();
+	const Sci::Position position = 0;
+	const Sci::Position length = Length();
 	Sci::Line lineInsert = 1;
-	bool atLineStart = true;
+	const bool atLineStart = true;
 /* CHANGEBAR begin */
-	lv.InsertText(lineInsert-1, length, uh.Edition(), undoing, false);
+	plv->InsertText(lineInsert-1, length, uh.Edition(), undoing, false);
 /* CHANGEBAR end */
 	unsigned char chBeforePrev = 0;
 	unsigned char chPrev = 0;
@@ -821,7 +1136,7 @@ void CellBuffer::ResetLineEnds(bool undoing) {
 		} else if (ch == '\n') {
 			if (chPrev == '\r') {
 				// Patch up what was end of line
-				lv.SetLineStart(lineInsert - 1, (position + i) + 1);
+				plv->SetLineStart(lineInsert - 1, (position + i) + 1);
 			} else {
 /* CHANGEBAR begin */
 				InsertLine(lineInsert, (position + i) + 1, atLineStart, uh.Edition(), undoing);
@@ -842,6 +1157,42 @@ void CellBuffer::ResetLineEnds(bool undoing) {
 	}
 }
 
+namespace {
+
+CountWidths CountCharacterWidthsUTF8(const char *s, size_t len) noexcept {
+	CountWidths cw;
+	size_t remaining = len;
+	while (remaining > 0) {
+		const int utf8Status = UTF8Classify(reinterpret_cast<const unsigned char*>(s), len);
+		const int lenChar = utf8Status & UTF8MaskWidth;
+		cw.CountChar(lenChar);
+		s += lenChar;
+		remaining -= lenChar;
+	}
+	return cw;
+}
+
+}
+
+bool CellBuffer::MaintainingLineCharacterIndex() const noexcept {
+	return plv->LineCharacterIndex() != SC_LINECHARACTERINDEX_NONE;
+}
+
+void CellBuffer::RecalculateIndexLineStarts(Sci::Line lineFirst, Sci::Line lineLast) {
+	std::string text;
+	Sci::Position posLineEnd = LineStart(lineFirst);
+	for (Sci::Line line = lineFirst; line <= lineLast; line++) {
+		// Find line start and end, retrieve text of line, count characters and update line width
+		const Sci::Position posLineStart = posLineEnd;
+		posLineEnd = LineStart(line+1);
+		const Sci::Position width = posLineEnd - posLineStart;
+		text.resize(width);
+		GetCharRange(const_cast<char *>(text.data()), posLineStart, width);
+		const CountWidths cw = CountCharacterWidthsUTF8(text.data(), text.size());
+		plv->SetLineCharactersWidth(line, cw);
+	}
+}
+
 /* CHANGEBAR begin */
 void CellBuffer::BasicInsertString(Sci::Position position, const char *s, Sci::Position insertLength, bool undoing) {
 	bool atFileEnd = position == substance.Length();
@@ -856,17 +1207,34 @@ void CellBuffer::BasicInsertString(Sci::Position position, const char *s, Sci::P
 		breakingUTF8LineEnd = UTF8LineEndOverlaps(position);
 	}
 
-	substance.InsertFromArray(position, s, 0, insertLength);
-	style.InsertValue(position, insertLength, 0);
+	const Sci::Line linePosition = plv->LineFromPosition(position);
+	Sci::Line lineInsert = linePosition + 1;
 
-	Sci::Line lineInsert = lv.LineFromPosition(position) + 1;
-	bool atLineStart = lv.LineStart(lineInsert-1) == position;
+	// A simple insertion is one that inserts valid text on a single line at a character boundary
+	bool simpleInsertion = false;
+
+	const bool maintainingIndex = MaintainingLineCharacterIndex();
+
+	// Check for breaking apart a UTF-8 sequence and inserting invalid UTF-8
+	if (utf8Substance && maintainingIndex) {
+		// Actually, don't need to check that whole insertion is valid just that there
+		// are no potential fragments at ends.
+		simpleInsertion = UTF8IsCharacterBoundary(position) &&
+			UTF8IsValid(s, insertLength);
+	}
+
+	substance.InsertFromArray(position, s, 0, insertLength);
+	if (hasStyles) {
+		style.InsertValue(position, insertLength, 0);
+	}
+
+	const bool atLineStart = plv->LineStart(lineInsert-1) == position;
 	// Point all the lines after the insertion point further along in the buffer
 /* CHANGEBAR begin */
-	bool atLineEnd = (lv.LineStart(lineInsert) == position+1) || atFileEnd;
+	bool atLineEnd = (plv->LineStart(lineInsert) == position+1) || atFileEnd;
 	bool lineUnchanged = (atLineStart && (s[insertLength-1] == '\n')) ||
 		(atLineEnd && (s[0] == '\r' || s[0] == '\n'));
-	lv.InsertText(lineInsert-1, insertLength, uh.Edition(), undoing, lineUnchanged);
+	plv->InsertText(lineInsert-1, insertLength, uh.Edition(), undoing, lineUnchanged);
 /* CHANGEBAR end */
 	unsigned char chBeforePrev = substance.ValueAt(position - 2);
 	unsigned char chPrev = substance.ValueAt(position - 1);
@@ -890,16 +1258,18 @@ void CellBuffer::BasicInsertString(Sci::Position position, const char *s, Sci::P
 			InsertLine(lineInsert, (position + i) + 1, atLineStart, uh.Edition(), undoing);
 /* CHANGEBAR end */
 			lineInsert++;
+			simpleInsertion = false;
 		} else if (ch == '\n') {
 			if (chPrev == '\r') {
 				// Patch up what was end of line
-				lv.SetLineStart(lineInsert - 1, (position + i) + 1);
+				plv->SetLineStart(lineInsert - 1, (position + i) + 1);
 			} else {
 /* CHANGEBAR begin */
 				InsertLine(lineInsert, (position + i) + 1, atLineStart, uh.Edition(), undoing);
 /* CHANGEBAR end */
 				lineInsert++;
 			}
+			simpleInsertion = false;
 		} else if (utf8LineEnds) {
 			const unsigned char back3[3] = {chBeforePrev, chPrev, ch};
 			if (UTF8IsSeparator(back3) || UTF8IsNEL(back3+1)) {
@@ -907,6 +1277,7 @@ void CellBuffer::BasicInsertString(Sci::Position position, const char *s, Sci::P
 				InsertLine(lineInsert, (position + i) + 1, atLineStart, uh.Edition(), undoing);
 /* CHANGEBAR end */
 				lineInsert++;
+				simpleInsertion = false;
 			}
 		}
 		chBeforePrev = chPrev;
@@ -918,6 +1289,7 @@ void CellBuffer::BasicInsertString(Sci::Position position, const char *s, Sci::P
 			// End of line already in buffer so drop the newly created one
 /* CHANGEBAR begin */
 			RemoveLine(lineInsert - 1, undoing);
+			simpleInsertion = false;
 /* CHANGEBAR end */
 		}
 	} else if (utf8LineEnds && !UTF8IsAscii(chAfter)) {
@@ -930,15 +1302,25 @@ void CellBuffer::BasicInsertString(Sci::Position position, const char *s, Sci::P
 				InsertLine(lineInsert, (position + insertLength + j) + 1, atLineStart, uh.Edition(), undoing);
 /* CHANGEBAR end */
 				lineInsert++;
+				simpleInsertion = false;
 			}
 			if ((j == 0) && UTF8IsNEL(back3+1)) {
 /* CHANGEBAR begin */
 				InsertLine(lineInsert, (position + insertLength + j) + 1, atLineStart, uh.Edition(), undoing);
 /* CHANGEBAR end */
 				lineInsert++;
+				simpleInsertion = false;
 			}
 			chBeforePrev = chPrev;
 			chPrev = chAt;
+		}
+	}
+	if (maintainingIndex) {
+		if (simpleInsertion) {
+			const CountWidths cw = CountCharacterWidthsUTF8(s, insertLength);
+			plv->InsertCharacters(linePosition, cw);
+		} else {
+			RecalculateIndexLineStarts(linePosition, lineInsert - 1);
 		}
 	}
 }
@@ -949,31 +1331,58 @@ void CellBuffer::BasicDeleteChars(Sci::Position position, Sci::Position deleteLe
 	if (deleteLength == 0)
 		return;
 
+	Sci::Line lineRecalculateStart = INVALID_POSITION;
+
 	if ((position == 0) && (deleteLength == substance.Length())) {
 		// If whole buffer is being deleted, faster to reinitialise lines data
 		// than to delete each line.
-		lv.Init();
+		plv->Init();
 /* CHANGEBAR begin */
-		lv.InsertText(0, 0, uh.Edition(), undoing, false);
+		plv->InsertText(0, 0, uh.Edition(), undoing, false);
 /* CHANGEBAR end */
 	} else {
 		// Have to fix up line positions before doing deletion as looking at text in buffer
 		// to work out which lines have been removed
 
-		Sci::Line lineRemove = lv.LineFromPosition(position) + 1;
+		const Sci::Line linePosition = plv->LineFromPosition(position);
+		Sci::Line lineRemove = linePosition + 1;
 /* CHANGEBAR begin */
-		bool atLineEnd = (lv.LineStart(lineRemove) == position+1);
+		bool atLineEnd = (plv->LineStart(lineRemove) == position+1);
 		char chAfter = substance.ValueAt(position + deleteLength);
 		bool lineUnchanged = (atLineEnd && (chAfter == '\r' || chAfter == '\n'));
-		lv.InsertText(lineRemove-1, - (deleteLength), uh.Edition(), undoing, lineUnchanged);
+		plv->InsertText(lineRemove-1, - (deleteLength), uh.Edition(), undoing, lineUnchanged);
 /* CHANGEBAR end */
 		const unsigned char chPrev = substance.ValueAt(position - 1);
 		const unsigned char chBefore = chPrev;
 		unsigned char chNext = substance.ValueAt(position);
+
+		// Check for breaking apart a UTF-8 sequence
+		// Needs further checks that text is UTF-8 or that some other break apart is occurring
+		if (utf8Substance && MaintainingLineCharacterIndex()) {
+			const Sci::Position posEnd = position + deleteLength;
+			const Sci::Line lineEndRemove = plv->LineFromPosition(posEnd);
+			const bool simpleDeletion =
+				(linePosition == lineEndRemove) &&
+				UTF8IsCharacterBoundary(position) && UTF8IsCharacterBoundary(posEnd);
+			if (simpleDeletion) {
+				std::string text(deleteLength, '\0');
+				GetCharRange(const_cast<char *>(text.data()), position, deleteLength);
+				if (UTF8IsValid(text.data(), text.size())) {
+					// Everything is good
+					const CountWidths cw = CountCharacterWidthsUTF8(text.data(), text.size());
+					plv->InsertCharacters(linePosition, -cw);
+				} else {
+					lineRecalculateStart = linePosition;
+				}
+			} else {
+				lineRecalculateStart = linePosition;
+			}
+		}
+
 		bool ignoreNL = false;
 		if (chPrev == '\r' && chNext == '\n') {
 			// Move back one
-			lv.SetLineStart(lineRemove, position);
+			plv->SetLineStart(lineRemove, position);
 			lineRemove++;
 			ignoreNL = true; 	// First \n is not real deletion
 		}
@@ -1026,11 +1435,17 @@ void CellBuffer::BasicDeleteChars(Sci::Position position, Sci::Position deleteLe
 /* CHANGEBAR begin */
 			RemoveLine(lineRemove - 1, undoing);
 /* CHANGEBAR end */
-			lv.SetLineStart(lineRemove - 1, position + 1);
+			plv->SetLineStart(lineRemove - 1, position + 1);
+			plv->SetLineStart(lineRemove - 1, position + 1);
 		}
 	}
 	substance.DeleteRange(position, deleteLength);
-	style.DeleteRange(position, deleteLength);
+	if (lineRecalculateStart >= 0) {
+		RecalculateIndexLineStarts(lineRecalculateStart, lineRecalculateStart);
+	}
+	if (hasStyles) {
+		style.DeleteRange(position, deleteLength);
+	}
 }
 
 bool CellBuffer::SetUndoCollection(bool collectUndo) {
@@ -1039,7 +1454,7 @@ bool CellBuffer::SetUndoCollection(bool collectUndo) {
 	return collectingUndo;
 }
 
-bool CellBuffer::IsCollectingUndo() const {
+bool CellBuffer::IsCollectingUndo() const noexcept {
 	return collectingUndo;
 }
 
@@ -1054,8 +1469,8 @@ void CellBuffer::EndUndoAction() {
 void CellBuffer::AddUndoAction(Sci::Position token, bool mayCoalesce) {
 	bool startSequence;
 /* CHANGEBAR begin */
-	char *persistantForm = lv.PersistantForm();
-	uh.AppendAction(containerAction, token, 0, 0, startSequence, persistantForm, mayCoalesce);
+	char *persistantForm = plv->PersistantForm();
+	uh.AppendAction(containerAction, token, nullptr, 0, startSequence, persistantForm, mayCoalesce);
 /* CHANGEBAR end */
 }
 
@@ -1065,24 +1480,24 @@ void CellBuffer::DeleteUndoHistory(bool collectChangeHistory) {
 	uh.DeleteUndoHistory();
 /* CHANGEBAR begin */
 	uh.EnableChangeHistory(collectChangeHistory);
-	lv.EnableChangeCollection(collectChangeHistory);
+	plv->EnableChangeCollection(collectChangeHistory);
 /* CHANGEBAR end */
 }
 
 /* CHANGEBAR begin */
 bool CellBuffer::SetChangeCollection(bool collectChange) {
 	uh.EnableChangeHistory(collectChange);
-	lv.EnableChangeCollection(collectChange);
+	plv->EnableChangeCollection(collectChange);
 	return collectChange;
 }
 
 void CellBuffer::DeleteChangeCollection() {
 	uh.DeleteChangeHistory();
-	lv.DeleteChangeCollection();
+	plv->DeleteChangeCollection();
 }
 /* CHANGEBAR end */
 
-bool CellBuffer::CanUndo() const {
+bool CellBuffer::CanUndo() const noexcept {
 	return uh.CanUndo();
 }
 
@@ -1097,7 +1512,7 @@ const Action &CellBuffer::GetUndoStep() const {
 void CellBuffer::PerformUndoStep() {
 /* CHANGEBAR begin */
 	const char *changesState = uh.GetChangesStep();
-	lv.SetChanges(changesState);
+	plv->SetChanges(changesState);
 /* CHANGEBAR end */
 	const Action &actionStep = uh.GetUndoStep();
 	if (actionStep.at == insertAction) {
@@ -1116,7 +1531,7 @@ void CellBuffer::PerformUndoStep() {
 	uh.CompletedUndoStep();
 }
 
-bool CellBuffer::CanRedo() const {
+bool CellBuffer::CanRedo() const noexcept {
 	return uh.CanRedo();
 }
 
@@ -1142,14 +1557,14 @@ void CellBuffer::PerformRedoStep() {
 	uh.CompletedRedoStep();
 /* CHANGEBAR begin */
 	if (IsSavePoint()) {
-		lv.SetSavePoint();
+		plv->SetSavePoint();
 	}
 /* CHANGEBAR end */
 }
 
 /* CHANGEBAR begin */
 int CellBuffer::GetChanged(int line) const {
-	int changed = lv.GetChanged(line);
+	int changed = plv->GetChanged(line);
 	if (changed == 0)
 		return 0;
 	else if (uh.BeforeSavePointEffective(changed))
@@ -1159,6 +1574,6 @@ int CellBuffer::GetChanged(int line) const {
 }
 
 int CellBuffer::GetChangesEdition() const {
-    return lv.GetChangesEdition();
+    return plv->GetChangesEdition();
 }
 /* CHANGEBAR end */
