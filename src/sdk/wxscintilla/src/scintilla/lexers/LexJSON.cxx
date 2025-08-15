@@ -27,10 +27,9 @@
 #include "CharacterSet.h"
 #include "LexerModule.h"
 #include "OptionSet.h"
+#include "DefaultLexer.h"
 
-#ifdef SCI_NAMESPACE
 using namespace Scintilla;
-#endif
 
 static const char *const JSONWordListDesc[] = {
 	"JSON Keywords",
@@ -128,7 +127,7 @@ struct OptionSetJSON : public OptionSet<OptionsJSON> {
 	}
 };
 
-class LexerJSON : public ILexer {
+class LexerJSON : public DefaultLexer {
 	OptionsJSON options;
 	OptionSetJSON optSetJSON;
 	EscapeSequence escapeSeq;
@@ -202,6 +201,7 @@ class LexerJSON : public ILexer {
 
 	public:
 	LexerJSON() :
+		DefaultLexer("json", SCLEX_JSON),
 		setOperators(CharacterSet::setNone, "[{}]:,"),
 		setURL(CharacterSet::setAlphaNum, "-._~:/?#[]@!$&'()*+,),="),
 		setKeywordJSONLD(CharacterSet::setAlpha, ":@"),
@@ -209,7 +209,7 @@ class LexerJSON : public ILexer {
 	}
 	virtual ~LexerJSON() {}
 	int SCI_METHOD Version() const override {
-		return lvOriginal;
+		return lvIdentity;
 	}
 	void SCI_METHOD Release() override {
 		delete this;
@@ -228,6 +228,9 @@ class LexerJSON : public ILexer {
 			return 0;
 		}
 		return -1;
+	}
+	const char * SCI_METHOD PropertyGet(const char *key) override {
+		return optSetJSON.PropertyGet(key);
 	}
 	Sci_Position SCI_METHOD WordListSet(int n, const char *wl) override {
 		WordList *wordListN = 0;
