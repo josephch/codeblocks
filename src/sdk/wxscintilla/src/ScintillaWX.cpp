@@ -400,7 +400,7 @@ bool ScintillaWX::HaveMouseCapture() {
 }
 
 
-void ScintillaWX::ScrollText(int linesToMove) {
+void ScintillaWX::ScrollText(Sci::Line linesToMove) {
     int dy = vs.lineHeight * (linesToMove);
     stc->ScrollWindow(0, dy);
 }
@@ -426,7 +426,7 @@ void ScintillaWX::SetHorizontalScrollPos() {
 
 const int H_SCROLL_STEP = 20;
 
-bool ScintillaWX::ModifyScrollBars(int nMax, int nPage) {
+bool ScintillaWX::ModifyScrollBars(Sci::Line nMax, Sci::Line nPage) {
     bool modified = false;
 
     int vertEnd = nMax+1;
@@ -650,7 +650,7 @@ bool ScintillaWX::CanPaste() {
 void ScintillaWX::CreateCallTipWindow(PRectangle) {
     if (! ct.wCallTip.Created() ) {
         ct.wCallTip = new wxSCICallTip(stc, &ct, this);
-        ct.wDraw = ct.wCallTip;
+        ct.wDraw = &ct.wCallTip;
     }
 }
 
@@ -765,10 +765,6 @@ bool ScintillaWX::DestroySystemCaret() {
 #endif
 }
 
-bool ScintillaWX::FineTickerAvailable() {
-    return true;
-}
-
 bool ScintillaWX::FineTickerRunning(TickReason reason) {
     bool running = false;
     TimersHash::iterator i = timers.find(reason);
@@ -881,7 +877,7 @@ sptr_t ScintillaWX::WndProc(unsigned int iMessage, uptr_t wParam, sptr_t lParam)
 
 #ifdef SCI_LEXER
       case SCI_LOADLEXERLIBRARY:
-            LexerManager::GetInstance()->Load((const char*)lParam);
+            ExternalLexerLoad((const char*)lParam);
             break;
 #endif
       case SCI_GETDIRECTFUNCTION:
@@ -1070,7 +1066,7 @@ void ScintillaWX::DoSysColourChange() {
 }
 
 void ScintillaWX::DoLeftButtonDown(Point pt, unsigned int curTime, bool shift, bool ctrl, bool alt) {
-    ButtonDown(pt, curTime, shift, ctrl, alt);
+    ButtonDownWithModifiers(pt, curTime, ModifierFlags(shift, ctrl, alt));
 }
 
 void ScintillaWX::DoRightButtonDown(Point pt, unsigned int curTime, bool shift, bool ctrl, bool alt) {
@@ -1083,11 +1079,11 @@ void ScintillaWX::DoRightButtonDown(Point pt, unsigned int curTime, bool shift, 
 }
 
 void ScintillaWX::DoLeftButtonUp(Point pt, unsigned int curTime, bool ctrl) {
-    ButtonUp(pt, curTime, ctrl);
+    ButtonUpWithModifiers(pt, curTime, ModifierFlags(false, ctrl, false));
 }
 
-void ScintillaWX::DoLeftButtonMove(Point pt) {
-    ButtonMove(pt);
+void ScintillaWX::DoLeftButtonMove(Point pt, unsigned int curTime) {
+    ButtonMoveWithModifiers(pt, curTime, 0);
 }
 
 #ifdef __WXGTK__

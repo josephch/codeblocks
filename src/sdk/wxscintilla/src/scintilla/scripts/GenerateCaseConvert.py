@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Script to generate CaseConvert.cxx from Python's Unicode data
 # Should be run rarely when a Python with a new version of Unicode data is available.
 # Requires Python 3.3 or later
@@ -40,7 +41,7 @@ def conversionSets():
     # with complex cases.
     complexes = []
     symmetrics = []
-    for ch in range(sys.maxunicode):
+    for ch in range(sys.maxunicode + 1):
         if ch >= 0xd800 and ch <= 0xDBFF:
             continue
         if ch >= 0xdc00 and ch <= 0xDFFF:
@@ -103,7 +104,7 @@ def groupRanges(symmetrics):
     return rangeGroups, nonRanges
 
 def escape(s):
-	return "".join((chr(c) if chr(c) in string.ascii_letters else "\\x%x" % c) for c in s.encode('utf-8'))
+    return "".join((chr(c) if chr(c) in string.ascii_letters else "\\x%x" % c) for c in s.encode('utf-8'))
 
 def updateCaseConvert():
     symmetrics, complexes = conversionSets()
@@ -111,10 +112,10 @@ def updateCaseConvert():
     rangeGroups, nonRanges = groupRanges(symmetrics)
 
     print(len(rangeGroups), "ranges")
-    rangeLines = ["%d,%d,%d,%d, " % x for x in rangeGroups]
+    rangeLines = ["%d,%d,%d,%d," % x for x in rangeGroups]
 
     print(len(nonRanges), "non ranges")
-    nonRangeLines = ["%d,%d, " % x for x in nonRanges]
+    nonRangeLines = ["%d,%d," % x for x in nonRanges]
 
     print(len(symmetrics), "symmetric")
 
