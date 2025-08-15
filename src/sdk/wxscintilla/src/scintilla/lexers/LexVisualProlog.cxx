@@ -39,10 +39,9 @@
 #include "CharacterCategory.h"
 #include "LexerModule.h"
 #include "OptionSet.h"
+#include "DefaultLexer.h"
 
-#ifdef SCI_NAMESPACE
 using namespace Scintilla;
-#endif
 
 // Options used for LexerVisualProlog
 struct OptionsVisualProlog {
@@ -64,7 +63,7 @@ struct OptionSetVisualProlog : public OptionSet<OptionsVisualProlog> {
     }
 };
 
-class LexerVisualProlog : public ILexer {
+class LexerVisualProlog : public DefaultLexer {
     WordList majorKeywords;
     WordList minorKeywords;
     WordList directiveKeywords;
@@ -72,7 +71,7 @@ class LexerVisualProlog : public ILexer {
     OptionsVisualProlog options;
     OptionSetVisualProlog osVisualProlog;
 public:
-    LexerVisualProlog() {
+    LexerVisualProlog() : DefaultLexer("visualprolog", SCLEX_VISUALPROLOG) {
     }
     virtual ~LexerVisualProlog() {
     }
@@ -80,7 +79,7 @@ public:
         delete this;
     }
     int SCI_METHOD Version() const override {
-        return lvOriginal;
+        return lvIdentity;
     }
     const char * SCI_METHOD PropertyNames() override {
         return osVisualProlog.PropertyNames();
@@ -92,6 +91,9 @@ public:
         return osVisualProlog.DescribeProperty(name);
     }
     Sci_Position SCI_METHOD PropertySet(const char *key, const char *val) override;
+	const char * SCI_METHOD PropertyGet(const char *key) override {
+		return osVisualProlog.PropertyGet(key);
+	}
     const char * SCI_METHOD DescribeWordListSets() override {
         return osVisualProlog.DescribeWordListSets();
     }
@@ -365,6 +367,7 @@ void SCI_METHOD LexerVisualProlog::Lex(Sci_PositionU startPos, Sci_Position leng
         case SCE_VISUALPROLOG_STRING_ESCAPE_ERROR:
             // return to SCE_VISUALPROLOG_STRING and treat as such (fall-through)
             sc.SetState(SCE_VISUALPROLOG_STRING);
+            // Falls through.
         case SCE_VISUALPROLOG_STRING:
             if (sc.atLineEnd) {
                 sc.SetState(SCE_VISUALPROLOG_STRING_EOL_OPEN);
@@ -384,6 +387,7 @@ void SCI_METHOD LexerVisualProlog::Lex(Sci_PositionU startPos, Sci_Position leng
         case SCE_VISUALPROLOG_STRING_VERBATIM_EOL:
             // return to SCE_VISUALPROLOG_STRING_VERBATIM and treat as such (fall-through)
             sc.SetState(SCE_VISUALPROLOG_STRING_VERBATIM);
+            // Falls through.
         case SCE_VISUALPROLOG_STRING_VERBATIM:
             if (sc.atLineEnd) {
                 sc.SetState(SCE_VISUALPROLOG_STRING_VERBATIM_EOL);
