@@ -8,33 +8,35 @@
 #ifndef XPM_H
 #define XPM_H
 
-#ifdef SCI_NAMESPACE
 namespace Scintilla {
-#endif
 
 /**
  * Hold a pixmap in XPM format.
  */
 class XPM {
-	int height;
-	int width;
-	int nColours;
+	int height=1;
+	int width=1;
+	int nColours=1;
 	std::vector<unsigned char> pixels;
 	ColourDesired colourCodeTable[256];
-	char codeTransparent;
-	ColourDesired ColourFromCode(int ch) const;
+	char codeTransparent=' ';
+	ColourDesired ColourFromCode(int ch) const noexcept;
 	void FillRun(Surface *surface, int code, int startX, int y, int x) const;
 public:
 	explicit XPM(const char *textForm);
 	explicit XPM(const char *const *linesForm);
+	XPM(const XPM &) = default;
+	XPM(XPM &&) = default;
+	XPM &operator=(const XPM &) = default;
+	XPM &operator=(XPM &&) = default;
 	~XPM();
 	void Init(const char *textForm);
 	void Init(const char *const *linesForm);
 	/// Decompose image into runs and use FillRectangle for each run
 	void Draw(Surface *surface, const PRectangle &rc);
-	int GetHeight() const { return height; }
-	int GetWidth() const { return width; }
-	void PixelAt(int x, int y, ColourDesired &colour, bool &transparent) const;
+	int GetHeight() const noexcept { return height; }
+	int GetWidth() const noexcept { return width; }
+	void PixelAt(int x, int y, ColourDesired &colour, bool &transparent) const noexcept;
 private:
 	static std::vector<const char *>LinesFormFromTextForm(const char *textForm);
 };
@@ -48,20 +50,23 @@ class RGBAImage {
 	float scale;
 	std::vector<unsigned char> pixelBytes;
 public:
+	static constexpr size_t bytesPerPixel = 4;
 	RGBAImage(int width_, int height_, float scale_, const unsigned char *pixels_);
 	explicit RGBAImage(const XPM &xpm);
-	// Deleted so RGBAImage objects can not be copied.
-	RGBAImage(const RGBAImage &) = delete;
-	RGBAImage &operator=(const RGBAImage &) = delete;
+	RGBAImage(const RGBAImage &) = default;
+	RGBAImage(RGBAImage &&) = default;
+	RGBAImage &operator=(const RGBAImage &) = default;
+	RGBAImage &operator=(RGBAImage &&) = default;
 	virtual ~RGBAImage();
-	int GetHeight() const { return height; }
-	int GetWidth() const { return width; }
-	float GetScale() const { return scale; }
-	float GetScaledHeight() const { return height / scale; }
-	float GetScaledWidth() const { return width / scale; }
-	int CountBytes() const;
-	const unsigned char *Pixels() const;
-	void SetPixel(int x, int y, ColourDesired colour, int alpha=0xff);
+	int GetHeight() const noexcept { return height; }
+	int GetWidth() const noexcept { return width; }
+	float GetScale() const noexcept { return scale; }
+	float GetScaledHeight() const noexcept { return height / scale; }
+	float GetScaledWidth() const noexcept { return width / scale; }
+	int CountBytes() const noexcept;
+	const unsigned char *Pixels() const noexcept;
+	void SetPixel(int x, int y, ColourDesired colour, int alpha) noexcept;
+	static void BGRAFromRGBA(unsigned char *pixelsBGRA, const unsigned char *pixelsRGBA, size_t count) noexcept;
 };
 
 /**
@@ -74,9 +79,14 @@ class RGBAImageSet {
 	mutable int width;	///< Memorize largest width of the set.
 public:
 	RGBAImageSet();
+	// Deleted so RGBAImageSet objects can not be copied.
+	RGBAImageSet(const RGBAImageSet &) = delete;
+	RGBAImageSet(RGBAImageSet &&) = delete;
+	RGBAImageSet &operator=(const RGBAImageSet &) = delete;
+	RGBAImageSet &operator=(RGBAImageSet &&) = delete;
 	~RGBAImageSet();
 	/// Remove all images.
-	void Clear();
+	void Clear() noexcept;
 	/// Add an image.
 	void Add(int ident, RGBAImage *image);
 	/// Get image by id.
@@ -87,8 +97,6 @@ public:
 	int GetWidth() const;
 };
 
-#ifdef SCI_NAMESPACE
 }
-#endif
 
 #endif
