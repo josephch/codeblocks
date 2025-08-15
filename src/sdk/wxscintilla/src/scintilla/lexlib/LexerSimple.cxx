@@ -22,11 +22,11 @@
 #include "LexerBase.h"
 #include "LexerSimple.h"
 
-#ifdef SCI_NAMESPACE
 using namespace Scintilla;
-#endif
 
-LexerSimple::LexerSimple(const LexerModule *module_) : module(module_) {
+LexerSimple::LexerSimple(const LexerModule *module_) :
+	LexerBase(module_->LexClasses(), module_->NamedStyles()),
+	module(module_) {
 	for (int wl = 0; wl < module->GetNumWordLists(); wl++) {
 		if (!wordLists.empty())
 			wordLists += "\n";
@@ -50,4 +50,12 @@ void SCI_METHOD LexerSimple::Fold(Sci_PositionU startPos, Sci_Position lengthDoc
 		module->Fold(startPos, lengthDoc, initStyle, keyWordLists, astyler);
 		astyler.Flush();
 	}
+}
+
+const char * SCI_METHOD LexerSimple::GetName() {
+	return module->languageName;
+}
+
+int SCI_METHOD LexerSimple::GetIdentifier() {
+	return module->GetLanguage();
 }
