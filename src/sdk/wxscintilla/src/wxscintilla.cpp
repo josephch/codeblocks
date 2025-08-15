@@ -1285,13 +1285,13 @@ int wxScintilla::GetWhitespaceSize() const
 // is used to expand the possible states.
 void wxScintilla::SetStyleBits(int bits)
 {
-    SendMsg(SCI_SETSTYLEBITS, bits, 0);
+    //SendMsg(SCI_SETSTYLEBITS, bits, 0);
 }
 
 // Retrieve number of bits in style bytes used to hold the lexical state.
 int wxScintilla::GetStyleBits() const
 {
-    return SendMsg(SCI_GETSTYLEBITS, 0, 0);
+    return 0;//SendMsg(SCI_GETSTYLEBITS, 0, 0);
 }
 
 // Used to hold extra styling information for each line.
@@ -4676,7 +4676,7 @@ int wxScintilla::GetPropertyInt(const wxString &key, int defaultValue) const {
 // Retrieve the number of bits the current lexer needs for styling.
 int wxScintilla::GetStyleBitsNeeded() const
 {
-    return SendMsg(SCI_GETSTYLEBITSNEEDED, 0, 0);
+    return 0;//SendMsg(SCI_GETSTYLEBITSNEEDED, 0, 0);
 }
 
 // Retrieve the lexing language of the document.
@@ -5272,7 +5272,7 @@ void wxScintilla::OnMouseRightDown(wxMouseEvent& evt) {
 
 void wxScintilla::OnMouseMove(wxMouseEvent& evt) {
     wxPoint pt = evt.GetPosition();
-    m_swx->DoLeftButtonMove(Point(pt.x, pt.y));
+    m_swx->DoLeftButtonMove(Point(pt.x, pt.y), m_stopWatch.Time());
 }
 
 void wxScintilla::OnMouseLeftUp(wxMouseEvent& evt) {
