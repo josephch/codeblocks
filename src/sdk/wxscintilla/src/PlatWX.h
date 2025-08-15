@@ -1,4 +1,5 @@
 
+#include "Platform.h"
 #include <wx/defs.h>
 #include <wx/imaglist.h>
 
@@ -11,6 +12,12 @@
     #define wxFALLTHROUGH
 #endif // wxFALLTHROUGH
 /* C::B end */
+
+using Scintilla::PRectangle;
+using Scintilla::ColourDesired;
+using Scintilla::ListBox;
+using Scintilla::Point;
+using Scintilla::Font;
 
 wxRect wxRectFromPRectangle(PRectangle prc);
 PRectangle PRectangleFromwxRect(wxRect rc);
@@ -29,6 +36,7 @@ private:
 /* C::B begin */
     int                 technology;
 /* C::B end */
+    Scintilla::IListBoxDelegate*       m_lbDelegate;
 
 public:
     ListBoxImpl();
@@ -54,7 +62,7 @@ public:
             void RegisterImageHelper(int type, const wxBitmap& bmp);
     virtual void RegisterRGBAImage(int type, int width, int height, const unsigned char *pixelsImage) wxOVERRIDE;
     virtual void ClearRegisteredImages() wxOVERRIDE;
-    virtual void SetDoubleClickAction(CallBackAction, void *) wxOVERRIDE;
+    void SetDelegate(Scintilla::IListBoxDelegate *lbDelegate) wxOVERRIDE;
     virtual void SetList(const char* list, char separator, char typesep) wxOVERRIDE;
 };
 

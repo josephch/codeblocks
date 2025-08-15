@@ -27,10 +27,9 @@
 #include "CharacterSet.h"
 #include "LexerModule.h"
 #include "OptionSet.h"
+#include "DefaultLexer.h"
 
-#ifdef SCI_NAMESPACE
 using namespace Scintilla;
-#endif
 
 static const char *const RegistryWordListDesc[] = {
 	0
@@ -53,7 +52,7 @@ struct OptionSetRegistry : public OptionSet<OptionsRegistry> {
 	}
 };
 
-class LexerRegistry : public ILexer {
+class LexerRegistry : public DefaultLexer {
 	OptionsRegistry options;
 	OptionSetRegistry optSetRegistry;
 
@@ -162,10 +161,10 @@ class LexerRegistry : public ILexer {
 	}
 
 public:
-	LexerRegistry() {}
+	LexerRegistry() : DefaultLexer("registry", SCLEX_REGISTRY) {}
 	virtual ~LexerRegistry() {}
 	int SCI_METHOD Version() const override {
-		return lvOriginal;
+		return lvIdentity;
 	}
 	void SCI_METHOD Release() override {
 		delete this;
@@ -185,6 +184,10 @@ public:
 		}
 		return -1;
 	}
+	const char * SCI_METHOD PropertyGet(const char *key) override {
+		return optSetRegistry.PropertyGet(key);
+	}
+
 	Sci_Position SCI_METHOD WordListSet(int, const char *) override {
 		return -1;
 	}
