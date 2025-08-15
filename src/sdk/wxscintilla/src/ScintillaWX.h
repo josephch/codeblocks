@@ -16,7 +16,6 @@
 #ifndef __ScintillaWX_h__
 #define __ScintillaWX_h__
 #include "wx/defs.h"
-
 //----------------------------------------------------------------------
 
 #include <ctype.h>
@@ -98,6 +97,7 @@ class ScintillaWX;
 class wxSCITimer;
 class SurfaceData;
 
+using namespace Scintilla;
 //----------------------------------------------------------------------
 // Helper classes
 
@@ -133,10 +133,10 @@ public:
     virtual bool SetIdle(bool on) wxOVERRIDE;
     virtual void SetMouseCapture(bool on) wxOVERRIDE;
     virtual bool HaveMouseCapture() wxOVERRIDE;
-    virtual void ScrollText(int linesToMove) wxOVERRIDE;
+    virtual void ScrollText(Sci::Line linesToMove) wxOVERRIDE;
     virtual void SetVerticalScrollPos() wxOVERRIDE;
     virtual void SetHorizontalScrollPos() wxOVERRIDE;
-    virtual bool ModifyScrollBars(int nMax, int nPage) wxOVERRIDE;
+    virtual bool ModifyScrollBars(Sci::Line nMax, Sci::Line nPage) wxOVERRIDE;
     virtual void Copy() wxOVERRIDE;
     virtual void Paste() wxOVERRIDE;
     virtual void CopyToClipboard(const SelectionText &selectedText) wxOVERRIDE;
@@ -158,7 +158,7 @@ public:
     virtual void CancelModes() wxOVERRIDE;
 
     virtual void UpdateSystemCaret() wxOVERRIDE;
-    virtual bool FineTickerAvailable() wxOVERRIDE;
+ //   virtual bool FineTickerAvailable() wxOVERRIDE;
     virtual bool FineTickerRunning(TickReason reason) wxOVERRIDE;
     virtual void FineTickerStart(TickReason reason, int millis, int tolerance) wxOVERRIDE;
     virtual void FineTickerCancel(TickReason reason) wxOVERRIDE;
@@ -174,7 +174,7 @@ public:
     void DoLeftButtonDown(Point pt, unsigned int curTime, bool shift, bool ctrl, bool alt);
     void DoRightButtonDown(Point pt, unsigned int curTime, bool shift, bool ctrl, bool alt);
     void DoLeftButtonUp(Point pt, unsigned int curTime, bool ctrl);
-    void DoLeftButtonMove(Point pt);
+    void DoLeftButtonMove(Point pt, unsigned int curTime);
     void DoMiddleButtonUp(Point pt);
 /* C::B begin */
 #if !wxCHECK_VERSION(3, 0, 0)
