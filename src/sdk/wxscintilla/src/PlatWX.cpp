@@ -86,10 +86,6 @@ namespace Scintilla
 /* C::B end */
 #endif
 
-Point Point::FromLong(long lpoint) {
-    return Point(lpoint & 0xFFFF, lpoint >> 16);
-}
-
 wxRect wxRectFromPRectangle(PRectangle prc) {
     wxRect r(wxRound(prc.left), wxRound(prc.top),
              wxRound(prc.Width()), wxRound(prc.Height()));
@@ -163,7 +159,7 @@ int GetAscent(Font& f)
 
 } // anonymous namespace
 
-Font::Font() {
+Font::Font() noexcept{
     fid = 0;
 }
 
@@ -241,7 +237,7 @@ public:
     virtual int DeviceHeightFont(int points) wxOVERRIDE;
     virtual void MoveTo(int x_, int y_) wxOVERRIDE;
     virtual void LineTo(int x_, int y_) wxOVERRIDE;
-    virtual void Polygon(Point *pts, int npts, ColourDesired fore, ColourDesired back) wxOVERRIDE;
+    virtual void Polygon(Point *pts, size_t npts, ColourDesired fore, ColourDesired back) wxOVERRIDE;
     virtual void RectangleDraw(PRectangle rc, ColourDesired fore, ColourDesired back) wxOVERRIDE;
     virtual void FillRectangle(PRectangle rc, ColourDesired back) wxOVERRIDE;
     virtual void FillRectangle(PRectangle rc, Surface &surfacePattern) wxOVERRIDE;
@@ -258,11 +254,9 @@ public:
     virtual void DrawTextTransparent(PRectangle rc, Font &font_, XYPOSITION ybase, const char *s, int len, ColourDesired fore) wxOVERRIDE;
     virtual void MeasureWidths(Font &font_, const char *s, int len, XYPOSITION *positions) wxOVERRIDE;
     virtual XYPOSITION WidthText(Font &font_, const char *s, int len) wxOVERRIDE;
-    virtual XYPOSITION WidthChar(Font &font_, char ch) wxOVERRIDE;
     virtual XYPOSITION Ascent(Font &font_) wxOVERRIDE;
     virtual XYPOSITION Descent(Font &font_) wxOVERRIDE;
     virtual XYPOSITION InternalLeading(Font &font_) wxOVERRIDE;
-    virtual XYPOSITION ExternalLeading(Font &font_) wxOVERRIDE;
     virtual XYPOSITION Height(Font &font_) wxOVERRIDE;
     virtual XYPOSITION AverageCharWidth(Font &font_) wxOVERRIDE;
 
@@ -271,6 +265,8 @@ public:
 
     virtual void SetUnicodeMode(bool unicodeMode_) wxOVERRIDE;
     virtual void SetDBCSMode(int codePage) wxOVERRIDE;
+    
+    void GradientRectangle(PRectangle rc, const std::vector<ColourStop> &stops, GradientOptions options) override;
 
     void BrushColour(ColourDesired back);
     void SetFont(Font &font_);
@@ -383,12 +379,12 @@ void SurfaceImpl::LineTo(int x_, int y_) {
     y = y_;
 }
 
-void SurfaceImpl::Polygon(Point *pts, int npts, ColourDesired fore, ColourDesired back) {
+void SurfaceImpl::Polygon(Point *pts, size_t npts, ColourDesired fore, ColourDesired back) {
     PenColour(fore);
     BrushColour(back);
     wxPoint *p = new wxPoint[npts];
 
-    for (int i=0; i<npts; i++) {
+    for (size_t i=0; i<npts; i++) {
         p[i].x = wxRound(pts[i].x);
         p[i].y = wxRound(pts[i].y);
     }
@@ -702,6 +698,60 @@ void SurfaceImpl::MeasureWidths(Font &font, const char *s, int len, XYPOSITION *
 #endif // wxUSE_UNICODE/!wxUSE_UNICODE
 }
 
+wxColour wxColourFromCA(ColourAlpha const& cd) {
+    return wxColour(cd.GetRed(), cd.GetGreen(), cd.GetBlue(), cd.GetAlpha());
+}
+
+void SurfaceImpl::GradientRectangle(PRectangle rc, const std::vector<ColourStop> &stops, GradientOptions options)
+{
+#if wxUSE_GRAPHICS_CONTEXT
+    wxGraphicsGradientStops gradientStops;
+    for ( size_t i = 0; i < stops.size(); ++i )
+    {
+        if ( i == 0 )
+            gradientStops.SetStartColour(wxColourFromCA(stops[i].colour));
+        else if ( i == stops.size() - 1 )
+            gradientStops.SetEndColour(wxColourFromCA(stops[i].colour));
+        else
+            gradientStops.Add(wxColourFromCA(stops[i].colour), stops[i].position);
+    }
+
+    wxPoint ep;
+    switch ( options )
+    {
+        case GradientOptions::leftToRight:
+            ep = wxPoint(rc.right, rc.top);
+            break;
+        case GradientOptions::topToBottom:
+        default:
+            ep = wxPoint(rc.left, rc.bottom);
+            break;
+    }
+
+    wxGCDC dc(*(wxMemoryDC*)hdc);
+    wxGraphicsContext* gc = dc.GetGraphicsContext();
+    gc->SetBrush(gc->CreateLinearGradientBrush(rc.left, rc.top, ep.x, ep.y, gradientStops));
+    gc->DrawRectangle(rc.left, rc.top, rc.Width(), rc.Height());
+#else
+    // limited implementation that only uses the first and last stop
+    wxDirection dir;
+    switch ( options )
+    {
+        case GradientOptions::leftToRight:
+            dir = wxEAST;
+            break;
+        case GradientOptions::topToBottom:
+        default:
+            dir = wxSOUTH;
+            break;
+    }
+
+    hdc->GradientFillLinear(wxRectFromPRectangle(rc),
+                            wxColourFromCA(stops[0].colour),
+                            wxColourFromCA(stops[stops.size() - 1].colour),
+                            dir);
+#endif
+}
 
 XYPOSITION SurfaceImpl::WidthText(Font &font, const char *s, int len) {
     SetFont(font);
@@ -712,16 +762,6 @@ XYPOSITION SurfaceImpl::WidthText(Font &font, const char *s, int len) {
     return w;
 }
 
-
-XYPOSITION SurfaceImpl::WidthChar(Font &font, char ch) {
-    SetFont(font);
-    int w;
-    int h;
-    char s[2] = { ch, 0 };
-
-    hdc->GetTextExtent(sci2wx(s, 1), &w, &h);
-    return w;
-}
 
 #define EXTENT_TEST wxT(" `~!@#$%^&*()-_=+\\|[]{};:\"\'<,>.?/1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
@@ -743,13 +783,6 @@ XYPOSITION SurfaceImpl::Descent(Font &font) {
 
 XYPOSITION SurfaceImpl::InternalLeading(Font &WXUNUSED(font)) {
     return 0;
-}
-
-XYPOSITION SurfaceImpl::ExternalLeading(Font &font) {
-    SetFont(font);
-    int w, h, d, e;
-    hdc->GetTextExtent(EXTENT_TEST, &w, &h, &d, &e);
-    return e;
 }
 
 XYPOSITION SurfaceImpl::Height(Font &font) {
@@ -1027,7 +1060,6 @@ public:
     virtual void MeasureWidths(Font &font_, const char *s, int len,
                                XYPOSITION *positions) wxOVERRIDE;
     virtual XYPOSITION WidthText(Font &font_, const char *s, int len) wxOVERRIDE;
-    virtual XYPOSITION WidthChar(Font &font_, char ch) wxOVERRIDE;
     virtual XYPOSITION Ascent(Font &font_) wxOVERRIDE;
     virtual XYPOSITION Descent(Font &font_) wxOVERRIDE;
     virtual XYPOSITION InternalLeading(Font &font_) wxOVERRIDE;
@@ -1918,11 +1950,7 @@ void Window::Destroy() {
     wid = 0;
 }
 
-bool Window::HasFocus() {
-    return wxWindow::FindFocus() == GETWIN(wid);
-}
-
-PRectangle Window::GetPosition() {
+PRectangle Window::GetPosition() const {
     if (! wid) return PRectangle();
     wxRect rc(GETWIN(wid)->GetPosition(), GETWIN(wid)->GetSize());
     return PRectangleFromwxRect(rc);
@@ -1933,8 +1961,8 @@ void Window::SetPosition(PRectangle rc) {
     GETWIN(wid)->SetSize(r);
 }
 
-void Window::SetPositionRelative(PRectangle rc, Window relativeTo) {
-    wxWindow *relativeWin = GETWIN(relativeTo.wid);
+void Window::SetPositionRelative(PRectangle rc, const Window* relativeTo) {
+    wxWindow *relativeWin = GETWIN(relativeTo->wid);
 
     wxPoint position = relativeWin->GetScreenPosition();
     position.x = wxRound(position.x + rc.left);
@@ -1968,7 +1996,7 @@ void Window::SetPositionRelative(PRectangle rc, Window relativeTo) {
     window->SetSize(position.x, position.y, width, height);
 }
 
-PRectangle Window::GetClientPosition() {
+PRectangle Window::GetClientPosition() const{
     if (! wid) return PRectangle();
     wxSize sz = GETWIN(wid)->GetClientSize();
     return  PRectangle(0, 0, sz.x, sz.y);
@@ -2032,12 +2060,6 @@ void Window::SetCursor(Cursor curs) {
         cursorLast = curs;
     }
 }
-
-
-void Window::SetTitle(const char *s) {
-    GETWIN(wid)->SetLabel(sci2wx(s));
-}
-
 
 // Returns rectangle of monitor pt is on
 PRectangle Window::GetMonitorRect(Point pt) {
@@ -2117,14 +2139,13 @@ class wxSCIListBoxWin : public wxPopupWindow
 {
 private:
     wxListView*         lv;
-    CallBackAction      doubleClickAction;
-    void*               doubleClickActionData;
+    IListBoxDelegate *delegate;
     int iconHeight = 0; int iconWidth = 0; // Cached from IconWidth() See ticket #1458
 public:
 
 public:
     wxSCIListBoxWin(wxWindow* parent, wxWindowID id, Point WXUNUSED(location)) :
-        wxPopupWindow(parent, wxBORDER_SIMPLE)
+        wxPopupWindow(parent, wxBORDER_SIMPLE), delegate(nullptr)
     {
 
 /* C::B begin */
@@ -2205,10 +2226,11 @@ public:
     }
 
 
-    void SetDoubleClickAction(CallBackAction action, void *data) {
-        doubleClickAction = action;
-        doubleClickActionData = data;
-    }
+  /** Defines the delegate for ListBox actions. */
+  void SetDelegate(IListBoxDelegate *lbDelegate) {
+    delegate = lbDelegate;
+   }
+
 
 
     void OnFocus(wxFocusEvent& event) {
@@ -2238,7 +2260,11 @@ public:
     }
 
     void OnActivate(wxListEvent& WXUNUSED(event)) {
-        doubleClickAction(doubleClickActionData);
+        if (delegate)
+        {
+          ListBoxEvent event(ListBoxEvent::EventType::doubleClick);
+          delegate->ListNotify(&event);
+        }
     }
 
     wxListView* GetLB() { return lv; }
@@ -2589,6 +2615,11 @@ void ListBoxImpl::SetList(const char* list, char separator, char typesep) {
     GETLB(wid)->Thaw();
 }
 
+void ListBoxImpl::SetDelegate(Scintilla::IListBoxDelegate *lbDelegate)
+{
+    m_lbDelegate = lbDelegate;
+}
+
 
 int ListBoxImpl::Length() {
     return GETLB(wid)->GetItemCount();
@@ -2683,12 +2714,7 @@ void ListBoxImpl::ClearRegisteredImages() {
 }
 
 
-void ListBoxImpl::SetDoubleClickAction(CallBackAction action, void *data) {
-    GETLBW(wid)->SetDoubleClickAction(action, data);
-}
-
-
-ListBox::ListBox() {
+ListBox::ListBox() noexcept{
 }
 
 ListBox::~ListBox() {
@@ -2700,7 +2726,7 @@ ListBox *ListBox::Allocate() {
 
 //----------------------------------------------------------------------
 
-Menu::Menu() : mid(0) {
+Menu::Menu() noexcept : mid(0) {
 }
 
 void Menu::CreatePopUp() {
@@ -2807,49 +2833,6 @@ unsigned int Platform::DoubleClickTime() {
     return 500;   // **** ::GetDoubleClickTime();
 }
 
-bool Platform::MouseButtonBounce() {
-    return false;
-}
-
-bool Platform::IsKeyDown(int WXUNUSED(key)) {
-    return false;  // I don't think we'll need this.
-}
-
-long Platform::SendScintilla(WindowID w,
-                             unsigned int msg,
-                             unsigned long wParam,
-                             long lParam) {
-
-    wxScintilla* stc = (wxScintilla*)w;
-    return stc->SendMsg(msg, wParam, lParam);
-}
-
-long Platform::SendScintillaPointer(WindowID w,
-                                    unsigned int msg,
-                                    unsigned long wParam,
-                                    void *lParam) {
-
-    wxScintilla* stc = (wxScintilla*)w;
-    return stc->SendMsg(msg, wParam, (wxIntPtr)lParam);
-}
-
-
-// These are utility functions not really tied to a platform
-
-int Platform::Minimum(int a, int b) {
-    if (a < b)
-        return a;
-    else
-        return b;
-}
-
-int Platform::Maximum(int a, int b) {
-    if (a > b)
-        return a;
-    else
-        return b;
-}
-
 //#define TRACE
 
 void Platform::DebugDisplay(const char *s) {
@@ -2903,49 +2886,6 @@ void Platform::Assert(const char *c, const char *file, int line) {
 #endif
 }
 
-
-int Platform::Clamp(int val, int minVal, int maxVal) {
-    if (val > maxVal)
-        val = maxVal;
-    if (val < minVal)
-        val = minVal;
-    return val;
-}
-
-
-bool Platform::IsDBCSLeadByte(int WXUNUSED(codePage), char WXUNUSED(ch)) {
-    return false;
-}
-
-int Platform::DBCSCharLength(int WXUNUSED(codePage), const char *WXUNUSED(s)) {
-    return 1;
-}
-
-int Platform::DBCSCharMaxLength() {
-    return 1;
-}
-
-
-//----------------------------------------------------------------------
-
-ElapsedTime::ElapsedTime() {
-    wxLongLong localTime = wxGetLocalTimeMillis();
-    littleBit = localTime.GetLo();
-    bigBit = localTime.GetHi();
-}
-
-double ElapsedTime::Duration(bool reset) {
-    wxLongLong prevTime(bigBit, littleBit);
-    wxLongLong localTime = wxGetLocalTimeMillis();
-    if(reset) {
-        littleBit = localTime.GetLo();
-        bigBit = localTime.GetHi();
-    }
-    wxLongLong duration = localTime - prevTime;
-    double result = duration.ToDouble();
-    result /= 1000.0;
-    return result;
-}
 #if wxCHECK_VERSION(3, 1, 4) && defined(__WXMSW__)
 // #include <windows.h> already included at top of file
 double Platform::GetActiveWindowDPIScaleFactor()
