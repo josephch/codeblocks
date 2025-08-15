@@ -160,7 +160,9 @@ libwxscintilla_la_SOURCES = src/PlatWX.cpp \
 			src/scintilla/src/Style.cxx \
 			src/scintilla/src/UniConversion.cxx \
 			src/scintilla/src/ViewStyle.cxx \
-			src/scintilla/src/XPM.cxx
+			src/scintilla/src/XPM.cxx \
+			src/scintilla/src/UniqueString.cxx \
+			src/scintilla/lexlib/DefaultLexer.cxx
 
 noinst_HEADERS = src/PlatWX.h \
 			src/ScintillaWX.h \
@@ -219,7 +221,8 @@ noinst_HEADERS = src/PlatWX.h \
 			src/scintilla/src/UnicodeFromUTF8.h \
 			src/scintilla/src/UniqueString.h \
 			src/scintilla/src/ViewStyle.h \
-			src/scintilla/src/XPM.h
+			src/scintilla/src/XPM.h \
+			src/scintilla/src/UniqueString.h
 
 sdkdir=$(includedir)/codeblocks/wxscintilla/include/wx
 
