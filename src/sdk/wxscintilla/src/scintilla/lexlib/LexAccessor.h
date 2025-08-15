@@ -8,11 +8,9 @@
 #ifndef LEXACCESSOR_H
 #define LEXACCESSOR_H
 
-#ifdef SCI_NAMESPACE
 namespace Scintilla {
-#endif
 
-enum EncodingType { enc8bit, encUnicode, encDBCS };
+enum class EncodingType { eightBit, unicode, dbcs };
 
 class LexAccessor {
 private:
@@ -53,7 +51,7 @@ public:
 	explicit LexAccessor(IDocument *pAccess_) :
 		pAccess(pAccess_), startPos(extremePosition), endPos(0),
 		codePage(pAccess->CodePage()),
-		encodingType(enc8bit),
+		encodingType(EncodingType::eightBit),
 		lenDoc(pAccess->Length()),
 		validLen(0),
 		startSeg(0), startPosStyling(0),
@@ -63,14 +61,14 @@ public:
 		styleBuf[0] = 0;
 		switch (codePage) {
 		case 65001:
-			encodingType = encUnicode;
+			encodingType = EncodingType::unicode;
 			break;
 		case 932:
 		case 936:
 		case 949:
 		case 950:
 		case 1361:
-			encodingType = encDBCS;
+			encodingType = EncodingType::dbcs;
 		default:
 		  break;
 		}
@@ -81,7 +79,7 @@ public:
 		}
 		return buf[position - startPos];
 	}
-	IDocumentWithLineEnd *MultiByteAccess() const {
+	IDocumentWithLineEnd *MultiByteAccess() const noexcept {
 		if (documentVersion >= dvLineEnd) {
 			return static_cast<IDocumentWithLineEnd *>(pAccess);
 		}
@@ -101,7 +99,7 @@ public:
 	bool IsLeadByte(char ch) const {
 		return pAccess->IsDBCSLeadByte(ch);
 	}
-	EncodingType Encoding() const {
+	EncodingType Encoding() const noexcept {
 		return encodingType;
 	}
 	bool Match(Sci_Position pos, const char *s) {
@@ -113,7 +111,7 @@ public:
 		return true;
 	}
 	char StyleAt(Sci_Position position) const {
-		return static_cast<char>(pAccess->StyleAt(position));
+		return pAccess->StyleAt(position);
 	}
 	Sci_Position GetLine(Sci_Position position) const {
 		return pAccess->LineFromPosition(position);
@@ -174,13 +172,14 @@ public:
 
 			if (validLen + (pos - startSeg + 1) >= bufferSize)
 				Flush();
+			const char attr = static_cast<char>(chAttr);
 			if (validLen + (pos - startSeg + 1) >= bufferSize) {
 				// Too big for buffer so send directly
-				pAccess->SetStyleFor(pos - startSeg + 1, static_cast<char>(chAttr));
+				pAccess->SetStyleFor(pos - startSeg + 1, attr);
 			} else {
 				for (Sci_PositionU i = startSeg; i <= pos; i++) {
 					assert((startPosStyling + validLen) < Length());
-					styleBuf[validLen++] = static_cast<char>(chAttr);
+					styleBuf[validLen++] = attr;
 				}
 			}
 		}
@@ -199,8 +198,13 @@ public:
 	}
 };
 
-#ifdef SCI_NAMESPACE
+struct LexicalClass {
+	int value;
+	const char *name;
+	const char *tags;
+	const char *description;
+};
+
 }
-#endif
 
 #endif
