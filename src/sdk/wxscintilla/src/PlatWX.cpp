@@ -2617,7 +2617,7 @@ void ListBoxImpl::SetList(const char* list, char separator, char typesep) {
 
 void ListBoxImpl::SetDelegate(Scintilla::IListBoxDelegate *lbDelegate)
 {
-    m_lbDelegate = lbDelegate;
+    GETLBW(wid)->SetDelegate(lbDelegate);
 }
 
 
