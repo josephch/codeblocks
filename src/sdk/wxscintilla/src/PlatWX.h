@@ -36,7 +36,6 @@ private:
 /* C::B begin */
     int                 technology;
 /* C::B end */
-    Scintilla::IListBoxDelegate*       m_lbDelegate;
 
 public:
     ListBoxImpl();
