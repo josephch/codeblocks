@@ -1516,7 +1516,7 @@ void BrowseTracker::OnMenuTrackerDump(wxCommandEvent& WXUNUSED(event))
    #ifdef LOGGING
         LOGIT( "BT --Browsed--Editors-------------" );
         LOGIT( "BT CurrIndex[%d]LastIndex[%d]count[%d]", m_CurrEditorIndex, m_LastEditorIndex, GetEditorBrowsedCount() );
-        int maxEntries = Helpers::GetMaxEntries();
+        int maxEntries = Helpers::GetMaxAllocEntries();
         for (int i=0;i<maxEntries;++i )
         {
             wxString edName = GetPageFilename(i);
@@ -2079,8 +2079,7 @@ void BrowseTracker::OnEditorClosed(CodeBlocksEvent& event)
     ProjectData* pProjectData = GetProjectDataByEditorName( filePath);
 
     #if defined(LOGGING)
-        LOGIT( "BT OnEditorClosed Eb[%p][%s]", eb, eb->GetShortName().c_str() );
-        //LOGIT( "BT Closing Eb[%p][%s]", eb, eb->GetFilename().c_str() );
+        LOGIT( "BT OnEditorClosed Eb[%p][%s]", event_eb, event_eb->GetShortName().c_str() );
     #endif
 
     // Using the editor manager will fail here
@@ -2311,7 +2310,7 @@ void BrowseTracker::RemoveEditor(EditorBase* eb)
                 }//if win
             }//if find page from editor
             #if defined(LOGGING)
-                /LOGIT( "BT RemoveEditor Erased hash entry[%p]", eb );
+                LOGIT("BT RemoveEditor Erased hash entry[%p]", eb );
             #endif
         }
     }while(0);
