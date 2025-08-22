@@ -14,6 +14,7 @@
 //#include "Version.h"
 #include "JumpTracker.h"
 #include "JumpData.h"
+#include "Version.h"
 
 // now that we have ArrayOfJumpData declaration in scope we may finish the
 // definition -- note that this expands into some C++
@@ -329,9 +330,9 @@ void JumpTracker::OnViewJumpTrackerWindow(wxCommandEvent& event)
     wxMenuItem* pViewItem = pbar->FindItem(idMenuJumpView, &pViewMenu);
     #if defined(LOGGING)
     LOGIT( _T("OnViewJumpTracker [%s] Checked[%d] IsShown[%d]"),
-            GetConfig()->IsFloatingWindow()?_T("float"):_T("dock"),
-            pViewMenu->IsChecked(idViewJumpTracker),
-            IsWindowReallyShown(JumpTrackerWindow())
+            GetConfigBool("IsFloatingWindow")?_T("float"):_T("dock"),
+            pViewMenu->IsChecked(idMenuJumpView),
+            IsWindowReallyShown(GetJumpTrackerViewControl())
             );
     #endif
 
@@ -347,9 +348,9 @@ void JumpTracker::OnViewJumpTrackerWindow(wxCommandEvent& event)
 
     #if defined(LOGGING)
     LOGIT( _T("OnView [%s] Checked[%d] IsShown[%d]"),
-            GetConfig()->IsFloatingWindow()?_T("float"):_T("dock"),
+            GetConfigBool("IsFloatingWindow")?_T("float"):_T("dock"),
             pViewItem->IsChecked(),
-            IsWindowReallyShown(GetJumpTrackerWindow())
+            IsWindowReallyShown(GetJumpTrackerViewControl())
             );
     #endif
 
@@ -401,7 +402,7 @@ void JumpTracker::OnDockWindowVisability(CodeBlocksDockEvent& event)
     //event.layout
     //BUG: the event.GetId() is always null. It should be the window pointer.
     #if defined(LOGGING)
-    LOGIT( _T("cbEVT_DOCK_WINDOW_VISIBILITY[%p]"),event.GetId() );
+    LOGIT( _T("cbEVT_DOCK_WINDOW_VISIBILITY[%d]"),event.GetId() );
     #endif
     wxMenuBar* pbar = Manager::Get()->GetAppFrame()->GetMenuBar();
     if (not IsWindowReallyShown(GetJumpTrackerViewControl()))
@@ -561,7 +562,7 @@ void JumpTracker::OnEditorClosed(CodeBlocksEvent& event)
 
     EditorBase* pEdBase = event.GetEditor();
     #if defined(LOGGING)
-        LOGIT( _T("JT OnEditorClosed Eb[%p][%s]"), eb, eb->GetShortName().c_str() );
+        LOGIT( _T("JT OnEditorClosed Eb[%p][%s]"), pEdBase, pEdBase->GetShortName().c_str() );
     #endif
 
 
@@ -855,7 +856,7 @@ void JumpTracker::JumpDataAdd(const wxString& inFilename, const long inPosn, con
     }
 
     #if defined(LOGGING)
-    LOGIT( _T("JT JumpDataAdd[%s][%ld][%d]"), filename.c_str(), posn, m_insertNext);
+    LOGIT( _T("JT JumpDataAdd[%s][%ld][%d]"), inFilename.c_str(), inPosn, kount);
     #endif
 
 ////    if ( kount == maxJumpEntries ) // (ph 25/04/27)
@@ -1065,10 +1066,10 @@ void JumpTracker::OnMenuJumpDump(wxCommandEvent &/*event*/)
             edLine +=1; //editors are 1 origin
         }
 
-        wxString msg = wxString::Format(_T("[%d][%s][%ld][%ld]"), count, edFilename.c_str(), edPosn, edLine);
+        wxString msg = wxString::Format(_T("[%zu][%s][%ld][%ld]"), count, edFilename.c_str(), edPosn, edLine);
         if (count == (size_t)m_ArrayCursor)
             msg.Append(_T("<--c"));
-        if (count == (size_t)m_insertNext)
+        if (count == (size_t)m_ArrayCursor)
             msg.Append(_T("<--i"));
         LOGIT( msg );
     }
