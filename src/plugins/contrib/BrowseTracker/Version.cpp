@@ -21,7 +21,7 @@
 #include "Version.h"
 
    #if LOGGING
-	wxLogWindow*    m_pLog;
+	wxLog*    m_pLog;
    #endif
 
 // ----------------------------------------------------------------------------
