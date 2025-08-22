@@ -282,9 +282,8 @@ void BrowseTracker::OnAttach()
 
     #if LOGGING
      wxLog::EnableLogging(true);
-     m_pLog = new wxLogWindow( m_pAppWin, _T(" BrowseTracker Plugin"),true,false);
+     m_pLog = new wxLogStderr();
      wxLog::SetActiveTarget( m_pLog);
-     m_pLog->GetFrame()->SetSize(20,30,600,300);
      LOGIT( _T("BrowseTracker Plugin Logging Started[%s]"),pgmVersion.GetVersion().c_str());
      m_pLog->Flush();
     #endif
