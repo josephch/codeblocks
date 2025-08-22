@@ -172,6 +172,10 @@ void JumpTracker::OnRelease(bool appShutDown)
 
     wxWindow* appWin = Manager::Get()->GetAppWindow();
 
+    CodeBlocksDockEvent evtRemoveDockWindow(cbEVT_REMOVE_DOCK_WINDOW);
+    evtRemoveDockWindow.pWindow = GetJumpTrackerView()->m_pListCtrl;
+    Manager::Get()->ProcessEvent(evtRemoveDockWindow);
+
     //If appShutdown leave the event handler, else wxWidgets asserts on linux
     if (not appShutDown)
         appWin->RemoveEventHandler(this); //2017/11/23 stop uninstall crash 2017/12/6 crashes linux
