@@ -27,6 +27,7 @@
 // ---------------------------------------------------------------------------
 //debugging control
 #include <wx/log.h>
+#define LOGGING 1
 
 #define LOGIT wxLogDebug
 #if defined(LOGGING)
