@@ -222,6 +222,7 @@ class JumpTracker : public cbPlugin
         std::vector<cbEditor*> m_MouseBoundEditors;
 
         wxListCtrl* m_pSearchLogControl = nullptr;
+        bool m_lastJumpItemNewlyLoadedFile = false;
 
     private:
         DECLARE_EVENT_TABLE();
