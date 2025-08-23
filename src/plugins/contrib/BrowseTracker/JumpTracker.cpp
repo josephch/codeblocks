@@ -787,8 +787,7 @@ void JumpTracker::JumpDataAdd(const wxString& inFilename, const long inPosn, con
         m_leftDown = false;
     // Dont record position if line number is < 1 since a newly loaded
     //  file always reports an event for line 0
-     if (inLineNum < 1)       // user requested feature 2010/06/1
-        return;
+    bool newlyLoadedFile = (inLineNum < 1);
 
     cbEditor* pEd = Manager::Get()->GetEditorManager()->GetBuiltinActiveEditor();
     if (not pEd) return;
@@ -857,38 +856,49 @@ void JumpTracker::JumpDataAdd(const wxString& inFilename, const long inPosn, con
         }
     }
 
-    // Make room for a new jump
-    while (m_ArrayOfJumpData.GetCount() >= (size_t)maxJumpEntries)
+    if (!m_lastJumpItemNewlyLoadedFile)
     {
-        // Remove the oldest entry (index 0 is guaranteed to exist here)
-        m_ArrayOfJumpData.RemoveAt(0);
+		// Make room for a new jump
+		while (m_ArrayOfJumpData.GetCount() >= (size_t)maxJumpEntries)
+		{
+			// Remove the oldest entry (index 0 is guaranteed to exist here)
+			m_ArrayOfJumpData.RemoveAt(0);
 
-        if (m_ArrayCursor > 0)
-            --m_ArrayCursor;
+			if (m_ArrayCursor > 0)
+				--m_ArrayCursor;
+		}
+
+		// Normalise the cursor and sync the view
+		if (m_ArrayCursor < 0)
+			m_ArrayCursor = m_ArrayOfJumpData.GetCount() - 1;
+
+		SetJumpTrackerViewIndex(m_ArrayCursor); // (ph 25/04/26)
+
+		#if defined(LOGGING)
+		LOGIT( _T("JT JumpDataAdd[%s][%ld][%d]"), inFilename.c_str(), inPosn, kount);
+		#endif
+
+	////    if ( kount == maxJumpEntries ) // (ph 25/04/27)
+	////    {   //remove oldest item in the array
+	////        m_ArrayOfJumpData.RemoveAt(0);
+	////        if (m_ArrayCursor) --m_ArrayCursor;
+	////        if (m_ArrayCursor < 0 )
+	////            m_ArrayCursor = m_ArrayOfJumpData.GetCount()-1;
+	////        SetJumpTrackerViewIndex(m_ArrayCursor); // (ph 25/04/26)
+	////    }
+
+	   // initialize new item
+		m_ArrayOfJumpData.Add(new JumpData(inFilename, inPosn,inLineNum));
+		m_ArrayCursor = m_ArrayOfJumpData.GetCount()-1;
     }
-
-    // Normalise the cursor and sync the view
-    if (m_ArrayCursor < 0)
-        m_ArrayCursor = m_ArrayOfJumpData.GetCount() - 1;
-
-    SetJumpTrackerViewIndex(m_ArrayCursor); // (ph 25/04/26)
-
-    #if defined(LOGGING)
-    LOGIT( _T("JT JumpDataAdd[%s][%ld][%d]"), inFilename.c_str(), inPosn, kount);
-    #endif
-
-////    if ( kount == maxJumpEntries ) // (ph 25/04/27)
-////    {   //remove oldest item in the array
-////        m_ArrayOfJumpData.RemoveAt(0);
-////        if (m_ArrayCursor) --m_ArrayCursor;
-////        if (m_ArrayCursor < 0 )
-////            m_ArrayCursor = m_ArrayOfJumpData.GetCount()-1;
-////        SetJumpTrackerViewIndex(m_ArrayCursor); // (ph 25/04/26)
-////    }
-
-   // initialize new item
-    m_ArrayOfJumpData.Add(new JumpData(inFilename, inPosn,inLineNum));
-    m_ArrayCursor = m_ArrayOfJumpData.GetCount()-1;
+    else
+    {
+        if (m_ArrayCursor)
+            m_ArrayOfJumpData.RemoveAt(m_ArrayCursor);
+        m_ArrayOfJumpData.Add(new JumpData(inFilename, inPosn,inLineNum));
+        m_ArrayCursor = m_ArrayOfJumpData.GetCount()-1;
+    }
+    m_lastJumpItemNewlyLoadedFile = newlyLoadedFile;
 
     //#if defined(LOGGING)
     //    // debugging: Dump the array to log
@@ -995,6 +1005,7 @@ void JumpTracker::OnMenuJumpBack(wxCommandEvent &/*event*/)
         default:
         int idx = lastViewedIndex;
         idx = GetPreviousIndex(idx);
+        m_lastJumpItemNewlyLoadedFile = false;
         if ( idx == wxNOT_FOUND)
             break;
         JumpData& jumpdata = m_ArrayOfJumpData[idx];
@@ -1107,6 +1118,7 @@ void JumpTracker::OnMenuJumpNext(wxCommandEvent &/*event*/)
     #endif
 
     m_bJumpInProgress = false;
+    m_lastJumpItemNewlyLoadedFile = false;
     return;
 }
 // ----------------------------------------------------------------------------
