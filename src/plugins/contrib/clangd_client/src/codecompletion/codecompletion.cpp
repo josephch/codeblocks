@@ -3770,7 +3770,9 @@ void ClgdCompletion::ShutdownLSPclient(cbProject* pProject)
             // Tell LSP server to quit
             pClient->LSP_Shutdown();
             GetParseManager()->m_LSP_Clients.erase(pProject); // erase first or crash
-            delete pClient;
+            pClient->SetEvtHandlerEnabled(false);
+            wxTheApp->CallAfter([pClient]()
+                                { delete pClient; });
             pClient = nullptr;
 
             // The clangd process is probably already terminated by LSP_Shutdown above.
