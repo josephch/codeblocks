@@ -43,10 +43,6 @@ class JumpTrackerView : public ListCtrlLogger, public wxEvtHandler
                 else
                     selected = -1; // List is empty, nothing to select
             }
-            // Now 'selected' holds the desired item index, or -1 if the list is empty
-            if (selected == -1)
-                return 0;
-
             return selected;
         }
 
