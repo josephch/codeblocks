@@ -421,13 +421,25 @@ void JumpTracker::OnDockWindowVisability(CodeBlocksDockEvent& event)
 void JumpTracker::OnEditorActivated(CodeBlocksEvent& event)
 // ----------------------------------------------------------------------------
 {
+#if defined(LOGGING)
+    LOGIT(_T("cbEVT_EDITOR_ACTIVATED[%d]"), event.GetId());
+#endif
     cbEditor* pEd =  Manager::Get()->GetEditorManager()->GetBuiltinActiveEditor();
     if(not pEd)
+    {
+#if defined(LOGGING)
+        LOGIT(_T("GetBuiltinActiveEditor failed"));
+#endif
         return;
+    }
     cbStyledTextCtrl* pControl = pEd->GetControl();
     if(pControl->GetCurrentLine() == wxSCI_INVALID_POSITION)
+    {
+#if defined(LOGGING)
+        LOGIT(_T("GetCurrentLine failed"));
+#endif
         return;
-
+    }
     // Add any new editor to vector of editors bound to mouse events
     bool edFound = std::find(m_MouseBoundEditors.begin(),
                              m_MouseBoundEditors.end(),
@@ -473,9 +485,8 @@ void JumpTracker::OnEditorUpdateUIEvent(CodeBlocksEvent& event)
     long edPosn = pControl->GetCurrentPos();
 
     #if defined(LOGGING)
-    //LOGIT( _T("JT OnEditorUpdateEvent Filename[%s] line[%ld] pos[%ld] "), edFilename.c_str(), edLine, edPosn);
-    //LOGIT( _T("JT \ttopLine[%ld] botLine[%ld] OnScrn[%ld] "), topLine, botLine, edstc->LinesOnScreen());
-    #endif
+    LOGIT(_T("JT OnEditorUpdateEvent Filename[%s] line[%ld] pos[%ld] "), edFilename.c_str(), edLine, edPosn);
+#endif
 
     // Newly activated editor ?
     if (m_FilenameLast != edFilename)
@@ -496,7 +507,10 @@ void JumpTracker::OnEditorUpdateUIEvent(CodeBlocksEvent& event)
     m_FilenameLast = edFilename;
     if (m_leftDown and (not m_isDragging)) // (ph 25/04/25)
         JumpDataAdd(edFilename, edPosn, edLine);
-
+#if defined(LOGGING)
+    else
+        LOGIT(_T("JT OnEditorUpdateEvent Filename[%s] line[%ld] pos[%ld] ignored as m_leftDown %d m_isDragging %d "), edFilename.c_str(), edLine, edPosn, m_leftDown, m_isDragging);
+#endif
     return;
 }//OnEditorUpdateEvent
 // ----------------------------------------------------------------------------
@@ -780,7 +794,12 @@ void JumpTracker::JumpDataAdd(const wxString& inFilename, const long inPosn, con
     // Do not record old jump locations when a jump is in progress.
     // Caused by activating an editor inside the jump routines.
     if (GetJumpInProgress())
+    {
+#if defined(LOGGING)
+        LOGIT(_T("JT JumpDataAdd[%s][%ld][%d] discard as jump in progress"), inFilename.c_str(), inPosn, m_ArrayCursor);
+#endif
         return;
+    }
 
     // when debugging the mouse status can get stuck, so clear it.
     if (m_leftDown and (not m_isDragging)) // (ph 25/04/26)
@@ -788,7 +807,9 @@ void JumpTracker::JumpDataAdd(const wxString& inFilename, const long inPosn, con
     // Dont record position if line number is < 1 since a newly loaded
     //  file always reports an event for line 0
     bool newlyLoadedFile = (inLineNum < 1);
-
+#if defined(LOGGING)
+    LOGIT(_T("JT JumpDataAdd[%s][%ld][%d] Enter, newlyLoadedFile %d m_lastJumpItemNewlyLoadedFile %d"), inFilename.c_str(), inPosn, m_ArrayCursor, newlyLoadedFile, m_lastJumpItemNewlyLoadedFile);
+#endif
     cbEditor* pEd = Manager::Get()->GetEditorManager()->GetBuiltinActiveEditor();
     if (not pEd) return;
     cbStyledTextCtrl* pControl = pEd->GetControl();
@@ -823,6 +844,10 @@ void JumpTracker::JumpDataAdd(const wxString& inFilename, const long inPosn, con
                 if(checkWithPreviousEntry)
                 {
                     discardLastEntryAndUsePenultimateEntry = true;
+
+#if defined(LOGGING)
+                    LOGIT(_T("JT JumpDataAdd[%s][%ld][%d] discard LastEntry And Use Penultimate Entry"), inFilename.c_str(), inPosn, m_ArrayCursor);
+#endif
                 }
                 else
                 {
@@ -923,10 +948,18 @@ void JumpTracker::JumpDataAdd(const wxString& inFilename, const long inPosn, con
     else
     {
         if (m_ArrayCursor)
+        {
+#if defined(LOGGING)
+            LOGIT(_T("JT JumpDataAdd[%s][%ld][%d] remove item at curser"), inFilename.c_str(), inPosn, m_ArrayCursor);
             m_ArrayOfJumpData.RemoveAt(m_ArrayCursor);
+#endif
+        }
         if (!discardLastEntryAndUsePenultimateEntry)
         {
             m_ArrayOfJumpData.Add(new JumpData(inFilename, inPosn,inLineNum));
+#if defined(LOGGING)
+            LOGIT(_T("JT JumpDataAdd[%s][%ld][%d]"), inFilename.c_str(), inPosn, m_ArrayCursor);
+#endif
         }
         m_ArrayCursor = m_ArrayOfJumpData.GetCount()-1;
     }
@@ -1037,6 +1070,9 @@ void JumpTracker::OnMenuJumpBack(wxCommandEvent &/*event*/)
     if (not m_bWrapJumpEntries)
         if (lastViewedIndex < 0)
         {
+            #if defined(LOGGING)
+            LOGIT( _T("JT [%s]"), _T("!m_bWrapJumpEntries and lastViewedIndex < 0 , so return"));
+            #endif
             return;
         }
 
@@ -1045,7 +1081,12 @@ void JumpTracker::OnMenuJumpBack(wxCommandEvent &/*event*/)
     cbEditor* pcbEd = (pEdBase ? pEdMgr->GetBuiltinEditor(pEdBase) : nullptr);
 
     if (not pcbEd)
+    {
+        #if defined(LOGGING)
+        LOGIT( _T("JT [%s]"), _T("not pcbEd , so return"));
+        #endif
         return;
+    }
 
     m_bJumpInProgress = true;
 
@@ -1055,8 +1096,20 @@ void JumpTracker::OnMenuJumpBack(wxCommandEvent &/*event*/)
     {
         default:
         int idx = lastViewedIndex;
-        if ((idx == wxNOT_FOUND) || isJumpDataLineVisible(pcbEd, m_ArrayOfJumpData[idx]))
+        if (idx == wxNOT_FOUND)
+        {
             idx = GetPreviousIndex(idx);
+            LOGIT(_T("JT [%s]"), _T("lastViewedIndex not found"));
+        }
+        else if (isJumpDataLineVisible(pcbEd, m_ArrayOfJumpData[idx]))
+        {
+            idx = GetPreviousIndex(idx);
+            LOGIT(_T("JT [%s]"), _T("lastViewedIndex already visible, go to previous index"));
+        }
+        else
+        {
+            LOGIT(_T("JT [%s]"), _T("lastViewedIndex not visible, go to that"));
+        }
         m_lastJumpItemNewlyLoadedFile = false;
         if ( idx == wxNOT_FOUND)
             break;
