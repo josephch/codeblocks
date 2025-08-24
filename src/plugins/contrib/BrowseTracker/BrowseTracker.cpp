@@ -1514,7 +1514,7 @@ void BrowseTracker::OnMenuTrackerDump(wxCommandEvent& WXUNUSED(event))
 
    #ifdef LOGGING
         LOGIT( "BT --Browsed--Editors-------------" );
-        LOGIT( "BT CurrIndex[%d]LastIndex[%d]count[%d]", m_CurrEditorIndex, m_LastEditorIndex, GetEditorBrowsedCount() );
+        LOGIT( "BT LastIndex[%d]count[%d]", m_LastEditorIndex, GetEditorBrowsedCount() );
         int maxEntries = Helpers::GetMaxAllocEntries();
         for (int i=0;i<maxEntries;++i )
         {
@@ -1775,6 +1775,12 @@ void BrowseTracker::OnEditorActivated(CodeBlocksEvent& event)
 
             }//if cbed
         }//if new editor
+#if defined(LOGGING)
+        else
+        {
+            LOGIT( _T("BT Editor not processed[%p]proj[%p][%s][%s]"), eb, pcbProject, eb->GetShortName().c_str(), IsBrowseMarksEnabled()?"marker not enabled": "eb hash already present" );
+        }
+#endif
 
         m_PreviousEbActivated = m_CurrentEbActivated;
         m_CurrentEbActivated =  eb;
