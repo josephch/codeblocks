@@ -1036,6 +1036,9 @@ void JumpTracker::OnMenuJumpBack(wxCommandEvent &/*event*/)
     if (not m_bWrapJumpEntries)
         if (lastViewedIndex < 0)
         {
+            #if defined(LOGGING)
+            LOGIT( _T("JT [%s]"), _T("!m_bWrapJumpEntries and lastViewedIndex < 0 , so return"));
+            #endif
             return;
         }
 
@@ -1044,7 +1047,12 @@ void JumpTracker::OnMenuJumpBack(wxCommandEvent &/*event*/)
     cbEditor* pcbEd = (pEdBase ? pEdMgr->GetBuiltinEditor(pEdBase) : nullptr);
 
     if (not pcbEd)
+    {
+        #if defined(LOGGING)
+        LOGIT( _T("JT [%s]"), _T("not pcbEd , so return"));
+        #endif
         return;
+    }
 
     m_bJumpInProgress = true;
 
@@ -1053,8 +1061,20 @@ void JumpTracker::OnMenuJumpBack(wxCommandEvent &/*event*/)
     {
         default:
         int idx = lastViewedIndex;
-        if ((idx == wxNOT_FOUND) || isJumpDataLineVisible(pcbEd, m_ArrayOfJumpData[idx]))
+        if (idx == wxNOT_FOUND)
+        {
             idx = GetPreviousIndex(idx);
+            LOGIT(_T("JT [%s] [%d]"), _T("lastViewedIndex not found"));
+        }
+        else if (isJumpDataLineVisible(pcbEd, m_ArrayOfJumpData[idx]))
+        {
+            idx = GetPreviousIndex(idx);
+            LOGIT(_T("JT [%s] [%d]"), _T("lastViewedIndex already visible, go to previous index"));
+        }
+        else
+        {
+            LOGIT(_T("JT [%s] [%d]"), _T("lastViewedIndex not visible, go to that"));
+        }
         m_lastJumpItemNewlyLoadedFile = false;
         if ( idx == wxNOT_FOUND)
             break;
