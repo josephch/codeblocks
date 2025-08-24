@@ -204,6 +204,8 @@ class JumpTracker : public cbPlugin
             return false;
         }
 
+        void JumpDataAdd(EditorBase* pEdBase);
+
         // Mouse Events
         void OnLeftDown(wxMouseEvent& event);
         void OnLeftUp(wxMouseEvent& event);

@@ -435,6 +435,7 @@ void JumpTracker::OnEditorActivated(CodeBlocksEvent& event)
         pControl->Bind(wxEVT_MOTION, &JumpTracker::OnMouseMove, this);
         pControl->Bind(wxEVT_LEFT_UP, &JumpTracker::OnLeftUp, this);
     }
+    JumpDataAdd(event.GetEditor());
 }
 // ----------------------------------------------------------------------------
 void JumpTracker::OnEditorUpdateUIEvent(CodeBlocksEvent& event)
@@ -523,15 +524,17 @@ void JumpTracker::OnEditorDeactivated(CodeBlocksEvent& event)
     event.Skip();
     //Add the deactivated editor location
     // add the deactivated plugin position so we can jump back
+    JumpDataAdd(event.GetEditor());
+}
 
+void JumpTracker::JumpDataAdd(EditorBase* pEdBase)
+{
     if (m_bShuttingDown) return;
     if (not IsAttached()) return;
 
     // Don't record closing editor activations
     if (m_bProjectClosing)
         return;
-
-    EditorBase* pEdBase = event.GetEditor();
     wxString edFilename = pEdBase->GetFilename();
     cbEditor* pcbEd = Manager::Get()->GetEditorManager()->GetBuiltinEditor(pEdBase);
     if (not pcbEd) return;
