@@ -953,6 +953,9 @@ void JumpTracker::OnMenuJumpBack(wxCommandEvent &/*event*/)
         //if (not (lastViewedIndex >= 0)) // (ph 25/05/07)
         if (lastViewedIndex < 0)// (ph 25/05/07)
         {
+            #if defined(LOGGING)
+            LOGIT( _T("JT [%s]"), _T("!m_bWrapJumpEntries and lastViewedIndex < 0 , so return"));
+            #endif
             return;
         }
 
@@ -961,7 +964,12 @@ void JumpTracker::OnMenuJumpBack(wxCommandEvent &/*event*/)
     cbEditor* pcbEd = (pEdBase ? pEdMgr->GetBuiltinEditor(pEdBase) : nullptr);
 
     if (not pcbEd)
+    {
+        #if defined(LOGGING)
+        LOGIT( _T("JT [%s]"), _T("not pcbEd , so return"));
+        #endif
         return;
+    }
 
     m_bJumpInProgress = true;
 
