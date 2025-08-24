@@ -787,9 +787,16 @@ void JumpTracker::JumpDataAdd(const wxString& inFilename, const long inPosn, con
 
     // if current entry is identical to the currently double-clicked line
     // in the JumTrackerView window, do not enter the line in the array
+    bool dropLastEntry  = m_lastJumpItemNewlyLoadedFile;
+    bool discardLastEntryAndUsePenultimateEntry = false;
     if (m_ArrayOfJumpData.GetCount())
     {
         int currentViewIndex = GetJumpTrackerViewIndex();
+        bool checkWithPreviousEntry = (!newlyLoadedFile && dropLastEntry && (currentViewIndex > 0));
+        if (checkWithPreviousEntry)
+        {
+            currentViewIndex--;
+        }
         JumpData jumpData = m_ArrayOfJumpData[currentViewIndex];
         wxString jdFilename = jumpData.GetFilename();
         int jdPosn = jumpData.GetPosition();
@@ -802,7 +809,16 @@ void JumpTracker::JumpDataAdd(const wxString& inFilename, const long inPosn, con
             if (not pControl) return;
             jdLineNo = pEd->GetControl()->LineFromPosition(jdPosn);
             if (jdLineNo == inLineNum)
-                return;
+            {
+                if(checkWithPreviousEntry)
+                {
+                    discardLastEntryAndUsePenultimateEntry = true;
+                }
+                else
+                {
+                    return;
+                }
+            }
         }
     }
     // If the input entry is same as last entry in array, skip it
@@ -846,7 +862,7 @@ void JumpTracker::JumpDataAdd(const wxString& inFilename, const long inPosn, con
         }
     }
 
-    if (!m_lastJumpItemNewlyLoadedFile)
+    if (!dropLastEntry)
     {
         // make room for a new jump
         int kount = m_ArrayOfJumpData.GetCount();
@@ -882,7 +898,10 @@ void JumpTracker::JumpDataAdd(const wxString& inFilename, const long inPosn, con
     {
         if (m_ArrayCursor)
             m_ArrayOfJumpData.RemoveAt(m_ArrayCursor);
-        m_ArrayOfJumpData.Add(new JumpData(inFilename, inPosn,inLineNum));
+        if (!discardLastEntryAndUsePenultimateEntry)
+        {
+            m_ArrayOfJumpData.Add(new JumpData(inFilename, inPosn,inLineNum));
+        }
         m_ArrayCursor = m_ArrayOfJumpData.GetCount()-1;
     }
     m_lastJumpItemNewlyLoadedFile = newlyLoadedFile;
