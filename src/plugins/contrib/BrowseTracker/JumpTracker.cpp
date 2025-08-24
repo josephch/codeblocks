@@ -1006,8 +1006,10 @@ void JumpTracker::OnMenuJumpBack(wxCommandEvent &/*event*/)
     int lastViewedIndex = GetJumpTrackerViewIndex();
     // If not wrapping && we're about to backup into the insert index, return
     if (not m_bWrapJumpEntries)
-        if (knt and (lastViewedIndex == 0))
-            lastViewedIndex = 1; //just cause a jump to index 0 again // (ph 25/08/16)
+        if (lastViewedIndex < 0)
+        {
+            return;
+        }
 
     EditorManager* pEdMgr = Manager::Get()->GetEditorManager();
     EditorBase* pEdBase = pEdMgr->GetActiveEditor();
