@@ -197,13 +197,7 @@ class JumpTracker : public cbPlugin
         int GetJumpTrackerViewIndex()
         // ------------------------------------------
         {
-            int index =  GetJumpTrackerView()->GetJumpTrackerViewIndex();
-            if (index < 0)
-            {
-                cbAssertNonFatal(index < 0);
-                return 0;
-            }
-            return index;
+            return GetJumpTrackerView()->GetJumpTrackerViewIndex();
         }
 
         bool GetJumpInProgress()
