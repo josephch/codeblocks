@@ -39,7 +39,7 @@ class JumpTrackerView : public ListCtrlLogger, public wxEvtHandler
             if (selected == -1)
             {
                 if (m_pListCtrl->GetItemCount() > 0)
-                    selected = 0; // No selection, fallback to first item
+                    selected = m_pListCtrl->GetItemCount() - 1; // No selection, fallback to last item
                 else
                     selected = -1; // List is empty, nothing to select
             }
