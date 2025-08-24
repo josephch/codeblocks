@@ -856,7 +856,7 @@ void JumpTracker::JumpDataAdd(const wxString& inFilename, const long inPosn, con
         int jdOldLineNo = jumpDataOld.GetLineNo();
         int halfPage = pControl ? pControl->LinesOnScreen()>>1 : 10;
 
-        if (abs(jdOldLineNo - inLineNum) <= halfPage)
+        if ((abs(jdOldLineNo - inLineNum) <= halfPage) && (inFilename == jumpDataOld.GetFilename()))
         {
             // set old entry with  new data
             JumpData* pJumpData = &m_ArrayOfJumpData[currentViewIndex];
@@ -868,6 +868,7 @@ void JumpTracker::JumpDataAdd(const wxString& inFilename, const long inPosn, con
             pJumpData->SetPosition(inPosn);
             SetJumpTrackerViewIndex(m_ArrayCursor);
             UpdateJumpTrackerViewWindow();
+            GetJumpTrackerView()->FocusEntry(m_ArrayCursor);
             return;
         }
     }
