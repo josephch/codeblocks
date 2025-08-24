@@ -821,16 +821,28 @@ void JumpTracker::JumpDataAdd(const wxString& inFilename, const long inPosn, con
             }
         }
     }
+
+    size_t jumpDataArraySize = m_ArrayOfJumpData.GetCount();
     // If the input entry is same as last entry in array, skip it
-    if (m_ArrayOfJumpData.GetCount())
+    if (jumpDataArraySize)
     {
-        int endIndex = m_ArrayOfJumpData.GetCount()-1;
+        int endIndex = jumpDataArraySize - 1;
         JumpData jumpData = m_ArrayOfJumpData[endIndex];
         wxString jdFilename = jumpData.GetFilename();
         if (inFilename == jdFilename)
         {
             if (jumpData.GetLineNo() == inLineNum)
                 return;
+        }
+
+        int currentViewIndex = GetJumpTrackerViewIndex();
+        if (currentViewIndex < endIndex)
+        {
+            m_ArrayOfJumpData.RemoveAt(currentViewIndex + 1, endIndex - currentViewIndex);
+            m_ArrayCursor = m_ArrayOfJumpData.GetCount() - 1;
+#if defined(LOGGING)
+            LOGIT(_T("JT Removed index [%d -> %d]"), currentViewIndex + 1, endIndex);
+#endif
         }
     }
 
