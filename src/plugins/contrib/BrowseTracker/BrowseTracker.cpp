@@ -1774,6 +1774,12 @@ void BrowseTracker::OnEditorActivated(CodeBlocksEvent& event)
 
             }//if cbed
         }//if new editor
+#if defined(LOGGING)
+        else
+        {
+            LOGIT( _T("BT Editor not processed[%p]proj[%p][%s][%s]"), eb, pcbProject, eb->GetShortName().c_str(), IsBrowseMarksEnabled()?"marker not enabled": "eb hash already present" );
+        }
+#endif
 
         m_PreviousEbActivated = m_CurrentEbActivated;
         m_CurrentEbActivated =  eb;
