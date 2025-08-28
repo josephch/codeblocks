@@ -50,7 +50,7 @@ class JumpTrackerView : public ListCtrlLogger, public wxEvtHandler
         {
             int knt = m_pListCtrl->GetItemCount();
             if ( (not knt)  //(ph 2025-05-11 )
-                or (itemIndex > knt) )
+                or (itemIndex >= knt) )
                 return; //setting index before adding the item
             m_pListCtrl->SetItemState(itemIndex, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
         }
