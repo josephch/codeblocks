@@ -2,6 +2,7 @@
 #define THREAD_SEARCH_COMMON_H
 
 #include <wx/string.h>
+#include <wx/window.h>
 
 class wxComboBox;
 
