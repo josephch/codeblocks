@@ -56,7 +56,6 @@ TextFileSearcher::eFileSearcherReturn TextFileSearcher::FindInFile(const wxStrin
                                                                    std::vector<int> &matchedPositions)
 {
     eFileSearcherReturn success=idStringNotFound;
-    wxString line;
 
     // skip empty fles
     if(wxFileName::GetSize(filePath) != 0)
@@ -137,16 +136,13 @@ TextFileSearcher::eFileSearcherReturn TextFileSearcher::FindInFile(const wxStrin
 
         }
 
-
         // Tests all file lines
         for ( size_t i = 0; i < m_TextFile.GetLineCount(); ++i )
         {
-            line = m_TextFile.GetLine(i);
-
-            std::vector<int>::size_type idxMatchedCount = matchedPositions.size();
-
+            wxString& line = m_TextFile.GetLine(i);
             if ( MatchLine(&matchedPositions, line) )
             {
+                std::vector<int>::size_type idxMatchedCount = matchedPositions.size();
                 success=idStringFound;
                 // An interesting line is found. We clean and add it to the provided array
                 line.Replace(_T("\t"), _T(" "));
