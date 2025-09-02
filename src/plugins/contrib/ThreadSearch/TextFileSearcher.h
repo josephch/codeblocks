@@ -45,7 +45,8 @@ public:
                                                    bool matchWordBegin,
                                                    bool matchWord,
                                                    bool matchInComments,
-                                                   bool regEx);
+                                                   bool regEx,
+                                                   bool enocoded);
 
 
     /** Destructor. */
@@ -77,9 +78,8 @@ public:
       * @return true if success (error can only come from bad reg ex or file open
       * failure).
       */
-    eFileSearcherReturn FindInFile(const wxString& filePath, wxArrayString &foundLines,
+    virtual eFileSearcherReturn FindInFile(const wxString& filePath, wxArrayString &foundLines,
                                    std::vector<int> &matchedPositions);
-
 protected:
 
     /** Constructor TextFileSearched
