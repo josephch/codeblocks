@@ -16,6 +16,7 @@ libThreadSearch_la_SOURCES = DirectoryParamsPanel.cpp \
 			TextFileSearcher.cpp \
 			TextFileSearcherRegEx.cpp \
 			TextFileSearcherText.cpp \
+			TextFileSearcherAscii.cpp \
 			ThreadSearch.cpp \
 			ThreadSearchConfPanel.cpp \
 			ThreadSearchControlIds.cpp \
@@ -39,6 +40,7 @@ noinst_HEADERS =  	DirectoryParamsPanel.h \
 			TextFileSearcher.h \
 			TextFileSearcherRegEx.h \
 			TextFileSearcherText.h \
+			TextFileSearcherAscii.h \
 			ThreadSearch.h \
 			ThreadSearchCommon.h \
 			ThreadSearchConfPanel.h \
