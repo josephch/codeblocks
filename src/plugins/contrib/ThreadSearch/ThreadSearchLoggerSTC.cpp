@@ -369,6 +369,13 @@ void ThreadSearchLoggerSTC::OnSearchBegin(const ThreadSearchFindData& findData)
             optionMessage += wxT(", ");
         optionMessage += _("regular expression");
     }
+    if (findData.GetEncoded())
+    {
+        if (!optionMessage.empty())
+            optionMessage += wxT(", ");
+        optionMessage += _("encoded");
+    }
+
 
     // Add initial banner for the current search.
     wxString message;
