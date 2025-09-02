@@ -14,6 +14,7 @@
  * License:   GPL
  **************************************************************/
 
+#include <chrono>
 #include "sdk.h"
 #ifndef CB_PRECOMP
     #include "cbeditor.h"
@@ -47,7 +48,8 @@ ThreadSearchThread::ThreadSearchThread(ThreadSearchView*           pThreadSearch
                                                                   findData.GetStartWord(),
                                                                   findData.GetMatchWord(),
                                                                   findData.GetMatchInComments(),
-                                                                  findData.GetRegEx());
+                                                                  findData.GetRegEx(),
+                                                                  findData.GetAscii());
     if (!m_pTextFileSearcher)
     {
         ThreadSearchEvent event(wxEVT_THREAD_SEARCH_ERROR, -1);
@@ -215,6 +217,7 @@ void* ThreadSearchThread::Entry()
         return nullptr;
     }
 
+    auto start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < m_FilePaths.GetCount(); ++i)
     {
         FindInFile(m_FilePaths[i]);
@@ -223,6 +226,9 @@ void* ThreadSearchThread::Entry()
         if (TestDestroy() == true)
             return nullptr;
     }
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cerr << "Time taken for search : " << duration.count() << " ms" << std::endl;
 
     return nullptr;
 }

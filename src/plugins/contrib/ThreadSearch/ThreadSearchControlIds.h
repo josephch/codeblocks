@@ -30,6 +30,7 @@ struct ControlIDs
         idOptionMatchCase,
         idOptionMatchInComments,
         idOptionRegEx,
+        idOptionAscii,
         idOptionResetAll,
         idMenuViewThreadSearch,
         idMenuViewFocusThreadSearch,

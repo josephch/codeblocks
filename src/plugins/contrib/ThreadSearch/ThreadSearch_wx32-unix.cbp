@@ -56,6 +56,8 @@
 		<Unit filename="SearchInPanel.h" />
 		<Unit filename="TextFileSearcher.cpp" />
 		<Unit filename="TextFileSearcher.h" />
+		<Unit filename="TextFileSearcherAscii.cpp" />
+		<Unit filename="TextFileSearcherAscii.h" />
 		<Unit filename="TextFileSearcherRegEx.cpp" />
 		<Unit filename="TextFileSearcherRegEx.h" />
 		<Unit filename="TextFileSearcherText.cpp" />
