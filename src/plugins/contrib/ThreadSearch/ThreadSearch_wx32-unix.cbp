@@ -30,7 +30,7 @@
 			<Add option="-Winvalid-pch" />
 			<Add option="-fmessage-length=0" />
 			<Add option="-fexceptions" />
-			<Add option="-std=c++11" />
+			<Add option="-std=c++17" />
 			<Add option="-DCB_PRECOMP" />
 			<Add option="-DcbDEBUG" />
 			<Add directory="../../../include" />
@@ -52,10 +52,13 @@
 		<Unit filename="DirectoryParamsPanel.h" />
 		<Unit filename="InsertIndexManager.cpp" />
 		<Unit filename="InsertIndexManager.h" />
+		<Unit filename="SearchFileAscii.h" />
 		<Unit filename="SearchInPanel.cpp" />
 		<Unit filename="SearchInPanel.h" />
 		<Unit filename="TextFileSearcher.cpp" />
 		<Unit filename="TextFileSearcher.h" />
+		<Unit filename="TextFileSearcherAscii.cpp" />
+		<Unit filename="TextFileSearcherAscii.h" />
 		<Unit filename="TextFileSearcherRegEx.cpp" />
 		<Unit filename="TextFileSearcherRegEx.h" />
 		<Unit filename="TextFileSearcherText.cpp" />

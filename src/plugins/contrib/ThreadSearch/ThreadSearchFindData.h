@@ -50,6 +50,7 @@ public:
     void SetMatchInComments(bool matchInComments)       {m_MatchInComments = matchInComments;}
 
     void SetRegEx          (bool regEx)                 {m_RegEx           = regEx;}
+    void SetEncoded        (bool encoded)               {m_Encoded         = encoded;}
     void SetScope          (int scope)                  {m_Scope           = scope;}
     void SetSearchPath     (const wxString& searchPath) {m_SearchPath      = searchPath;}
     void SetSearchPathFullList(const wxArrayString &searchPaths)
@@ -66,6 +67,7 @@ public:
     bool     GetMatchCase()       const {return m_MatchCase;}
     bool     GetMatchInComments() const {return m_MatchInComments;}
     bool     GetRegEx()           const {return m_RegEx;}
+    bool     GetEncoded()         const {return m_Encoded;}
     int      GetScope()           const {return m_Scope;}
     wxString GetSearchMask()      const {return m_SearchMask;}
     bool     GetRecursiveSearch() const {return m_RecursiveSearch;}
@@ -83,6 +85,7 @@ private:
     bool     m_MatchCase;
     bool     m_MatchInComments;
     bool     m_RegEx;
+    bool     m_Encoded;
     int      m_Scope;
     wxString m_SearchPath;
     wxArrayString m_SearchPathFullList;

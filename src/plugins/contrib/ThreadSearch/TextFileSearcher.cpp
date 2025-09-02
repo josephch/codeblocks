@@ -19,23 +19,31 @@
 
 #include "TextFileSearcher.h"
 #include "TextFileSearcherText.h"
+#include "TextFileSearcherAscii.h"
 #include "TextFileSearcherRegEx.h"
-
 
 TextFileSearcher* TextFileSearcher::BuildTextFileSearcher(const wxString& searchText,
                                                           bool matchCase,
                                                           bool matchWordBegin,
                                                           bool matchWord,
                                                           bool matchInComments,
-                                                          bool regEx)
+                                                          bool regEx,
+                                                          bool encoded)
 {
     TextFileSearcher* pFileSearcher = nullptr;
     if ( regEx == true )
     {
+        std::cerr << "use TextFileSearcherRegEx\n";
         pFileSearcher = new TextFileSearcherRegEx(searchText, matchCase, matchWordBegin, matchWord, matchInComments);
+    }
+    else if (!encoded)
+    {
+        std::cerr << "use TextFileSearcherAscii\n";
+        pFileSearcher = new TextFileSearcherAscii(searchText, matchCase, matchWordBegin, matchWord, matchInComments);
     }
     else
     {
+        std::cerr << "use TextFileSearcherText\n";
         pFileSearcher = new TextFileSearcherText(searchText, matchCase, matchWordBegin, matchWord, matchInComments);
     }
 
