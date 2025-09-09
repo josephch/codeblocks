@@ -16,27 +16,6 @@
       <longhelp>Last modified</longhelp>
       <bitmap>images/22x22/last_modified.png</bitmap>
     </object>
-    <object class="separator"/>
-    <object class="tool" name="idMarkToggle">
-      <tooltip>Toggle bookmark</tooltip>
-      <longhelp>Toggle bookmark</longhelp>
-      <bitmap>images/22x22/mark.png</bitmap>
-    </object>
-    <object class="tool" name="idMarkPrev">
-      <tooltip>Prev bookmark</tooltip>
-      <longhelp>Prev bookmark</longhelp>
-      <bitmap>images/22x22/mark_prev.png</bitmap>
-    </object>
-    <object class="tool" name="idMarkNext">
-      <tooltip>Next bookmark</tooltip>
-      <longhelp>Next bookmark</longhelp>
-      <bitmap>images/22x22/mark_next.png</bitmap>
-    </object>
-    <object class="tool" name="idMarksClear">
-      <tooltip>Clear bookmarks</tooltip>
-      <longhelp>Clear bookmarks</longhelp>
-      <bitmap>images/22x22/mark_clear.png</bitmap>
-    </object>
   </object>
 </resource>
 
