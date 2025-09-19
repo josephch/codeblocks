@@ -3696,7 +3696,8 @@ void ClgdCompletion::OnLSP_Event(wxCommandEvent& event)
     else if ( evtString.StartsWith("textDocument/completion"))
     {
         Parser* pParser = (Parser*)GetParseManager()->GetParserByProject(pProject);
-        pParser->OnLSP_CompletionResponse(event, m_CompletionTokens);
+        if (pParser)
+            pParser->OnLSP_CompletionResponse(event, m_CompletionTokens);
     }
     // ----------------------------------------------------------------------------
     // Hover event
