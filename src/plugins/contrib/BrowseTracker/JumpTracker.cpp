@@ -904,7 +904,7 @@ void JumpTracker::JumpDataAdd(const wxString& inFilename, const long inPosn, con
         SetJumpTrackerViewIndex(m_ArrayCursor); // (ph 25/04/26)
 
 #if defined(LOGGING)
-        LOGIT("JT JumpDataAdd[%s][%ld][%d]", inFilename.c_str(), inPosn, kount);
+		LOGIT("JT JumpDataAdd[%s][%ld][%d]", inFilename.c_str(), inPosn, m_ArrayCursor);
 #endif
 
         ////    if ( kount == maxJumpEntries ) // (ph 25/04/27)
