@@ -6,6 +6,7 @@
 #include <fstream>
 //-#include <tuple>
 #include <chrono>
+#include <filesystem>
 
 #include <sdk.h>
 
@@ -4044,6 +4045,8 @@ void ProcessLanguageClient::UpdateCompilationDatabase(cbProject* pProject, wxStr
         {
             return;
         }
+
+        std::error_code ec;
         for (unsigned int ii = 0; ii < jdb.size(); ++ii)
         {
             json ccjEntry;
@@ -4059,19 +4062,11 @@ void ProcessLanguageClient::UpdateCompilationDatabase(cbProject* pProject, wxStr
             }
 
             const std::string& ccjFile = ccjEntry["file"];
-            if (ccjFile == GetstdUTF8Str(pProjectFile->file.GetFullPath()))
+            if (std::filesystem::equivalent(ccjFile, GetstdUTF8Str(filename), ec))
             {
+                fprintf(stderr, "ProcessLanguageClient::%s:%d [%p] file %s already in json\n", __FUNCTION__, __LINE__, this, ccjFile.c_str());
+                m_CompileCommandsFiles.emplace_back(std::move(filename));
                 return;
-            }
-            else
-            {
-                wxFileName file = pProjectFile->file;
-                file.MakeRelativeTo(wxFileName::GetCwd());
-                if (ccjFile == GetstdUTF8Str(file.GetFullPath()))
-                {
-                    m_CompileCommandsFiles.emplace_back(std::move(filename));
-                    return;
-                }
             }
         }
     }
