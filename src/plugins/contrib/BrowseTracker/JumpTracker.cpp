@@ -1004,6 +1004,21 @@ void JumpTracker::OnMenuJumpLastModified(wxCommandEvent& /*event*/)
     }
 }
 
+static inline bool isJumpDataLineVisible(cbEditor* pcbEd, JumpData& jumpData)
+{
+    if (pcbEd->GetFilename() != jumpData.GetFilename())
+        return false;
+
+    cbStyledTextCtrl* ctrl = pcbEd->GetControl();
+    int lineNo = jumpData.GetLineNo();
+    int firstVisible = ctrl->DocLineFromVisible(ctrl->GetFirstVisibleLine());
+    int lastVisible = firstVisible + ctrl->LinesOnScreen() - 1;
+#if defined(LOGGING)
+    LOGIT(_T("JT %s : %d,%s : %d,%s : %d"), _T("firstVisible"), firstVisible, _T("lineNo"), lineNo, _T("lastVisible"), lastVisible);
+#endif
+    return (lineNo >= firstVisible && lineNo <= lastVisible);
+}
+
 // ----------------------------------------------------------------------------
 void JumpTracker::OnMenuJumpBack(wxCommandEvent &/*event*/)
 // ----------------------------------------------------------------------------
@@ -1038,7 +1053,8 @@ void JumpTracker::OnMenuJumpBack(wxCommandEvent &/*event*/)
     {
         default:
         int idx = lastViewedIndex;
-        idx = GetPreviousIndex(idx);
+        if ((idx == wxNOT_FOUND) || isJumpDataLineVisible(pcbEd, m_ArrayOfJumpData[idx]))
+            idx = GetPreviousIndex(idx);
         m_lastJumpItemNewlyLoadedFile = false;
         if ( idx == wxNOT_FOUND)
             break;
