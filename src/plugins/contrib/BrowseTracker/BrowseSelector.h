@@ -21,6 +21,7 @@
 #ifndef BROWSE_SELECTOR_H
 #define BROWSE_SELECTOR_H
 
+#include "editorbase.h"
 #include "scrollingdialog.h"
 #include <map>
 #include <wx/bitmap.h>
