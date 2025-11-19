@@ -21,6 +21,8 @@
 #define PROJECTDATA_H
 
 #include "BrowseTrackerDefs.h"
+#include "cbeditor.h"
+#include "editormanager.h"
 
 WX_DEFINE_ARRAY_PTR(cbEditor*, ArrayOfcbEditorPtrs);
 WX_DEFINE_ARRAY_PTR(cbStyledTextCtrl*, ArrayOfcbSTCPtrs);
