@@ -1652,6 +1652,25 @@ wxString realpath(const wxString& path)
     // no symlinks support on windows
     return path;
 #else
+#if defined(__GLIBC__)
+    if (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 19))
+    {
+        char outPath[PATH_MAX];
+        const wxWX2MBbuf pathC = cbU2C(path);
+        const char* inPath = (const char*)pathC;
+        if (realpath(inPath, outPath))
+        {
+            return cbC2U(outPath);
+        }
+        else
+        {
+            return path;
+        }
+    }
+    else
+    {
+#endif
+
     char buf[2048] = {};
     struct stat buffer;
     const wxWX2MBbuf pathC = cbU2C(path);
@@ -1691,6 +1710,9 @@ wxString realpath(const wxString& path)
         slashPos = ret.find('/', slashPos);
     }
     return cbC2U(ret.c_str());
+#if defined(__GLIBC__)
+    }
+#endif
 #endif
 }
 
