@@ -702,7 +702,7 @@ void ClgdCompletion::OnAttach()
     cbAssert(GetParseManager() != nullptr);
     GetParseManager()->SetNextHandler(this);
 
-    GetParseManager()->CreateClassBrowser();
+    GetParseManager()->CreateClassBrowserIfEnabled();
 
     // hook to editors
     // both ccmanager and cc have hooks, but they don't conflict. ccmanager are mainly
@@ -1242,8 +1242,7 @@ void ClgdCompletion::OnPluginAttached(CodeBlocksEvent& event)
     if (plug and clgdEnabled)
     {
         const PluginInfo* info = Manager::Get()->GetPluginManager()->GetPluginInfo(plug);
-        wxString msg = info ? info->title : wxString(_("<Unknown plugin>"));
-        if (info->name == "CodeCompletion")
+        if (info && (info->name == "CodeCompletion"))
         {
             wxString msg = _("The CodeCompletion plugin should not be enabled when 'Clangd_client' is running.\n"
                              "The plugins are not compatible with one another.\n\n"
@@ -1251,12 +1250,13 @@ void ClgdCompletion::OnPluginAttached(CodeBlocksEvent& event)
                              "RESTART Code::Blocks to avoid crashes and effects of incompatibilities.");
             cbMessageBox(msg, _("ERROR"), wxOK, GetTopWxWindow());
         }
+        //wxString msg = info ? info->title : wxString(_("<Unknown plugin>"));
         //Manager::Get()->GetLogManager()->DebugLog(F(_T("%s plugin activated"), msg.wx_str())); // **Debugging**
-        if ( info->name.Lower() == "clangd_client" )
-        {
+        //if ( info->name.Lower() == "clangd_client" )
+        //{
             // This means that legacy CodeCompletion should be disabled.
             // But there's no way to do that from here.
-        }
+        //}
     }
 }
 // ----------------------------------------------------------------------------
@@ -1439,7 +1439,7 @@ std::vector<ClgdCompletion::CCToken> ClgdCompletion::GetAutocompList(bool isAuto
                     Token token(wxString(),0,0,0,&parser);
                     token.m_TokenKind = (TokenKind)semanticTokenType;
                     if (semanticTokenType == LSP_SemanticTokenType::Unknown)
-                        cldToken.category = (TokenKind)-1;
+                        cldToken.category = -1;
                     token.m_TokenKind =  GetParseManager()->GetParser().ConvertLSPSemanticTypeToCCTokenKind(semanticTokenType);
                     int iidx = GetParseManager()->GetTokenImageFromSemanticTokenType(&token);
                     if (iidx < 0) iidx = -1; // -1 tells ccManager to ignore this item
@@ -1835,7 +1835,7 @@ void ClgdCompletion::LSP_DoAutocomplete(const CCToken& token, cbEditor* ed)
                         itemText += tokenArgs;
                         insideFunction = false;
                     }
-                    else // Found something, but result may be false positive.
+                    else if (tree) // Found something, but result may be false positive.
                     {
                         const Token* parent = tree->at(funcToken);
                         // Make sure that parent is not container (class, etc)
