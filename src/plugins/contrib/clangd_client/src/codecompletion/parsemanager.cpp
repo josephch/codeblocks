@@ -656,7 +656,7 @@ wxArrayString ParseManager::GetAllPathsByFilename(const wxString& filename)
         cbProject* project = IsParserPerWorkspace() ? GetActiveEditorProject()
                                                     : GetProjectByParser(m_ActiveParser);
         // search in the project
-        if (project)
+        if (project && (project != m_pProxyProject))
         {
             const wxString prjPath = project->GetCommonTopLevelPath();
             wxString priorityPath;
