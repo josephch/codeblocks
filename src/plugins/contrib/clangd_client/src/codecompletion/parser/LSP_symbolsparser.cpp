@@ -2781,9 +2781,12 @@ void LSP_SymbolsParser::HandleEnum()
 
     m_Tokenizer.SetState(oldState);
 
-    newEnum->m_ImplLine      = lineNr;
-    newEnum->m_ImplLineStart = lineStart;
-    newEnum->m_ImplLineEnd   = m_Tokenizer.GetLineNumber();
+    if (newEnum)
+    {
+        newEnum->m_ImplLine      = lineNr;
+        newEnum->m_ImplLineStart = lineStart;
+        newEnum->m_ImplLineEnd   = m_Tokenizer.GetLineNumber();
+    }
 
 //    // skip to ;
 //    SkipToOneOfChars(ParserConsts::semicolon);
