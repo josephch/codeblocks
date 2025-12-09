@@ -1633,7 +1633,7 @@ std::vector<ClgdCompletion::CCToken> ClgdCompletion::GetTokenAt(int pos, cbEdito
     // ----------------------------------------------------
     // On second call from ccmanager, we should have some tokens to return
     // else the second call is never initiated by OnLSP_HoverResponse().
-    if (m_HoverTokens.size() )
+    if (m_HoverTokens.size() && (ed == m_pEditorLastHoverRequest) )
     {
         tokens.clear();
         //wxString hoverMsg = wxString::Format("GetTokenAt() sees %d tokens.\n", int(m_HoverTokens.size()));
@@ -1645,6 +1645,7 @@ std::vector<ClgdCompletion::CCToken> ClgdCompletion::GetTokenAt(int pos, cbEdito
         }
         m_HoverTokens.clear();
         GetParseManager()->SetHoverRequestIsActive(false);
+        fprintf(stderr, "[HOVER] %s:%d Return already populated tokens of size %zu. Editor %s \n", __FUNCTION__, __LINE__, tokens.size(), ed->GetFilename().ToUTF8().data());
         return tokens;
     }
     // On the first call from ccmanager, issue LSP_Hover() to clangd and return empty tokens
@@ -1652,8 +1653,10 @@ std::vector<ClgdCompletion::CCToken> ClgdCompletion::GetTokenAt(int pos, cbEdito
     // will re-issue this event (cbEVT_EDITOR_TOOLTIP) to display the results.
     if (GetLSP_IsEditorParsed(ed) )
     {
+       fprintf(stderr, "[HOVER] %s:%d Request hover request for editor %s \n", __FUNCTION__, __LINE__, ed->GetFilename().ToUTF8().data());
         GetParseManager()->SetHoverRequestIsActive(true);
         m_HoverLastPosition = pos;
+        m_pEditorLastHoverRequest = ed;
         GetLSPClient(ed)->LSP_Hover(ed, pos);
     }
     tokens.clear();
