@@ -1632,7 +1632,7 @@ std::vector<ClgdCompletion::CCToken> ClgdCompletion::GetTokenAt(int pos, cbEdito
     // ----------------------------------------------------
     // On second call from ccmanager, we should have some tokens to return
     // else the second call is never initiated by OnLSP_HoverResponse().
-    if (m_HoverTokens.size() )
+    if (m_HoverTokens.size() && (ed == m_pEditorLastHoverRequest))
     {
         tokens.clear();
         //wxString hoverMsg = wxString::Format("GetTokenAt() sees %d tokens.\n", int(m_HoverTokens.size()));
@@ -1644,15 +1644,23 @@ std::vector<ClgdCompletion::CCToken> ClgdCompletion::GetTokenAt(int pos, cbEdito
         }
         m_HoverTokens.clear();
         GetParseManager()->SetHoverRequestIsActive(false);
+        fprintf(stderr, "[HOVER] %s:%d Return already populated tokens of size %zu. Editor %s \n", __FUNCTION__, __LINE__, tokens.size(), ed->GetFilename().ToUTF8().data());
         return tokens;
+    }
+    else if (m_HoverTokens.size() && !(ed == m_pEditorLastHoverRequest))
+    {
+        fprintf(stderr, "[HOVER] %s:%d Ignore response as editor switched\n", __FUNCTION__, __LINE__);
+        m_HoverTokens.clear();
     }
     // On the first call from ccmanager, issue LSP_Hover() to clangd and return empty tokens
     // while waiting for clangd to respond. Once we get response data, OnLSP_HoverResponse()
     // will re-issue this event (cbEVT_EDITOR_TOOLTIP) to display the results.
     if (GetLSP_IsEditorParsed(ed) )
     {
+        fprintf(stderr, "[HOVER] %s:%d Request hover request for editor %s \n", __FUNCTION__, __LINE__, ed->GetFilename().ToUTF8().data());
         GetParseManager()->SetHoverRequestIsActive(true);
         m_HoverLastPosition = pos;
+        m_pEditorLastHoverRequest = ed;
         GetLSPClient(ed)->LSP_Hover(ed, pos);
     }
     tokens.clear();
@@ -3716,8 +3724,14 @@ void ClgdCompletion::OnLSP_Event(wxCommandEvent& event)
     else if ( evtString.StartsWith("textDocument/hover"))
     {
         Parser* pParser = (Parser*)GetParseManager()->GetParserByProject(pProject);
-        if (pParser)
+
+        cbEditor* pEditor = Manager::Get()->GetEditorManager()->GetBuiltinActiveEditor();
+        if (pParser && (m_pEditorLastHoverRequest == pEditor))
             pParser->OnLSP_HoverResponse(event, m_HoverTokens, m_HoverLastPosition);
+        else if (pParser && (m_pEditorLastHoverRequest != pEditor))
+        {
+            fprintf(stderr, "[HOVER] %s:%d Response came after editor switched to %s \n", __FUNCTION__, __LINE__, pEditor->GetFilename().ToUTF8().data());
+        }
     }
     // ----------------------------------------------------------------------------
     // SignatureHelp event
