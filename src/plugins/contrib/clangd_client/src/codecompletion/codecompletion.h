@@ -568,6 +568,7 @@ private:
     std::vector<std::string> m_SemanticTokensTypes;
     std::vector<std::string> m_SemanticTokensModifiers;
 
+    cbEditor* m_pEditorLastHoverRequest{nullptr};
 
     // ---------------------------------------------------------
     bool GetLSP_Initialized(cbProject* pProject)
