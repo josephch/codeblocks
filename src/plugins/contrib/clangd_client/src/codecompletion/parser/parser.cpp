@@ -2532,6 +2532,7 @@ void Parser::OnLSP_DeclDefResponse(wxCommandEvent& event)
                 cbEditor* targetEditor = pEdMgr->Open(filenameStr);
                 if (targetEditor)
                 {
+                    GetLSPClient()->LSP_DidOpen(targetEditor);
                     cbStyledTextCtrl* pCntl = targetEditor->GetControl();
                     int posn = pCntl->PositionFromLine(linenum);
                     posn += charPosn; //increment to column
@@ -2589,6 +2590,12 @@ void Parser::OnLSP_DeclDefResponse(wxCommandEvent& event)
 
     else if ( (isDecl or isImpl) and (event.GetString().Contains(wxString(STX) + "error")) )
     {
+        cbEditor* editor = Manager::Get()->GetEditorManager()->GetBuiltinActiveEditor();
+        if (editor && m_pParseManager->EditorBelongsToProxyProject(editor))
+        {
+            cbMessageBox(wxString::Format(_("File does not belong to active project")), _("Warning"), wxICON_WARNING);
+            return;
+        }
         //{"jsonrpc":"2.0","id":"textDocument/declaration","error":{"code":-32600,"message":"not indexed"}}
         wxString errorMsg = wxString::Format("error:%s", pJson->at("error").dump() );
         CCLogger::Get()->DebugLog(errorMsg);

@@ -2307,7 +2307,7 @@ void ClgdCompletion::OnGotoDeclaration(wxCommandEvent& event)
     TRACE(_T("OnGotoDeclaration"));
 
     wxString msg = VerifyEditorParsed(pActiveEditor);
-    if (not msg.empty()) //return reason editor is not yet ready
+    if (not msg.empty() && !GetParseManager()->EditorBelongsToProxyProject(pActiveEditor)) // return reason editor is not yet ready
     {
         msg += wxString::Format("\n%s",__FUNCTION__);
         InfoWindow::Display("LSP", msg, 7000);
@@ -2336,13 +2336,24 @@ void ClgdCompletion::OnGotoDeclaration(wxCommandEvent& event)
 
    // Confusing behaviour for original CC vs Clangd:
    // if caret is already on the definition (.h) clangd wont find it
-    if (isDecl)
+
+    ProcessLanguageClient* processLanguageClient = nullptr;
+    if (GetParseManager()->EditorBelongsToProxyProject(pActiveEditor))
     {
-        GetLSPClient(pActiveEditor)->LSP_GoToDeclaration(pActiveEditor, GetCaretPosition(pActiveEditor));
+        processLanguageClient = GetLSPClient(Manager::Get()->GetProjectManager()->GetActiveProject());
     }
     else
     {
-        GetLSPClient(pActiveEditor)->LSP_GoToDefinition(pActiveEditor, GetCaretPosition(pActiveEditor));
+        processLanguageClient = GetLSPClient(pActiveEditor);
+    }
+
+    if (isDecl)
+    {
+        processLanguageClient->LSP_GoToDeclaration(pActiveEditor, GetCaretPosition(pActiveEditor));
+    }
+    else
+    {
+        processLanguageClient->LSP_GoToDefinition(pActiveEditor, GetCaretPosition(pActiveEditor));
     }
     return;
 }//end OnGotoDeclaration()
@@ -4390,6 +4401,22 @@ void ClgdCompletion::OnEditorClosed(CodeBlocksEvent& event)
     {
             GetLSPClient(pcbEd)->LSP_DidClose(pcbEd);
             m_pParseManager->ClearDiagnostics(pcbEd->GetFilename());  //(Christo 2024/03/30)
+    }
+
+    if (pcbEd && m_pParseManager->EditorBelongsToProxyProject(pcbEd))
+    {
+        ProjectsArray* projectsArray = Manager::Get()->GetProjectManager()->GetProjects();
+        for (cbProject* project : *projectsArray)
+        {
+            ProcessLanguageClient* pClient = GetLSPClient(project);
+            if (pClient)
+            {
+                if (pClient->GetLSP_EditorIsOpen(pcbEd))
+                {
+                    pClient->LSP_DidClose(pcbEd);
+                }
+            }
+        }
     }
 
     if (m_LastEditor == event.GetEditor())
