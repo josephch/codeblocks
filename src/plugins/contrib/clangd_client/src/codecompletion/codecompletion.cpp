@@ -2312,7 +2312,7 @@ void ClgdCompletion::OnGotoDeclaration(wxCommandEvent& event)
     TRACE(_T("OnGotoDeclaration"));
 
     wxString msg = VerifyEditorParsed(pActiveEditor);
-    if (not msg.empty()) //return reason editor is not yet ready
+    if (not msg.empty() && !GetParseManager()->EditorBelongsToProxyProject(pActiveEditor)) // return reason editor is not yet ready
     {
         msg += wxString::Format("\n%s",__FUNCTION__);
         InfoWindow::Display("LSP", msg, 7000);
@@ -2336,18 +2336,29 @@ void ClgdCompletion::OnGotoDeclaration(wxCommandEvent& event)
    // LSP Goto Declaration/definition
    // ----------------------------------------------------------------------------
 
-    // if max parsing, spit out parsing is delayed message
-    if (ParsingIsVeryBusy()) {;}
-
    // Confusing behaviour for original CC vs Clangd:
    // if caret is already on the definition (.h) clangd wont find it
-    if (isDecl)
+
+    ProcessLanguageClient* processLanguageClient = nullptr;
+    if (GetParseManager()->EditorBelongsToProxyProject(pActiveEditor))
     {
-        GetLSPClient(pActiveEditor)->LSP_GoToDeclaration(pActiveEditor, GetCaretPosition(pActiveEditor));
+        processLanguageClient = GetLSPClient(Manager::Get()->GetProjectManager()->GetActiveProject());
     }
     else
     {
-        GetLSPClient(pActiveEditor)->LSP_GoToDefinition(pActiveEditor, GetCaretPosition(pActiveEditor));
+        processLanguageClient = GetLSPClient(pActiveEditor);
+    }
+
+    // if max parsing, spit out parsing is delayed message
+    if (ParsingIsVeryBusy(processLanguageClient)) {;}
+
+    if (isDecl)
+    {
+        processLanguageClient->LSP_GoToDeclaration(pActiveEditor, GetCaretPosition(pActiveEditor));
+    }
+    else
+    {
+        processLanguageClient->LSP_GoToDefinition(pActiveEditor, GetCaretPosition(pActiveEditor));
     }
     return;
 }//end OnGotoDeclaration()
@@ -2401,7 +2412,7 @@ void ClgdCompletion::OnFindReferences(cb_unused wxCommandEvent& event)
         return;
     }
     // check count of currently parsing files, and print info msg if max is parsing.
-    if  (ParsingIsVeryBusy()) {;}
+    if  (ParsingIsVeryBusy(pClient)) {;}
 
     GetLSPClient(pEditor)->LSP_FindReferences(pEditor, GetCaretPosition(pEditor));
     return;
@@ -4399,6 +4410,22 @@ void ClgdCompletion::OnEditorClosed(CodeBlocksEvent& event)
             m_pParseManager->ClearDiagnostics(pcbEd->GetFilename());  //(Christo 2024/03/30)
     }
 
+    if (pcbEd && m_pParseManager->EditorBelongsToProxyProject(pcbEd))
+    {
+        ProjectsArray* projectsArray = Manager::Get()->GetProjectManager()->GetProjects();
+        for (cbProject* project : *projectsArray)
+        {
+            ProcessLanguageClient* pClient = GetLSPClient(project);
+            if (pClient)
+            {
+                if (pClient->GetLSP_EditorIsOpen(pcbEd))
+                {
+                    pClient->LSP_DidClose(pcbEd);
+                }
+            }
+        }
+    }
+
     if (m_LastEditor == event.GetEditor())
     {
         m_LastEditor = nullptr;
@@ -5774,7 +5801,7 @@ void ClgdCompletion::OnDebuggerFinished(CodeBlocksEvent& event)
 
 }
 // ----------------------------------------------------------------------------
-bool ClgdCompletion::ParsingIsVeryBusy()
+bool ClgdCompletion::ParsingIsVeryBusy(ProcessLanguageClient* pClient)
 // ----------------------------------------------------------------------------
 {
     // suggestion: max parallel files parsing should be no more than half of processors
@@ -5787,10 +5814,6 @@ bool ClgdCompletion::ParsingIsVeryBusy()
     //int cfg_parsers_while_compiling  = std::min(cfg->ReadInt("/max_parsers_while_compiling", 0), max_parallel_processes);
     //int max_parsers_while_compiling  = std::min(cfg_parsers_while_compiling, max_parallel_processes);
 
-    cbEditor* pEditor = Manager::Get()->GetEditorManager()->GetBuiltinActiveEditor();
-    if (not pEditor) return false;
-
-    ProcessLanguageClient* pClient = GetLSPClient(pEditor);
     if ( int(pClient->LSP_GetServerFilesParsingCount()) > max_parallel_processes)
     {
         wxString msg = _("Parsing is very busy, response may be delayed.");
