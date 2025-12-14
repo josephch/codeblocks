@@ -15,10 +15,12 @@
 #include <wx/aui/aui.h>
 
 #include <cbstyledtextctrl.h>
+#include "cbeditor.h"
 #include "parsemanager_base.h"
 //-#include "parser/parser_base.h"
 #include "parser/cclogger.h"
 #include "LSPEventCallbackHandler.h"
+#include "projectfile.h"
 //-#include "IdleCallbackHandler.h"
 
 
@@ -323,7 +325,13 @@ public:
 
     // Fetch the temporary cbProject used to send non-project files to clangd.
     cbProject* GetProxyProject() {return m_pProxyProject;}
-    bool IsProxyProject(cbProject* pProject){return pProject == m_pProxyProject;}
+    bool IsProxyProject(cbProject* pProject) { return pProject == m_pProxyProject; }
+    bool EditorBelongsToProxyProject(cbEditor* pcbEd)
+    {
+        ProjectFile* pf = pcbEd->GetProjectFile();
+        cbProject* pEdProject = pf ? pf->GetParentProject() : nullptr;
+        return IsProxyProject(pEdProject);
+    }
     // Fetch the ProxyParser used to parse non-project owned files
     Parser* GetProxyParser() {return m_pProxyParser;}
     bool IsProxyParser(Parser* pParser) {return pParser == m_pProxyParser;}
