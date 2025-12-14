@@ -2374,7 +2374,7 @@ void ProcessLanguageClient::LSP_GoToDefinition(cbEditor* pcbEd, int argCaretPosi
         return ;
     }
 
-    if (not GetLSP_IsEditorParsed(pcbEd))
+    if (not GetLSP_IsEditorParsed(pcbEd) && not m_pParser->GetParseManager()->EditorBelongsToProxyProject(pcbEd))
     {
         wxString msg = wxString::Format(_("%s\nnot yet parsed.\nProject:"),
                 wxFileName(pcbEd->GetFilename()).GetFullName());
@@ -2463,7 +2463,7 @@ void ProcessLanguageClient::LSP_GoToDeclaration(cbEditor* pcbEd, int argCaretPos
         cbMessageBox(_("LSP: attempt to LSP_GoToDeclaration before initialization."));
         return ;
     }
-    if (not GetLSP_IsEditorParsed(pcbEd))
+    if (not GetLSP_IsEditorParsed(pcbEd) && not m_pParser->GetParseManager()->EditorBelongsToProxyProject(pcbEd))
     {
         wxString msg = wxString::Format(_("%s\nnot yet parsed.\nProject:"),
                 wxFileName(pcbEd->GetFilename()).GetFullName());

@@ -692,7 +692,7 @@ private:
 
     wxString GetTargetsOutFilename(cbProject* pProject);
     // Check if allowable files parsing are maxed out.
-    bool ParsingIsVeryBusy();
+    bool ParsingIsVeryBusy(ProcessLanguageClient* pClient);
 
     // This is set to false if ClgdCompletion ctor completes ok.
     // Forces CB restart when clangd_client first enabled
