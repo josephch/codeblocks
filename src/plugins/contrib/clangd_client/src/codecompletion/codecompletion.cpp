@@ -1657,10 +1657,12 @@ std::vector<ClgdCompletion::CCToken> ClgdCompletion::GetTokenAt(int pos, cbEdito
         }
         m_HoverTokens.clear();
         GetParseManager()->SetHoverRequestIsActive(false);
+        fprintf(stderr, "[HOVER] %s:%d Return already populated tokens of size %zu. Editor %s \n", __FUNCTION__, __LINE__, tokens.size(), ed->GetFilename().ToUTF8().data());
         return tokens;
     }
     else if (m_HoverTokens.size() && !(ed == m_pEditorLastHoverRequest))  // ticket 1585
     {
+        fprintf(stderr, "[HOVER] %s:%d Ignore response as editor switched\n", __FUNCTION__, __LINE__);
         m_HoverTokens.clear();
     }
     // On the first call from ccmanager, issue LSP_Hover() to clangd and return empty tokens
@@ -1668,6 +1670,7 @@ std::vector<ClgdCompletion::CCToken> ClgdCompletion::GetTokenAt(int pos, cbEdito
     // will re-issue this event (cbEVT_EDITOR_TOOLTIP) to display the results.
     if (GetLSP_IsEditorParsed(ed) )
     {
+        fprintf(stderr, "[HOVER] %s:%d Request hover request for editor %s \n", __FUNCTION__, __LINE__, ed->GetFilename().ToUTF8().data());
         GetParseManager()->SetHoverRequestIsActive(true);
         m_HoverLastPosition = pos;
         m_pEditorLastHoverRequest = ed; // ticket 1585
@@ -3741,6 +3744,10 @@ void ClgdCompletion::OnLSP_Event(wxCommandEvent& event)
         // assure that this data belongs to the current active editor   // ticket 1585
         if (pParser && (m_pEditorLastHoverRequest == pEditor))
             pParser->OnLSP_HoverResponse(event, m_HoverTokens, m_HoverLastPosition);
+        else if (pParser && (m_pEditorLastHoverRequest != pEditor))
+        {
+            fprintf(stderr, "[HOVER] %s:%d Response came after editor switched to %s \n", __FUNCTION__, __LINE__, pEditor->GetFilename().ToUTF8().data());
+        }
     }
     // ----------------------------------------------------------------------------
     // SignatureHelp event
