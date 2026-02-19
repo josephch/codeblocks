@@ -499,7 +499,14 @@ void cbProject::CalculateCommonTopLevelPath()
 #endif
 
     m_CommonTopLevelPath = base.GetFullPath();
-    Manager::Get()->GetLogManager()->DebugLog(_T("Project's common toplevel path: ") + m_CommonTopLevelPath);
+
+    wxString basePath = GetBasePath();
+    if (!basePath.ends_with(sep))
+    {
+        basePath += sep;
+    }
+    bool commonTopLevelChildOfBase = m_CommonTopLevelPath.StartsWith(basePath);
+    Manager::Get()->GetLogManager()->DebugLog(_T("Project's common toplevel path: ") + m_CommonTopLevelPath + " basePath : " + basePath + " commonTopLevelChildOfBase: " + (commonTopLevelChildOfBase ? "true" : "false"));
 
     const wxString &projectBasePath = GetBasePath();
 
@@ -512,7 +519,12 @@ void cbProject::CalculateCommonTopLevelPath()
         wxString fileName = f->file.GetFullPath();
         bool fileHasUNCName = fileName.StartsWith(_T("\\\\"));
 
-        if (   (prjHasUNCName && fileHasUNCName)
+        if (commonTopLevelChildOfBase)
+        {
+            f->relativeToCommonTopLevelPath = fileName.Right(fileName.Length() - m_CommonTopLevelPath.Length());
+            f->relativeFilename = fileName.Right(fileName.Length() - basePath.Length());
+        }
+        else if (   (prjHasUNCName && fileHasUNCName)
             || (   !prjHasUNCName
                 && !fileHasUNCName
                 && vol.IsSameAs(f->file.GetVolume(), false) ) )
