@@ -679,6 +679,7 @@ private:
     void OnProjectPauseParsing(wxCommandEvent& event);
     void DisplayPausedStatusOfAllProjects();
     void OnFormatActiveFile(wxCommandEvent& event); // (christo 25/05/02)
+    void OnRefactor(wxCommandEvent& event);
 
     // ----------------------------------------------------------------
     inline int GetCaretPosition(cbEditor* pEditor)
