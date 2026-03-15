@@ -504,16 +504,28 @@ HighlightLanguage EditorColourSet::Apply(cbEditor* editor, HighlightLanguage lan
 {
     if (!editor)
         return HL_NONE;
+    const wxString& filename = editor->GetFilename();
 
     if (lang == HL_AUTO)
-        lang = GetLanguageForFilename(editor->GetFilename());
+        lang = GetLanguageForFilename(filename);
 
-    const bool isC = (   Manager::Get()->GetConfigManager(wxT("editor"))->ReadBool(wxT("no_stl_in_c"), true)
-                      && lang == GetHighlightLanguage(wxT("C/C++"))
-                      && editor->GetFilename().Lower().EndsWith(wxT(".c")) );
+    bool probableHeaderC = (lang == GetHighlightLanguage(wxT("C/C++")) && filename.Lower().EndsWith(wxT(".h")));
+    if (probableHeaderC)
+    {
+        cbProject* project = Manager::Get()->GetProjectManager()->FindProjectForFile(filename, nullptr, false, false);
+        if (project && project->IsCProject())
+        {
+            fprintf(stderr, "EditorColourSet::%s:%d detected C project for %s\n", __FUNCTION__, __LINE__, editor->GetFilename().ToUTF8().data());
+            lang = GetHighlightLanguage(wxT("C"));
+        }
+        else
+        {
+            fprintf(stderr, "EditorColourSet::%s:%d detected C++ project for %s\n", __FUNCTION__, __LINE__, editor->GetFilename().ToUTF8().data());
+        }
+    }
 
-    Apply(lang, editor->GetLeftSplitViewControl(),  isC, colourise);
-    Apply(lang, editor->GetRightSplitViewControl(), isC, colourise);
+    Apply(lang, editor->GetLeftSplitViewControl(), false, colourise);
+    Apply(lang, editor->GetRightSplitViewControl(), false, colourise);
 
     return lang;
 }
