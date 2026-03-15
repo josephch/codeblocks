@@ -948,7 +948,7 @@ void CodeCompletion::DoCodeComplete(int caretPos, cbEditor* ed, std::vector<CCTo
                         lang = colour_set->GetLanguageForFilename(ed->GetFilename());
                     wxString strLang = colour_set->GetLanguageName(lang);
                     // if its sourcecode/header file and a known fileformat, show the corresponding icon
-                    if (isC && strLang == "C/C++")
+                    if (isC && ((strLang == "C/C++") || (strLang == "C")))
                         stc->RegisterImage(iidx, GetImage(ImageId::KeywordCPP, fontSize));
                     else if (isC && strLang == "D")
                         stc->RegisterImage(iidx, GetImage(ImageId::KeywordD, fontSize));
