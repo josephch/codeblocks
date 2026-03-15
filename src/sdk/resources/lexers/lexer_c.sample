@@ -1,0 +1,66 @@
+/*
+ * Sample preview code
+ * This is a block comment
+ */
+
+#include <iostream.h> // this is a line comment
+#include <stdio.h>
+
+/**
+  * This is a documentation comment block
+  * @param xxx does this (this is the documentation keyword)
+  * @authr some user (this is the documentation keyword error)
+  */
+
+int main(int argc, char **argv)
+{
+	/// This is a documentation comment line
+	int numbers[20];
+	int average = 0;
+	char ch = '\n';
+	for (size_t i = 0; i < 20; ++i) // a breakpoint is set
+	{
+		numbers[i] = i; // active line (during debugging)
+		total += i; // error line
+	}
+	average = total / 20;
+	printf("%d \n %d \n", numbers[0], numbers[19]);
+	printf("total: %d average: %d\n", total, average);
+	printf("Press any key...\n");
+	getch();
+}
+
+#if 0
+/*
+ * Inactive code section
+ * This is a block comment
+ */
+
+#include <iostream.h> // this is a line comment
+#include <stdio.h>
+
+/**
+  * This is a documentation comment block
+  * @param xxx does this (this is the documentation keyword)
+  * @authr some user (this is the documentation keyword error)
+  */
+
+int main(int argc, char **argv)
+{
+	/// This is a documentation comment line
+	int numbers[20];
+	int average = 0;
+	char ch = '\n';
+	for (size_t i = 0; i < 20; ++i) // a breakpoint is set
+	{
+		numbers[i] = i; // active line (during debugging)
+		total += i; // error line
+	}
+	average = total / 20;
+	printf("%d \n %d \n", numbers[0], numbers[19]);
+	printf("total: %d average: %d\n", total, average);
+	printf("Press any key...\n");
+	getch();
+}
+#endif	// 0
+
