@@ -8,6 +8,7 @@
 
 #include <wx/hashmap.h>
 #include "ibaseloader.h"
+#include "tinyxml.h"
 
 #define PROJECT_FILE_VERSION_MAJOR 1
 #define PROJECT_FILE_VERSION_MINOR 6
