@@ -1,0 +1,195 @@
+<?xml version="1.0"?>
+<!DOCTYPE CodeBlocks_lexer_properties>
+<CodeBlocks_lexer_properties>
+        <Lexer name="C"
+                index="3"
+                filemasks="*.c,*.h">
+                <Style name="Default"
+                        index="0,11"
+                        fg="0,0,0"
+                        bg="255,255,255"
+                        bold="0"
+                        italics="0"
+                        underlined="0"/>
+                <Style name="Default (inactive)"
+                        index="64,72,75"
+                        fg="200,200,200"/>
+                <Style name="Comment (normal)"
+                        index="1,23"
+                        fg="152,152,217"/>
+                <Style name="Comment (inactive)"
+                        index="65,87"
+                        fg="192,192,192"/>
+                <Style name="Comment line (normal)"
+                        index="2"
+                        fg="152,152,217"/>
+                <Style name="Comment line (inactive)"
+                        index="66"
+                        fg="192,192,192"/>
+                <Style name="Comment (documentation)"
+                        index="3,24"
+                        fg="128,128,255"
+                        bold="1"/>
+                <Style name="Comment (documentation, inactive)"
+                        index="67,88"
+                        fg="170,170,240"
+                        bold="1"/>
+                <Style name="Comment line (documentation)"
+                        index="15"
+                        fg="128,128,255"
+                        bold="1"/>
+                <Style name="Comment line (documentation, inactive)"
+                        index="79"
+                        fg="170,170,240"
+                        bold="1"/>
+                <Style name="Comment keyword (documentation)"
+                        index="17"
+                        fg="0,128,128"/>
+                <Style name="Comment keyword (documentation, inactive)"
+                        index="81"
+                        fg="107,153,153"/>
+                <Style name="Comment keyword error (documentation)"
+                        index="18"
+                        fg="128,0,0"/>
+                <Style name="Comment keyword error (documentation, inactive)"
+                        index="82"
+                        fg="172,89,89"/>
+                <Style name="Number"
+                        index="4"
+                        fg="240,0,240"/>
+                <Style name="Number (inactive)"
+                        index="68"
+                        fg="240,200,240"/>
+                <Style name="Keyword"
+                        index="5"
+                        fg="0,0,160"
+                        bold="1"/>
+                <Style name="Keyword (inactive)"
+                        index="69"
+                        fg="135,135,200"
+                        bold="1"/>
+                <Style name="User keyword"
+                        index="16"
+                        fg="0,160,0"
+                        bold="1"/>
+                <Style name="User keyword (inactive)"
+                        index="80"
+                        fg="154,200,154"
+                        bold="1"/>
+                <Style name="Global classes and typedefs"
+                        index="19"
+                        fg="190,0,190"
+                        bold="1"/>
+                <Style name="Global classes and typedefs (inactive)"
+                        index="83"
+                        fg="190,137,190"
+                        bold="1"/>
+                <Style name="String"
+                        index="6,12,20"
+                        fg="0,0,255"/>
+                <Style name="String (inactive)"
+                        index="70,76"
+                        fg="190,190,255"/>
+                <Style name="Character"
+                        index="7"
+                        fg="224,160,0"/>
+                <Style name="Character (inactive)"
+                        index="71"
+                        fg="224,206,159"/>
+                <Style name="UUID"
+                        index="8"
+                        fg="0,0,0"/>
+                <Style name="Preprocessor"
+                        index="9"
+                        fg="0,160,0"/>
+                <Style name="Preprocessor (inactive)"
+                        index="73"
+                        fg="132,160,132"/>
+                <Style name="Operator"
+                        index="10"
+                        fg="255,0,0"/>
+                <Style name="Operator (inactive)"
+                        index="74"
+                        fg="255,200,200"/>
+                <Style name="Breakpoint line"
+                        index="-2"
+                        bg="255,160,160"/>
+                <Style name="Debugger active line"
+                        index="-3"
+                        bg="160,160,255"/>
+                <Style name="Compiler error line"
+                        index="-4"
+                        bg="255,128,0"/>
+                <Style name="wxSmith-generated code"
+                        index="50"
+                        fg="64,64,128"
+                        italics="1"/>
+                <Style name="wxSmith-generated code (inactive)"
+                        index="114"
+                        fg="133,133,172"
+                        italics="1"/>
+                <Keywords>
+                        <!-- Primary keywords and identifiers -->
+                        <Set index="0"
+                            value="alignas alignof asm auto bool break case char const constexpr continue default do double else enum extern
+                                   float for goto if inline int long nullptr register restrict return short signed sizeof static static_assert
+                                   struct switch thread_local true typedef typedof typeof_unqual union unsigned void volatile  while
+                                   _Alignas _Alignof _Atomic  _BitInt  _Bool (C99) _Complex _Decimal128  _Decimal32  _Decimal64  _Generic
+                                   _Imaginary _Noreturn _Static_assert _Thread_local"/>
+                        <!-- and and_eq bitand bitor compl not not_eq or or_eq xor xor_eq -->
+                        <!-- Secondary keywords and identifiers -->
+                        <Set index="1"
+                            value="wchar_t char16_t char32_t int8_t uint8_t int16_t uint16_t int32_t uint32_t int64_t uint64_t
+                                   int_least8_t uint_least8_t int_least16_t uint_least16_t
+                                   int_least32_t uint_least32_t int_least64_t uint_least64_t
+                                   int_fast8_t uint_fast8_t int_fast16_t uint_fast16_t
+                                   int_fast32_t uint_fast32_t int_fast64_t uint_fast64_t
+                                   intptr_t uintptr_t intmax_t uintmax_t
+                                   wint_t wchar_t wctrans_t wctype_t size_t time_t"/>
+                        <!-- Documentation comment keywords -->
+                        <Set index="2"
+                            value="a addindex addtogroup anchor arg attention author authors b
+                                   brief bug c callergraph callgraph category cite class code cond
+                                   copybrief copydetails copydoc copyright date def defgroup
+                                   deprecated details diafile dir docbookonly dontinclude dot
+                                   dotfile e else elseif em endcode endcond enddocbookonly enddot
+                                   endhtmlonly endif endinternal endlatexonly endlink endmanonly
+                                   endmsc endparblock endrtfonly endsecreflist endverbatim enduml
+                                   endxmlonly enum example exception extends f$ f[ f] f{ f} file fn
+                                   headerfile hidecallergraph hidecallgraph hideinitializer
+                                   htmlinclude htmlonly idlexcept if ifnot image implements include
+                                   includedoc includelineno ingroup internal invariant interface
+                                   latexinclude latexonly li line link mainpage manonly memberof msc
+                                   mscfile n name namespace nosubgrouping note overload p package
+                                   page par paragraph param param[in] param[out] param[in,out]
+                                   parblock post pre private privatesection property protected
+                                   protectedsection protocol public publicsection pure ref refitem
+                                   related relates relatedalso relatesalso remark remarks result
+                                   return returns retval rtfonly sa secreflist section see short
+                                   showinitializer since skip skipline snippet snippetdoc
+                                   snippetlineno startuml struct subpage subsection subsubsection
+                                   tableofcontents test throw throws todo tparam typedef union until
+                                   var verbatim verbinclude version vhdlflow warning weakgroup
+                                   xmlonly xrefitem $ @ \ &amp; &lt; &gt;  # { }"/>
+                </Keywords>
+                <SampleCode value="lexer_c.sample"
+                        breakpoint_line="20"
+                        debug_line="22"
+                        error_line="23"/>
+                <LanguageAttributes
+                    LineComment="//"
+                    DoxygenLineComment="///"
+                    StreamCommentStart="/*"
+                    StreamCommentEnd="*/"
+                    DoxygenStreamCommentStart="/**"
+                    DoxygenStreamCommentEnd="*/"
+                    BoxCommentStart="/* "
+                    BoxCommentMid=" * "
+                    BoxCommentEnd=" */"
+                    CaseSensitive="1"
+                    LexerCommentStyles="1,2,3,15,17,18,23,65,66,67,79,81,82,87"
+                    LexerCharacterStyles="7,71"
+                    LexerStringStyles="6,12,70,76"
+                    LexerPreprocessorStyles="9,73"/>
+        </Lexer>
+</CodeBlocks_lexer_properties>
