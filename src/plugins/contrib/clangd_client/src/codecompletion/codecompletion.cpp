@@ -1328,8 +1328,12 @@ ClgdCompletion::CCProviderStatus ClgdCompletion::GetProviderStatusFor(cbEditor* 
     if (m_CC_initDeferred) return ccpsInactive;
 
     EditorColourSet *colour_set = ed->GetColourSet();
-    if (colour_set && ed->GetLanguage() == colour_set->GetHighlightLanguage(wxT("C/C++")))
-        return ccpsActive;
+    if (colour_set)
+    {
+        HighlightLanguage lang = ed->GetLanguage();
+        if ((lang == colour_set->GetHighlightLanguage(wxT("C/C++"))) || (lang == colour_set->GetHighlightLanguage(wxT("C"))))
+            return ccpsActive;
+    }
 
     switch (ParserCommon::FileType(ed->GetFilename()))
     {
