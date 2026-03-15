@@ -804,7 +804,13 @@ ProjectFile* cbProject::AddFile(int targetIndex, const wxString& filename, bool 
     else if (platform::windows && ext.IsSameAs(FileFilters::RESOURCE_EXT))
         pf->compilerVar = _T("WINDRES");
     else
+    {
         pf->compilerVar = _T("CPP"); // default
+        if (!ext.IsSameAs(FileFilters::H_EXT, false))
+        {
+            m_HasCppFiles = true;
+        }
+    }
 
     if (!m_Targets.GetCount())
     {

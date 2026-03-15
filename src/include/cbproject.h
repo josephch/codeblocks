@@ -319,6 +319,9 @@ class DLLIMPORT cbProject : public CompileTargetBase
         /** @return True if the project is using a custom Makefile for compilation, false if not. */
         bool IsMakefileCustom() const { return m_CustomMakefile; }
 
+        /** @return True if the project is using a custom Makefile for compilation, false if not. */
+        bool IsCProject() const { return !m_HasCppFiles; }
+
         /** Allow the specification of specific execution directory if the project use a custom Makefile.
           * Defaults to the projects base path, if no custom makefile is used.
           * @param dir The directory the custom Makefile should be executed from.
@@ -935,6 +938,7 @@ class DLLIMPORT cbProject : public CompileTargetBase
         wxString               m_DefaultExecuteTarget;
         mutable wxString       m_Makefile;
         bool                   m_CustomMakefile;
+        bool                   m_HasCppFiles{false};
         mutable wxString       m_MakefileExecutionDir;
 
         std::vector<ProjectGlob> m_Globs;
