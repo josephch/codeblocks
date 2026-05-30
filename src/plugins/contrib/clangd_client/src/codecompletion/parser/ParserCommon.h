@@ -68,7 +68,8 @@ struct ParserOptions
         LLVM_MasterPath(""),
         storeDocumentation(true),
         useCompletionIconsCheck(false),
-        parseOpenedFilesOnly(false)
+        parseOpenedFilesOnly(false),
+        parseExternalMakefileProjectOnOpen(false)
     {}
 
     bool followLocalIncludes;  /// parse XXX.h in directive #include "XXX.h"
@@ -89,6 +90,7 @@ struct ParserOptions
     bool storeDocumentation;   /// should tokenizer detect and store doxygen documentation?
     bool useCompletionIconsCheck; /// this will check for user enabled using completion icons
     bool parseOpenedFilesOnly;    /// this allows to configure to parse only opened files
+    bool parseExternalMakefileProjectOnOpen; /// this controls if external makefile project parsing to be disabled on opening the project
 };
 // ----------------------------------------------------------------------------
 /** Options for the symbol browser, this specify how the symbol browser will shown */
