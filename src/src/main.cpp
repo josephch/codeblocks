@@ -4968,7 +4968,7 @@ void MainFrame::OnSwitchTabs(cb_unused wxCommandEvent& event)
         return;
 
     // Create container and add all open editors:
-    wxSwitcherItems items;
+    cbSwitcherItems items;
     items.AddGroup(_("Open files"), "editors");
     if (!Manager::Get()->GetConfigManager("app")->ReadBool("/environment/tabs_stacked_based_switching"))
     {   // Switch tabs editor with tab order
@@ -5006,7 +5006,7 @@ void MainFrame::OnSwitchTabs(cb_unused wxCommandEvent& event)
     }
 
     // Create the switcher dialog
-    wxSwitcherDialog dlg(items, wxGetApp().GetTopWindow());
+    cbSwitcherDialog dlg(items, wxGetApp().GetTopWindow());
 
     // Ctrl+Tab workaround for non windows platforms:
     if      (platform::cocoa)
@@ -5020,7 +5020,7 @@ void MainFrame::OnSwitchTabs(cb_unused wxCommandEvent& event)
     // If necessary change the selected editor:
     if ((answer == wxID_OK) && (dlg.GetSelection() != -1))
     {
-        wxSwitcherItem& item = items.GetItem(dlg.GetSelection());
+        cbSwitcherItem& item = items.GetItem(dlg.GetSelection());
         wxWindow* win = item.GetWindow();
         if (win)
         {

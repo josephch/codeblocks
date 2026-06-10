@@ -847,7 +847,7 @@ void BrowseTracker::OnMenuTrackerSelect(wxCommandEvent& WXUNUSED(event))
         return;
 
     // Create container and add all open editors:
-    wxSwitcherItems items;
+    btSwitcherItems items;
     items.AddGroup(_("Open files"), wxT("editors"));
     // FIXME (ph#): Need to use own stack of editors !!
     //-if (!Manager::Get()->GetConfigManager(_T("app"))->ReadBool(_T("/environment/tabs_stacked_based_switching")))
@@ -893,8 +893,8 @@ void BrowseTracker::OnMenuTrackerSelect(wxCommandEvent& WXUNUSED(event))
 
     // Create the switcher dialog
     // FIXME (ph#): for wxGetApp() ?
-    //?wxSwitcherDialog dlg(items, wxGetApp().GetTopWindow());
-    wxSwitcherDialog dlg(items, Manager::Get()->GetAppWindow());
+    //?btSwitcherDialog dlg(items, wxGetApp().GetTopWindow());
+    btSwitcherDialog dlg(items, Manager::Get()->GetAppWindow());
 
     // Ctrl+Tab workaround for non windows platforms:
     if      (platform::cocoa)
@@ -908,7 +908,7 @@ void BrowseTracker::OnMenuTrackerSelect(wxCommandEvent& WXUNUSED(event))
     // If necessary change the selected editor:
     if ((answer == wxID_OK) && (dlg.GetSelection() != -1))
     {
-        wxSwitcherItem& item = items.GetItem(dlg.GetSelection());
+        btSwitcherItem& item = items.GetItem(dlg.GetSelection());
         wxWindow* win = item.GetWindow();
         if (win)
         {
