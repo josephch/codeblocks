@@ -1,0 +1,127 @@
+name: Build AppImage
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-appimage:
+    runs-on: ubuntu-22.04
+
+    env:
+      WX_PREFIX: /opt/wxwidgets
+      APPDIR: AppDir
+
+    steps:
+    - name: Checkout Code::Blocks
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+
+        sudo apt-get install -y \
+          build-essential \
+          autoconf \
+          automake \
+          libtool \
+          pkg-config \
+          git \
+          zip \
+          unzip \
+          gettext \
+          libgtk-3-dev \
+          libboost-dev \
+          libboost-system-dev \
+          libboost-filesystem-dev \
+          libzstd-dev \
+          wget
+
+    - name: Checkout wxWidgets
+      run: |
+        git clone --depth=1 --branch v3.2.10 \
+          https://github.com/wxWidgets/wxWidgets.git
+        cd wxWidgets
+        git submodule update --init
+        git status
+
+    - name: Build wxWidgets
+      run: |
+        cd wxWidgets
+
+        mkdir buildgtk
+        cd buildgtk
+
+        ../configure \
+          --prefix=${WX_PREFIX} \
+          --disable-shared \
+          --disable-sys-libs \
+          --with-gtk=3 \
+          --enable-secretstore=no
+
+        make -j$(nproc)
+        sudo make install
+
+    - name: Bootstrap Code::Blocks
+      run: |
+        ACLOCAL_FLAGS="-I ${WX_PREFIX}/share/aclocal" ./bootstrap
+
+    - name: Configure Code::Blocks
+      run: |
+        export PKG_CONFIG_PATH=${WX_PREFIX}/lib/pkgconfig:$PKG_CONFIG_PATH
+        ./configure \
+          --with-contrib-plugins=all \
+          --with-wx-config=${WX_PREFIX}/bin/wx-config \
+          --disable-sys-libs --enable-static-wx \
+          --prefix=$PWD/$APPDIR
+
+    - name: Build Code::Blocks
+      run: |
+        make -j$(nproc)
+
+    - name: Install into AppDir
+      run: |
+        make install
+
+    - name: Download appimagetool
+      run: |
+        wget -O appimagetool.AppImage \
+          https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+
+        chmod +x appimagetool.AppImage
+
+    - name: Prepare AppDir
+      run: |
+        cat > ${APPDIR}/AppRun << 'EOF'
+        #!/bin/sh
+
+        HERE="$(dirname "$(readlink -f "${0}")")"
+        export PATH="${HERE}/bin:$PATH"
+        export LD_LIBRARY_PATH="${HERE}/lib:${HERE}/lib/codeblocks/wxContribItems:$LD_LIBRARY_PATH"
+        export CODEBLOCKS_DATA_DIR="${HERE}"
+        exec "${HERE}/bin/codeblocks" "$@"
+        EOF
+
+        chmod +x ${APPDIR}/AppRun
+
+    - name: Copy desktop file
+      run: |
+        cp src/mime/codeblocks.desktop ${APPDIR}/
+
+    - name: Copy icon
+      run: |
+        cp src/mime/codeblocks.png ${APPDIR}/
+
+    - name: Build AppImage
+      run: |
+        ARCH=x86_64 \
+        ./appimagetool.AppImage \
+          ${APPDIR} \
+          CodeBlocks-x86_64.AppImage
+
+    - name: Upload AppImage
+      uses: actions/upload-artifact@v7
+      with:
+        name: CodeBlocks-x86_64.AppImage
+        path: CodeBlocks-x86_64.AppImage
+        archive: false
+
