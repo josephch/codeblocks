@@ -10,6 +10,7 @@ jobs:
     env:
       WX_PREFIX: /opt/wxwidgets
       APPDIR: AppDir
+      APPVERSION: v25.03
 
     steps:
     - name: Checkout Code::Blocks
@@ -111,17 +112,21 @@ jobs:
       run: |
         cp src/mime/codeblocks.png ${APPDIR}/
 
+    - name: Add app name to env
+      run: |
+        echo "APPNAME=CodeBlocks-${{ env.APPVERSION }}-x86_64.AppImage" >> $GITHUB_ENV
+
     - name: Build AppImage
       run: |
         ARCH=x86_64 \
         ./appimagetool.AppImage \
           ${APPDIR} \
-          CodeBlocks-x86_64.AppImage
+          ${APPNAME}
 
     - name: Upload AppImage
       uses: actions/upload-artifact@v7
       with:
-        name: CodeBlocks-x86_64.AppImage
-        path: CodeBlocks-x86_64.AppImage
+        name: ${{ env.APPNAME }}
+        path: ${{ env.APPNAME }}
         archive: false
 
