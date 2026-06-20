@@ -357,7 +357,7 @@ AC_MSG_NOTICE([(Re)setting libs for wxWidgets $WX_VERSION])
 if test "x$ENABLE_STATIC_WX" = "xyes"; then
     AC_MSG_NOTICE([Using static wxWidgets for the main executable])
     WX_LIBS_FOR_EXE=`$WX_CONFIG_WITH_ARGS --static --libs std,aui,propgrid,richtext`
-    WX_LIBS_FOR_EXE="$WX_LIBS_FOR_EXE -rdynamic -Wl,-u,_ZTV10wxBusyInfo,-u,_ZTV18wxGenericValidator,-u,_Z13wxDirSelectorRK8wxStringS1_lRK7wxPointP8wxWindow,-u,_ZTI21wxPropertyGridManager,-u,_ZTI9wxCommand,-u,_ZTV18wxSashLayoutWindow,-u,_ZTV7wxCaret,-u,wxBitmapComboBoxNameStr,-u,_ZTV11wxSVGFileDC,-u,_ZTV24wxRichTextStyleComboCtrl"
+    WX_LIBS_FOR_EXE="$WX_LIBS_FOR_EXE -rdynamic -Wl,-u,_ZTV10wxBusyInfo,-u,_ZTV18wxGenericValidator,-u,_Z13wxDirSelectorRK8wxStringS1_lRK7wxPointP8wxWindow,-u,_ZTI21wxPropertyGridManager,-u,_ZTI9wxCommand,-u,_ZTV18wxSashLayoutWindow,-u,_ZTV7wxCaret,-u,wxBitmapComboBoxNameStr,-u,_ZTV11wxSVGFileDC,-u,_ZTV24wxRichTextStyleComboCtrl,-u,_ZN23wxStringOperationsWchar12EncodeNCharsEmRK9wxUniChar"
     WX_LIBS="-Wl,-z,undefs"
 else
     WX_LIBS=`$WX_CONFIG_WITH_ARGS --libs std,aui,propgrid,richtext`
