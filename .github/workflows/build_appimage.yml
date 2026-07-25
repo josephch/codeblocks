@@ -141,6 +141,42 @@ jobs:
         rm -f ${APPDIR}/lib/codeblocks/plugins/lib*.la
         rm -f ${APPDIR}/lib/codeblocks/wxContribItems/lib*.la
 
+
+    - name: Checkout libgit2
+      run: |
+        git clone --depth=1 --branch v1.9.4 \
+          https://github.com/libgit2/libgit2.git
+
+    - name: Build libgit2
+      run: |
+        cd libgit2
+        mkdir build-libgit2
+        cd build-libgit2
+        cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DUSE_HTTPS=OFF -DREGEX_BACKEND=builtin -DUSE_SSH=OFF -DCMAKE_INSTALL_PREFIX=/usr ..
+        cmake --build . -j
+        sudo cmake --install .
+
+    - name: Checkout cbvcs
+      run: |
+        git clone --depth=1 https://github.com/josephch/cbvcs
+
+    - name: Build cbvcs
+      run: |
+        export APPDIR=$PWD/${APPDIR}
+        export PKG_CONFIG_PATH=${APPDIR}/lib/pkgconfig
+        export PATH=${APPDIR}/bin/:$PATH
+        export WXPREFIX=${APPDIR}
+        echo "PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
+        ls $PKG_CONFIG_PATH
+        cd cbvcs
+        cmake -B build-cbvcs/ .
+        cmake --build build-cbvcs -j
+
+    - name: Install cbvcs to AppDir
+      run: |
+        cp cbvcs/cbvcs.so ${APPDIR}/lib/codeblocks/plugins/
+        cp cbvcs/cbvcs.zip ${APPDIR}/share/codeblocks
+
     - name: Build AppImage
       run: |
         ARCH=x86_64 \
