@@ -177,6 +177,49 @@ jobs:
         cp cbvcs/cbvcs.so ${APPDIR}/lib/codeblocks/plugins/
         cp cbvcs/cbvcs.zip ${APPDIR}/share/codeblocks
 
+    - name: Fetch CbProjectFromCompileCommands
+      run: |
+        git clone --depth=1 https://github.com/josephch/CbProjectFromCompileCommands
+        cd CbProjectFromCompileCommands
+        git submodule update --init
+
+    - name: Build CbProjectFromCompileCommands
+      run: |
+        export APPDIR=$PWD/${APPDIR}
+        export PKG_CONFIG_PATH=${APPDIR}/lib/pkgconfig
+        export PATH=${APPDIR}/bin/:$PATH
+        export WXPREFIX=${APPDIR}
+        cd CbProjectFromCompileCommands
+        cmake -B build-plugin/ .
+        cmake --build build-plugin -j
+
+    - name: Install CbProjectFromCompileCommands to AppDir
+      run: |
+        cp CbProjectFromCompileCommands/libCbProjectFromCompileCommands.so ${APPDIR}/lib/codeblocks/plugins/CbProjectFromCompileCommands.so
+        cp CbProjectFromCompileCommands/CbProjectFromCompileCommands.zip ${APPDIR}/share/codeblocks
+
+    - name: Fetch cb-ClangTidy
+      run: |
+        git clone --depth=1 https://github.com/josephch/cb-ClangTidy
+        cd cb-ClangTidy
+        git submodule update --init --recursive
+
+    - name: Build cb-ClangTidy
+      run: |
+        export APPDIR=$PWD/${APPDIR}
+        export PKG_CONFIG_PATH=${APPDIR}/lib/pkgconfig
+        export PATH=${APPDIR}/bin/:$PATH
+        export WXPREFIX=${APPDIR}
+        cd cb-ClangTidy
+        cmake -B build-plugin/ .
+        cmake --build build-plugin -j
+
+    - name: Install cb-ClangTidy to AppDir
+      run: |
+        cp cb-ClangTidy/CbClangTidy.so ${APPDIR}/lib/codeblocks/plugins/
+        cp cb-ClangTidy/CbClangTidy.zip ${APPDIR}/share/codeblocks
+
+
     - name: Build AppImage
       run: |
         ARCH=x86_64 \
