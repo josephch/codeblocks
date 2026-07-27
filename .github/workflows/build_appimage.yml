@@ -219,6 +219,24 @@ jobs:
         cp cb-ClangTidy/CbClangTidy.so ${APPDIR}/lib/codeblocks/plugins/
         cp cb-ClangTidy/CbClangTidy.zip ${APPDIR}/share/codeblocks
 
+    - name: Fetch ProjectExporter
+      run: |
+        git clone --depth=1 https://github.com/josephch/CBProjectExporter
+
+    - name: Build ProjectExporter
+      run: |
+        export APPDIR=$PWD/${APPDIR}
+        export PKG_CONFIG_PATH=${APPDIR}/lib/pkgconfig
+        export PATH=${APPDIR}/bin/:$PATH
+        export WXPREFIX=${APPDIR}
+        cd CBProjectExporter
+        cmake -B build-plugin/ .
+        cmake --build build-plugin -j
+
+    - name: Install ProjectExporter to AppDir
+      run: |
+        cp CBProjectExporter/bin/ProjectExporter.so ${APPDIR}/lib/codeblocks/plugins/
+        cp CBProjectExporter/bin/ProjectExporter.zip ${APPDIR}/share/codeblocks/
 
     - name: Build AppImage
       run: |
