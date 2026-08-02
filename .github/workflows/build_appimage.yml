@@ -238,6 +238,25 @@ jobs:
         cp CBProjectExporter/bin/ProjectExporter.so ${APPDIR}/lib/codeblocks/plugins/
         cp CBProjectExporter/bin/ProjectExporter.zip ${APPDIR}/share/codeblocks/
 
+    - name: Fetch UnitTestPlugin
+      run: |
+        git clone --depth=1 https://github.com/josephch/cb-UnitTestPlugin
+
+    - name: Build UnitTestPlugin
+      run: |
+        export APPDIR=$PWD/${APPDIR}
+        export PKG_CONFIG_PATH=${APPDIR}/lib/pkgconfig
+        export PATH=${APPDIR}/bin/:$PATH
+        export WXPREFIX=${APPDIR}
+        cd cb-UnitTestPlugin
+        cmake -B build-plugin/ .
+        cmake --build build-plugin -j
+
+    - name: Install UnitTestPlugin to AppDir
+      run: |
+        cp cb-UnitTestPlugin/UnitTest.so ${APPDIR}/lib/codeblocks/plugins/
+        cp cb-UnitTestPlugin/UnitTest.zip ${APPDIR}/share/codeblocks/
+
     - name: Build AppImage
       run: |
         ARCH=x86_64 \
