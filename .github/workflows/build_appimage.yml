@@ -152,7 +152,7 @@ jobs:
         cd libgit2
         mkdir build-libgit2
         cd build-libgit2
-        cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DUSE_HTTPS=OFF -DREGEX_BACKEND=builtin -DUSE_SSH=OFF -DCMAKE_INSTALL_PREFIX=/usr ..
+        cmake  -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DUSE_HTTPS=OFF -DREGEX_BACKEND=builtin -DUSE_SSH=OFF -DCMAKE_INSTALL_PREFIX=/usr ..
         cmake --build . -j
         sudo cmake --install .
 
@@ -169,8 +169,8 @@ jobs:
         echo "PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
         ls $PKG_CONFIG_PATH
         cd cbvcs
-        cmake -B build-cbvcs/ .
-        cmake --build build-cbvcs -j
+        cmake -DCMAKE_BUILD_TYPE=Release -B build-plugin/ .
+        cmake --build build-plugin -j
 
     - name: Install cbvcs to AppDir
       run: |
@@ -190,7 +190,7 @@ jobs:
         export PATH=${APPDIR}/bin/:$PATH
         export WXPREFIX=${APPDIR}
         cd CbProjectFromCompileCommands
-        cmake -B build-plugin/ .
+        cmake -DCMAKE_BUILD_TYPE=Release -B build-plugin/ .
         cmake --build build-plugin -j
 
     - name: Install CbProjectFromCompileCommands to AppDir
@@ -211,7 +211,7 @@ jobs:
         export PATH=${APPDIR}/bin/:$PATH
         export WXPREFIX=${APPDIR}
         cd cb-ClangTidy
-        cmake -B build-plugin/ .
+        cmake -DCMAKE_BUILD_TYPE=Release -B build-plugin/ .
         cmake --build build-plugin -j
 
     - name: Install cb-ClangTidy to AppDir
@@ -230,7 +230,7 @@ jobs:
         export PATH=${APPDIR}/bin/:$PATH
         export WXPREFIX=${APPDIR}
         cd CBProjectExporter
-        cmake -B build-plugin/ .
+        cmake -DCMAKE_BUILD_TYPE=Release -B build-plugin/ .
         cmake --build build-plugin -j
 
     - name: Install ProjectExporter to AppDir
@@ -249,7 +249,7 @@ jobs:
         export PATH=${APPDIR}/bin/:$PATH
         export WXPREFIX=${APPDIR}
         cd cb-UnitTestPlugin
-        cmake -B build-plugin/ .
+        cmake -DCMAKE_BUILD_TYPE=Release -B build-plugin/ .
         cmake --build build-plugin -j
 
     - name: Install UnitTestPlugin to AppDir
