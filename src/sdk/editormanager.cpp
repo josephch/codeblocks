@@ -549,7 +549,24 @@ void EditorManager::AddEditorBase(EditorBase* eb)
     {
         // use fullname as default, so tabs stay as small as possible
         wxFileName fn(eb->GetTitle());
-        m_pNotebook->AddPage(eb, fn.GetFullName(), true);
+        int newTabPosition = Manager::Get()->GetConfigManager(wxT("editor"))->ReadInt(wxT("/new_tab_position"), 0);
+        if (0 == newTabPosition)
+        {
+            m_pNotebook->AddPage(eb, fn.GetFullName(), true);
+        }
+        else
+        {
+            int selectedIdx = m_pNotebook->GetSelection();
+            if (wxNOT_FOUND == selectedIdx)
+            {
+                m_pNotebook->AddPage(eb, fn.GetFullName(), true);
+            }
+            else
+            {
+                size_t idx = selectedIdx + 1;
+                m_pNotebook->InsertPage(idx, eb, fn.GetFullName(), true);
+            }
+        }
     }
 }
 
