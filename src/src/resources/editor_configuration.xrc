@@ -522,7 +522,7 @@
 																	<object class="sizeritem">
 																		<object class="wxFlexGridSizer">
 																			<cols>2</cols>
-																			<rows>6</rows>
+																			<rows>7</rows>
 																			<object class="sizeritem">
 																				<object class="wxStaticText" name="wxID_ANY">
 																					<label>Show spaces in editor:</label>
@@ -648,6 +648,28 @@
 																				<border>5</border>
 																				<option>1</option>
 																			</object>
+																			<!--New Tab position -->
+																			<object class="sizeritem">
+																				<object class="wxStaticText" name="ID_STATICTEXT15">
+																					<label>New Tab Position:</label>
+																				</object>
+																				<flag>wxTOP|wxBOTTOM|wxRIGHT|wxEXPAND</flag>
+																				<border>5</border>
+																				<option>1</option>
+																			</object>
+																			<object class="sizeritem">
+																				<object class="wxChoice" name="cmbNewTabPosition">
+																					<content>
+																						<item>last</item>
+																						<item>right</item>
+																					</content>
+																					<selection>0</selection>
+																				</object>
+																				<flag>wxBOTTOM|wxEXPAND</flag>
+																				<border>5</border>
+																				<option>1</option>
+																			</object>
+																			<!--End New Tab position-->
 																		</object>
 																		<flag>wxTOP|wxLEFT|wxRIGHT</flag>
 																		<border>5</border>
