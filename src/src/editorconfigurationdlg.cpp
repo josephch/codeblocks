@@ -155,6 +155,7 @@ EditorConfigurationDlg::EditorConfigurationDlg(wxWindow* parent)
     XRCCTRL(*this, "cmbViewWS",                   wxChoice)->SetSelection(cfg->ReadInt(_T("/view_whitespace"),           0));
     XRCCTRL(*this, "spnSpaceExtraAscent",         wxSpinCtrl)->SetValue(cfg->ReadInt(_T("/space_extra_ascent"),          0));
     XRCCTRL(*this, "cmbCaretBuffer",              wxChoice)->SetSelection(cfg->ReadInt(wxT("/caret_buffer"),             2));
+    XRCCTRL(*this, "cmbNewTabPosition",           wxChoice)->SetSelection(cfg->ReadInt(_T("/new_tab_position"),          0));
 
     // chkSpacesAroundBraces must be enabled only when chkSmartIndent is checked
     const bool smartIndentEnabled = XRCCTRL(*this, "chkSmartIndent", wxCheckBox)->GetValue();
@@ -1084,6 +1085,7 @@ void EditorConfigurationDlg::EndModal(int retCode)
         cfg->Write(_T("/view_whitespace"),                     XRCCTRL(*this, "cmbViewWS",                       wxChoice)->GetSelection());
         cfg->Write(_T("/space_extra_ascent"),                  XRCCTRL(*this, "spnSpaceExtraAscent",             wxSpinCtrl)->GetValue());
         cfg->Write(_T("/caret_buffer"), XRCCTRL(*this, "cmbCaretBuffer", wxChoice)->GetSelection());
+        cfg->Write(_T("/new_tab_position"),                    XRCCTRL(*this, "cmbNewTabPosition",               wxChoice)->GetSelection());
 
 #if defined(__WXMSW__) && wxCHECK_VERSION(3, 1, 0)
         cfg->Write(_T("/technology"),                          XRCCTRL(*this, "cmbTechnology",                   wxChoice)->GetSelection());
