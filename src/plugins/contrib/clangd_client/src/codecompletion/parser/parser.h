@@ -167,6 +167,11 @@ public:
      */
     void AddParse(const wxString& filename) override;
 
+    /** Notify parser that a previously opened file is activated
+     * @param filename input file name
+     */
+    void FileActivated(const wxString& filename);
+
     /** Add one file to json mode Parsing
      * @param filenames input file name
      * @param json containing LSP symbols

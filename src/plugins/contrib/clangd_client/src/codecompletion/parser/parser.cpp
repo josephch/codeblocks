@@ -463,6 +463,26 @@ void Parser::AddParse(const wxString& filename)
     // ----------------------------------------------------------------------------
     CC_LOCKER_TRACK_P_MTX_UNLOCK(s_ParserMutex);
 }
+
+void Parser::FileActivated(const wxString& filename)
+{
+    auto locker_result = CCLogger::Get()->GetTimedMutexLock(s_ParserMutex);
+    if (locker_result != true)
+    {
+        return;
+    }
+
+    s_ParserMutex_Owner = wxString::Format("%s %d", __FUNCTION__, __LINE__); /*record owner*/
+
+    StringList::iterator it = std::find(m_BatchParseFiles.begin(), m_BatchParseFiles.end(), filename);
+    if (it != m_BatchParseFiles.end())
+    {
+        /* file in batch parse file list, bring it to front so that it will be parsed early*/
+        std::rotate(m_BatchParseFiles.begin(), it, std::next(it));
+    }
+    CC_LOCKER_TRACK_P_MTX_UNLOCK(s_ParserMutex);
+}
+
 // ----------------------------------------------------------------------------
 void Parser::LSP_OnClientInitialized(cbProject* pProject)
 // ----------------------------------------------------------------------------
