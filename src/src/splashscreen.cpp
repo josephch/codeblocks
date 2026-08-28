@@ -26,7 +26,7 @@ cbSplashScreen::cbSplashScreen(const wxBitmap& bitmap)
 {
 }
 
-void cbSplashScreen::DrawReleaseInfo(wxDC& dc)
+void cbSplashScreen::DrawReleaseInfo(wxDC& dc, bool isDark)
 {
     wxCoord w, h;
     const int text_center = 450;
@@ -37,7 +37,7 @@ void cbSplashScreen::DrawReleaseInfo(wxDC& dc)
     const wxString release(RELEASE);
     const wxString revision = " "+ConfigManager::GetRevisionString();
 
-    dc.SetTextForeground(*wxBLACK);
+    dc.SetTextForeground(isDark ? *wxWHITE : *wxBLACK);
 
     dc.SetFont(wxFont(14, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
     dc.GetMultiLineTextExtent(title, &w, &h);
@@ -77,7 +77,7 @@ void cbSplashScreen::DrawReleaseInfo(wxDC& dc)
         dc.SetFont(smallFont);
         dc.SetTextForeground(*wxRED);
         dc.DrawText(safeMode, text_center - (sm_width)/2, y - sm_height + sm_descend + lf_height+10);
-        dc.SetTextForeground(*wxBLACK);
+        dc.SetTextForeground(isDark ? *wxWHITE : *wxBLACK);
     }
 }
 
