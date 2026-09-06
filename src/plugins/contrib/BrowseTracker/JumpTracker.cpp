@@ -457,7 +457,7 @@ void JumpTracker::OnEditorUpdateUIEvent(CodeBlocksEvent& event)
     if (GetJumpInProgress())
         return;
 
-    if ( (not m_leftDown) or m_isDragging)
+    if (m_isDragging)
         return;
 
     cbEditor* pEd =  Manager::Get()->GetEditorManager()->GetBuiltinActiveEditor();
