@@ -39,7 +39,7 @@ jobs:
 
     - name: Checkout wxWidgets
       run: |
-        git clone --depth=1 --branch v3.3.2 \
+        git clone --depth=1 --branch v3.3.4 \
           https://github.com/wxWidgets/wxWidgets.git
         cd wxWidgets
         git submodule update --init
