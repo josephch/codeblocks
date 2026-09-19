@@ -58,7 +58,8 @@ jobs:
           --disable-shared \
           --disable-sys-libs \
           --with-gtk=3 \
-          --enable-secretstore=no
+          --enable-secretstore=no \
+          --enable-debug
 
         make -j$(nproc)
         make install
