@@ -173,7 +173,7 @@ _AM_IF_OPTION([tar-ustar], [_AM_PROG_TAR([ustar])],
 CODEBLOCKS_GET_PLATFORM
 CODEBLOCKS_ENABLE_SETTINGS
 
-AM_OPTIONS_WXCONFIG
+#AM_OPTIONS_WXCONFIG
 
 dnl Option to link the main executable against static wxWidgets.
 dnl Shared libraries and plugins will NOT link to wxWidgets; they
@@ -184,23 +184,6 @@ AC_ARG_ENABLE([static-wx],
     [ENABLE_STATIC_WX=$enableval],
     [ENABLE_STATIC_WX=no])
 
-AM_PATH_WXCONFIG(3.0.0, wxWin=1)
-    if test "$wxWin" != 1; then
-        AC_MSG_ERROR([
-                wxWidgets must be installed on your system.
-
-                Please check that wx-config is in path, the directory
-                where wxWidgets libraries are installed (returned by
-                'wx-config --libs' or 'wx-config --static --libs' command)
-                is in LD_LIBRARY_PATH or equivalent variable and
-                wxWindows version is 3.0.0 or above.
-                ])
-    fi
-
-dnl		CPPFLAGS="$CPPFLAGS $WX_CPPFLAGS"
-dnl		CXXFLAGS="$CXXFLAGS $WX_CXXFLAGS_ONLY"
-dnl		CFLAGS="$CFLAGS $WX_CFLAGS_ONLY"
-dnl		LIBS="$LIBS $WX_LIBS"
 
 AC_SUBST(CPPFLAGS)
 AC_SUBST(CXXFLAGS)
@@ -670,4 +653,6 @@ echo "   CPPFLAGS:   ${CPPFLAGS}"
 echo "   LDFLAGS:    ${LDFLAGS}"
 echo "   CXX:        ${CXX}"
 echo "   CC:         ${CC}"
+echo "   CC_FOR_BUILD: ${CC_FOR_BUILD}"
+echo "   CXX_FOR_BUILD: ${CXX_FOR_BUILD}"
 echo
