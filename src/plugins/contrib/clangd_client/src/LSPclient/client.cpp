@@ -550,8 +550,42 @@ ProcessLanguageClient::ProcessLanguageClient(const cbProject* pProject, const ch
     //-wxMilliSleep(1000); // **Debugging**
 
   #else // _nix //<<------------------------unix only -------------------------------
+    bool restorePath = false;
+    wxString originalPathEnv;
+    if (pProject->IsMakefileCustom() && !masterPath.IsEmpty() && wxGetEnv(_T("PATH"), &originalPathEnv))
+    {
+        const wxString& cppProgram = pCompiler->GetPrograms().CPP;
+        if (!cppProgram.IsEmpty())
+        {
+            wxFileName cppProgramFullPath = masterPath + wxFileName::GetPathSeparator() + "bin" + wxFileName::GetPathSeparator() + cppProgram;
+            wxString cppProgramDirPath = cppProgramFullPath.GetPath();
+            bool cppProgramDirPathInEnv = (nullptr != wxStrstr(originalPathEnv, cppProgramDirPath));
+            if (!cppProgramDirPathInEnv)
+            {
+                wxString modifiedPathEnv = cppProgramDirPath + (platform::windows ? _T(";") : _T(":")) + originalPathEnv;
+                if (!wxSetEnv(_T("PATH"), modifiedPathEnv))
+                {
+                    CCLogger::Get()->DebugLog(_T("ProcessLanguageClient: Could not set PATH environment variable: ") + modifiedPathEnv);
+                }
+                else
+                {
+                    restorePath = true;
+                    fprintf(stderr, "path = %s\n", modifiedPathEnv.ToUTF8().data());
+                }
+            }
+        }
+    }
+
     wxArrayString argsArrayString = GetArrayFromString(command, " ");
     m_pServerProcess = new UnixProcess(this, argsArrayString);
+
+    if (restorePath)
+    {
+        if (!wxSetEnv(_T("PATH"), originalPathEnv))
+        {
+            CCLogger::Get()->DebugLog(_T("ProcessLanguageClient: Could not restore PATH environment variable: ") + originalPathEnv);
+        }
+    }
 
     if (not m_pServerProcess)
     {
